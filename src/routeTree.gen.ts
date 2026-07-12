@@ -9,8 +9,14 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IngredientesRouteImport } from './routes/ingredientes'
 import { Route as IndexRouteImport } from './routes/index'
 
+const IngredientesRoute = IngredientesRouteImport.update({
+  id: '/ingredientes',
+  path: '/ingredientes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +25,39 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ingredientes': typeof IngredientesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ingredientes': typeof IngredientesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ingredientes': typeof IngredientesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/ingredientes'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/ingredientes'
+  id: '__root__' | '/' | '/ingredientes'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  IngredientesRoute: typeof IngredientesRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/ingredientes': {
+      id: '/ingredientes'
+      path: '/ingredientes'
+      fullPath: '/ingredientes'
+      preLoaderRoute: typeof IngredientesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +70,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  IngredientesRoute: IngredientesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
