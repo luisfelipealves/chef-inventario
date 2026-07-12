@@ -85,6 +85,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:description", content: "App local-first para cozinheiras e confeiteiras artesanais gerirem ingredientes e calcularem custos de receitas." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "ChefGestão — Gestão de stock e fichas técnicas" },
+      { name: "twitter:description", content: "App local-first para cozinheiras e confeiteiras artesanais gerirem ingredientes e calcularem custos de receitas." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/29ad06cf-4303-4230-9527-bffac313b540" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/29ad06cf-4303-4230-9527-bffac313b540" },
     ],
     links: [
       {
