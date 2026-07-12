@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { IngredienteFormDialog } from "@/components/ingredientes/IngredienteFormDialog";
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export const Route = createFileRoute("/ingredientes")({
   head: () => ({
@@ -32,10 +33,12 @@ export const Route = createFileRoute("/ingredientes")({
 });
 
 function IngredientesPage() {
+  const hydrated = useHydrated();
   const ingredientes = useLiveQuery(
-    () => db.ingredientes.orderBy("nome").toArray(),
-    [],
+    () => (hydrated ? db.ingredientes.orderBy("nome").toArray() : []),
+    [hydrated],
   );
+
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Ingrediente | null>(null);
