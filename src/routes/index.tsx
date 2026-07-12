@@ -2,14 +2,24 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Package, BookOpen, ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const totalIngredientes = useLiveQuery(() => db.ingredientes.count(), [], 0);
-  const totalReceitas = useLiveQuery(() => db.receitas.count(), [], 0);
+  const hydrated = useHydrated();
+  const totalIngredientes = useLiveQuery(
+    () => (hydrated ? db.ingredientes.count() : 0),
+    [hydrated],
+    0,
+  );
+  const totalReceitas = useLiveQuery(
+    () => (hydrated ? db.receitas.count() : 0),
+    [hydrated],
+    0,
+  );
 
   return (
     <main className="min-h-screen bg-background px-4 py-10">
