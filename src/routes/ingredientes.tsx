@@ -151,11 +151,6 @@ function IngredienteCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const unitario = custoPorUnidade(
-    ingrediente.precoEmbalagem,
-    ingrediente.quantidadeEmbalagem,
-  );
-
   return (
     <li className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -189,18 +184,10 @@ function IngredienteCard({
           </Button>
         </div>
       </div>
-
-      <div className="mt-3 flex items-center justify-between rounded-lg bg-muted px-3 py-2">
-        <span className="text-xs font-medium text-muted-foreground">
-          Custo por {unidadeMinimaLabel(ingrediente.unidade)}
-        </span>
-        <span className="text-sm font-semibold tabular-nums text-foreground">
-          {formatEuro(unitario)}
-        </span>
-      </div>
     </li>
   );
 }
+
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
