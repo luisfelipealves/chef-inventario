@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { IngredienteFormDialog } from "@/components/ingredientes/IngredienteFormDialog";
-import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
+import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
 
 export const Route = createFileRoute("/ingredientes")({
