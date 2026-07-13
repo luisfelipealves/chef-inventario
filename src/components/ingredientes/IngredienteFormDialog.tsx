@@ -158,7 +158,14 @@ export function IngredienteFormDialog({
     try {
       const novaQuantidade =
         ingrediente.quantidadeEmbalagem + parsed.data.quantidade;
-      const novoPreco = ingrediente.precoEmbalagem + parsed.data.preco;
+      // Custo unitário refere-se a esta compra (preço / quantidade comprada),
+      // não à média ponderada com o stock antigo. Guardamos o preço equivalente
+      // para o stock total mantendo esse custo unitário.
+      const custoUnitarioCompra =
+        parsed.data.quantidade > 0
+          ? parsed.data.preco / parsed.data.quantidade
+          : 0;
+      const novoPreco = custoUnitarioCompra * novaQuantidade;
       await db.ingredientes.update(ingrediente.id, {
         quantidadeEmbalagem: novaQuantidade,
         precoEmbalagem: novoPreco,
@@ -173,12 +180,13 @@ export function IngredienteFormDialog({
     }
   }
 
-  // Preview do novo custo médio ponderado
+  // Preview: custo unitário baseado apenas na nova compra
   const addQtd = Number(addValues.quantidade) || 0;
   const addPreco = Number(addValues.preco) || 0;
   const previewQtd = (ingrediente?.quantidadeEmbalagem ?? 0) + addQtd;
-  const previewPreco = (ingrediente?.precoEmbalagem ?? 0) + addPreco;
-  const previewUnitario = custoPorUnidade(previewPreco, previewQtd);
+  const previewUnitario = addQtd > 0 ? addPreco / addQtd : 0;
+  const previewPreco = previewUnitario * previewQtd;
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
