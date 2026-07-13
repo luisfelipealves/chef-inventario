@@ -18,8 +18,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { db, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
 
 const schema = z.object({
   nome: z.string().trim().min(1, "Indica o nome").max(80, "Máximo 80 caracteres"),
@@ -32,11 +34,25 @@ const schema = z.object({
     .nonnegative("Não pode ser negativo"),
 });
 
+const addSchema = z.object({
+  quantidade: z.coerce
+    .number({ invalid_type_error: "Número inválido" })
+    .positive("Deve ser maior que 0"),
+  preco: z.coerce
+    .number({ invalid_type_error: "Número inválido" })
+    .nonnegative("Não pode ser negativo"),
+});
+
 type FormValues = {
   nome: string;
   unidade: UnidadeMedida;
   quantidadeEmbalagem: string;
   precoEmbalagem: string;
+};
+
+type AddValues = {
+  quantidade: string;
+  preco: string;
 };
 
 const empty: FormValues = {
@@ -45,6 +61,8 @@ const empty: FormValues = {
   quantidadeEmbalagem: "",
   precoEmbalagem: "",
 };
+
+const emptyAdd: AddValues = { quantidade: "", preco: "" };
 
 export function IngredienteFormDialog({
   open,
@@ -56,13 +74,19 @@ export function IngredienteFormDialog({
   ingrediente?: Ingrediente | null;
 }) {
   const isEdit = !!ingrediente;
+  const [tab, setTab] = useState<"dados" | "compra">("dados");
   const [values, setValues] = useState<FormValues>(empty);
+  const [addValues, setAddValues] = useState<AddValues>(emptyAdd);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
+  const [addErrors, setAddErrors] = useState<Partial<Record<keyof AddValues, string>>>({});
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       setErrors({});
+      setAddErrors({});
+      setAddValues(emptyAdd);
+      setTab("dados");
       setValues(
         ingrediente
           ? {
@@ -117,6 +141,45 @@ export function IngredienteFormDialog({
     }
   }
 
+  async function handleAddPurchase(e: React.FormEvent) {
+    e.preventDefault();
+    if (!ingrediente) return;
+    const parsed = addSchema.safeParse(addValues);
+    if (!parsed.success) {
+      const errs: Partial<Record<keyof AddValues, string>> = {};
+      for (const issue of parsed.error.issues) {
+        const key = issue.path[0] as keyof AddValues;
+        if (!errs[key]) errs[key] = issue.message;
+      }
+      setAddErrors(errs);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const novaQuantidade =
+        ingrediente.quantidadeEmbalagem + parsed.data.quantidade;
+      const novoPreco = ingrediente.precoEmbalagem + parsed.data.preco;
+      await db.ingredientes.update(ingrediente.id, {
+        quantidadeEmbalagem: novaQuantidade,
+        precoEmbalagem: novoPreco,
+      });
+      toast.success("Compra adicionada ao stock");
+      onOpenChange(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gravar");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  // Preview do novo custo médio ponderado
+  const addQtd = Number(addValues.quantidade) || 0;
+  const addPreco = Number(addValues.preco) || 0;
+  const previewQtd = (ingrediente?.quantidadeEmbalagem ?? 0) + addQtd;
+  const previewPreco = (ingrediente?.precoEmbalagem ?? 0) + addPreco;
+  const previewUnitario = custoPorUnidade(previewPreco, previewQtd);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -125,96 +188,238 @@ export function IngredienteFormDialog({
             {isEdit ? "Editar ingrediente" : "Novo ingrediente"}
           </DialogTitle>
           <DialogDescription>
-            Regista a compra: quanto trouxeste e quanto pagaste.
+            {isEdit
+              ? "Corrige os dados ou adiciona uma nova compra ao stock."
+              : "Regista a compra: quanto trouxeste e quanto pagaste."}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="nome">Nome do ingrediente</Label>
-            <Input
-              id="nome"
-              placeholder="Ex: Farinha T65"
-              value={values.nome}
-              onChange={(e) => setValues((v) => ({ ...v, nome: e.target.value }))}
-              maxLength={80}
-              autoFocus
-              className="h-12 text-base"
-            />
-            {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
-          </div>
+        {isEdit ? (
+          <Tabs value={tab} onValueChange={(v) => setTab(v as "dados" | "compra")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="dados">Editar dados</TabsTrigger>
+              <TabsTrigger value="compra">Adicionar compra</TabsTrigger>
+            </TabsList>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
-            <div className="space-y-2 min-w-0">
-              <Label htmlFor="quantidade">Quantidade comprada</Label>
-              <Input
-                id="quantidade"
-                inputMode="decimal"
-                placeholder="1000"
-                value={values.quantidadeEmbalagem}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, quantidadeEmbalagem: e.target.value }))
-                }
-                className="h-12 text-base"
+            <TabsContent value="dados" className="mt-4">
+              <EditFields
+                values={values}
+                setValues={setValues}
+                errors={errors}
+                onSubmit={handleSubmit}
+                submitting={submitting}
+                onCancel={() => onOpenChange(false)}
+                submitLabel="Guardar"
               />
-              {errors.quantidadeEmbalagem && (
-                <p className="text-xs text-destructive">{errors.quantidadeEmbalagem}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="unidade">Unidade</Label>
-              <Select
-                value={values.unidade}
-                onValueChange={(u) =>
-                  setValues((v) => ({ ...v, unidade: u as UnidadeMedida }))
-                }
-              >
-                <SelectTrigger id="unidade" className="h-12 text-base">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="g">g</SelectItem>
-                  <SelectItem value="kg">kg</SelectItem>
-                  <SelectItem value="ml">ml</SelectItem>
-                  <SelectItem value="l">l</SelectItem>
-                  <SelectItem value="un">un</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            </TabsContent>
 
-          <div className="space-y-2">
-            <Label htmlFor="preco">Preço pago (€)</Label>
-            <Input
-              id="preco"
-              inputMode="decimal"
-              placeholder="5.00"
-              value={values.precoEmbalagem}
-              onChange={(e) =>
-                setValues((v) => ({ ...v, precoEmbalagem: e.target.value }))
-              }
-              className="h-12 text-base"
-            />
-            {errors.precoEmbalagem && (
-              <p className="text-xs text-destructive">{errors.precoEmbalagem}</p>
-            )}
-          </div>
+            <TabsContent value="compra" className="mt-4">
+              <form onSubmit={handleAddPurchase} className="space-y-4">
+                <div className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+                  Stock atual:{" "}
+                  <span className="font-medium text-foreground">
+                    {ingrediente?.quantidadeEmbalagem} {ingrediente?.unidade}
+                  </span>{" "}
+                  ·{" "}
+                  <span className="font-medium text-foreground">
+                    {formatEuro(ingrediente?.precoEmbalagem ?? 0, { compact: true })}
+                  </span>
+                </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="h-12 flex-1"
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={submitting} className="h-12 flex-1">
-              {submitting ? "A gravar…" : isEdit ? "Guardar" : "Adicionar"}
-            </Button>
-          </DialogFooter>
-        </form>
+                <div className="space-y-2">
+                  <Label htmlFor="add-quantidade">
+                    Quantidade comprada ({ingrediente?.unidade})
+                  </Label>
+                  <Input
+                    id="add-quantidade"
+                    inputMode="decimal"
+                    placeholder="500"
+                    value={addValues.quantidade}
+                    onChange={(e) =>
+                      setAddValues((v) => ({ ...v, quantidade: e.target.value }))
+                    }
+                    className="h-12 text-base"
+                    autoFocus
+                  />
+                  {addErrors.quantidade && (
+                    <p className="text-xs text-destructive">{addErrors.quantidade}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="add-preco">Preço pago (€)</Label>
+                  <Input
+                    id="add-preco"
+                    inputMode="decimal"
+                    placeholder="2.50"
+                    value={addValues.preco}
+                    onChange={(e) =>
+                      setAddValues((v) => ({ ...v, preco: e.target.value }))
+                    }
+                    className="h-12 text-base"
+                  />
+                  {addErrors.preco && (
+                    <p className="text-xs text-destructive">{addErrors.preco}</p>
+                  )}
+                </div>
+
+                {addQtd > 0 && (
+                  <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Novo stock</span>
+                      <span className="font-medium text-foreground">
+                        {previewQtd} {ingrediente?.unidade} ·{" "}
+                        {formatEuro(previewPreco, { compact: true })}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>
+                        Novo custo por{" "}
+                        {ingrediente
+                          ? unidadeMinimaLabel(ingrediente.unidade)
+                          : "unidade"}
+                      </span>
+                      <span className="font-semibold tabular-nums text-foreground">
+                        {formatEuro(previewUnitario)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <DialogFooter className="gap-2 sm:gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
+                    className="h-12 flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button type="submit" disabled={submitting} className="h-12 flex-1">
+                    {submitting ? "A gravar…" : "Adicionar ao stock"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </TabsContent>
+          </Tabs>
+        ) : (
+          <EditFields
+            values={values}
+            setValues={setValues}
+            errors={errors}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+            onCancel={() => onOpenChange(false)}
+            submitLabel="Adicionar"
+          />
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function EditFields({
+  values,
+  setValues,
+  errors,
+  onSubmit,
+  submitting,
+  onCancel,
+  submitLabel,
+}: {
+  values: FormValues;
+  setValues: React.Dispatch<React.SetStateAction<FormValues>>;
+  errors: Partial<Record<keyof FormValues, string>>;
+  onSubmit: (e: React.FormEvent) => void;
+  submitting: boolean;
+  onCancel: () => void;
+  submitLabel: string;
+}) {
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <Label htmlFor="nome">Nome do ingrediente</Label>
+        <Input
+          id="nome"
+          placeholder="Ex: Farinha T65"
+          value={values.nome}
+          onChange={(e) => setValues((v) => ({ ...v, nome: e.target.value }))}
+          maxLength={80}
+          autoFocus
+          className="h-12 text-base"
+        />
+        {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
+      </div>
+
+      <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+        <div className="space-y-2 min-w-0">
+          <Label htmlFor="quantidade">Quantidade total</Label>
+          <Input
+            id="quantidade"
+            inputMode="decimal"
+            placeholder="1000"
+            value={values.quantidadeEmbalagem}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, quantidadeEmbalagem: e.target.value }))
+            }
+            className="h-12 text-base"
+          />
+          {errors.quantidadeEmbalagem && (
+            <p className="text-xs text-destructive">{errors.quantidadeEmbalagem}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="unidade">Unidade</Label>
+          <Select
+            value={values.unidade}
+            onValueChange={(u) =>
+              setValues((v) => ({ ...v, unidade: u as UnidadeMedida }))
+            }
+          >
+            <SelectTrigger id="unidade" className="h-12 text-base">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="g">g</SelectItem>
+              <SelectItem value="kg">kg</SelectItem>
+              <SelectItem value="ml">ml</SelectItem>
+              <SelectItem value="l">l</SelectItem>
+              <SelectItem value="un">un</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="preco">Preço total pago (€)</Label>
+        <Input
+          id="preco"
+          inputMode="decimal"
+          placeholder="5.00"
+          value={values.precoEmbalagem}
+          onChange={(e) =>
+            setValues((v) => ({ ...v, precoEmbalagem: e.target.value }))
+          }
+          className="h-12 text-base"
+        />
+        {errors.precoEmbalagem && (
+          <p className="text-xs text-destructive">{errors.precoEmbalagem}</p>
+        )}
+      </div>
+
+      <DialogFooter className="gap-2 sm:gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          className="h-12 flex-1"
+        >
+          Cancelar
+        </Button>
+        <Button type="submit" disabled={submitting} className="h-12 flex-1">
+          {submitting ? "A gravar…" : submitLabel}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 }
