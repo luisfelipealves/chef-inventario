@@ -44,11 +44,10 @@ function Index() {
             subtitle={`${totalIngredientes} no stock`}
           />
           <ModuleCard
-            to="/"
-            disabled
+            to="/receitas"
             icon={<BookOpen className="h-5 w-5" />}
             title="Receitas"
-            subtitle={`${totalReceitas} · em breve`}
+            subtitle={`${totalReceitas} fichas técnicas`}
           />
         </nav>
       </div>
