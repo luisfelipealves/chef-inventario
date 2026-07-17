@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ScanLine } from "lucide-react";
 import { z } from "zod";
+import { BarcodeScannerDialog } from "@/components/ingredientes/BarcodeScannerDialog";
+import { fetchProdutoOFF } from "@/lib/open-food-facts";
 import {
   Dialog,
   DialogContent,
@@ -80,9 +83,49 @@ export function IngredienteFormDialog({
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [addErrors, setAddErrors] = useState<Partial<Record<keyof AddValues, string>>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const lastScannedRef = useRef<string | null>(null);
+
+  async function handleBarcode(code: string) {
+    if (lastScannedRef.current === code) return;
+    lastScannedRef.current = code;
+    setScannerOpen(false);
+    setScanning(true);
+    try {
+      const produto = await fetchProdutoOFF(code);
+      if (!produto || !produto.nome) {
+        toast.error("Produto não encontrado no Open Food Facts");
+        return;
+      }
+      setValues((v) => ({
+        ...v,
+        nome: produto.nome ?? v.nome,
+        unidade: produto.unidade ?? v.unidade,
+        quantidadeEmbalagem:
+          produto.quantidade != null ? String(produto.quantidade) : v.quantidadeEmbalagem,
+        precoEmbalagem: "",
+      }));
+      toast.success(`Encontrado: ${produto.nome}`);
+      setTimeout(() => {
+        const el = document.getElementById("preco") as HTMLInputElement | null;
+        el?.focus();
+      }, 50);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao consultar Open Food Facts");
+    } finally {
+      setScanning(false);
+    }
+  }
 
   useEffect(() => {
     if (open) {
+      setErrors({});
+      setAddErrors({});
+      setAddValues(emptyAdd);
+      setTab("dados");
+      lastScannedRef.current = null;
       setErrors({});
       setAddErrors({});
       setAddValues(emptyAdd);
@@ -311,17 +354,34 @@ export function IngredienteFormDialog({
             </TabsContent>
           </Tabs>
         ) : (
-          <EditFields
-            values={values}
-            setValues={setValues}
-            errors={errors}
-            onSubmit={handleSubmit}
-            submitting={submitting}
-            onCancel={() => onOpenChange(false)}
-            submitLabel="Adicionar"
-          />
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setScannerOpen(true)}
+              disabled={scanning}
+              className="h-12 w-full"
+            >
+              <ScanLine className="mr-2 h-5 w-5" />
+              {scanning ? "A consultar produto…" : "Bipar produto (EAN-13)"}
+            </Button>
+            <EditFields
+              values={values}
+              setValues={setValues}
+              errors={errors}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+              onCancel={() => onOpenChange(false)}
+              submitLabel="Adicionar"
+            />
+          </div>
         )}
       </DialogContent>
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={handleBarcode}
+      />
     </Dialog>
   );
 }
