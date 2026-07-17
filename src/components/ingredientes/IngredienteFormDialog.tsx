@@ -354,17 +354,34 @@ export function IngredienteFormDialog({
             </TabsContent>
           </Tabs>
         ) : (
-          <EditFields
-            values={values}
-            setValues={setValues}
-            errors={errors}
-            onSubmit={handleSubmit}
-            submitting={submitting}
-            onCancel={() => onOpenChange(false)}
-            submitLabel="Adicionar"
-          />
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setScannerOpen(true)}
+              disabled={scanning}
+              className="h-12 w-full"
+            >
+              <ScanLine className="mr-2 h-5 w-5" />
+              {scanning ? "A consultar produto…" : "Bipar produto (EAN-13)"}
+            </Button>
+            <EditFields
+              values={values}
+              setValues={setValues}
+              errors={errors}
+              onSubmit={handleSubmit}
+              submitting={submitting}
+              onCancel={() => onOpenChange(false)}
+              submitLabel="Adicionar"
+            />
+          </div>
         )}
       </DialogContent>
+      <BarcodeScannerDialog
+        open={scannerOpen}
+        onOpenChange={setScannerOpen}
+        onDetected={handleBarcode}
+      />
     </Dialog>
   );
 }
