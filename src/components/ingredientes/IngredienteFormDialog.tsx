@@ -363,7 +363,7 @@ export function IngredienteFormDialog({
               className="h-12 w-full"
             >
               <ScanLine className="mr-2 h-5 w-5" />
-              {scanning ? "A consultar produto…" : "Bipar produto (EAN-13)"}
+              {scanning ? "A consultar produto…" : "Ler código de barras"}
             </Button>
             <EditFields
               values={values}
