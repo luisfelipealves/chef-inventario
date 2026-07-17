@@ -1,5 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ScanLine } from "lucide-react";
 import { z } from "zod";
+import { BarcodeScannerDialog } from "@/components/ingredientes/BarcodeScannerDialog";
+import { fetchProdutoOFF } from "@/lib/open-food-facts";
 import {
   Dialog,
   DialogContent,
