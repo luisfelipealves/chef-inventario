@@ -39,11 +39,50 @@ export interface Cliente {
   createdAt: Date;
 }
 
+export type EstadoPedido = "pendente" | "confirmado" | "entregue" | "cancelado";
+
+export interface ItemPedido {
+  receitaId: number;
+  /** Nº de doses/unidades encomendadas */
+  quantidade: number;
+  /** Preço de venda por dose/unidade (€) */
+  precoUnitario: number;
+}
+
+export interface Pedido {
+  id: number;
+  clienteId: number;
+  itens: ItemPedido[];
+  dataEntrega: string;
+  estado: EstadoPedido;
+  notas: string;
+  createdAt: Date;
+}
+
 export const db = new Dexie("ChefGestaoDB") as Dexie & {
   ingredientes: EntityTable<Ingrediente, "id">;
   receitas: EntityTable<Receita, "id">;
   clientes: EntityTable<Cliente, "id">;
+  pedidos: EntityTable<Pedido, "id">;
 };
+
+db.version(1).stores({
+  ingredientes: "++id, nome, createdAt",
+  receitas: "++id, nome, createdAt",
+});
+
+db.version(2).stores({
+  ingredientes: "++id, nome, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+});
+
+db.version(3).stores({
+  ingredientes: "++id, nome, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+  pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+});
 
 db.version(1).stores({
   ingredientes: "++id, nome, createdAt",
