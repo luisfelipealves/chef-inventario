@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Package, BookOpen, ChevronRight } from "lucide-react";
+import { Package, BookOpen, ChevronRight, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { useHydrated } from "@/hooks/use-hydrated";
 
@@ -20,6 +20,12 @@ function Index() {
     [hydrated],
     0,
   );
+  const totalClientes = useLiveQuery(
+    () => (hydrated ? db.clientes.count() : 0),
+    [hydrated],
+    0,
+  );
+
 
   return (
     <main className="min-h-screen bg-background px-4 py-10">
