@@ -83,14 +83,3 @@ db.version(3).stores({
   clientes: "++id, nome, telefone, nif, createdAt",
   pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
 });
-
-db.version(1).stores({
-  ingredientes: "++id, nome, createdAt",
-  receitas: "++id, nome, createdAt",
-});
-
-db.version(2).stores({
-  ingredientes: "++id, nome, createdAt",
-  receitas: "++id, nome, createdAt",
-  clientes: "++id, nome, telefone, nif, createdAt",
-});
