@@ -55,6 +55,12 @@ function Index() {
             title="Receitas"
             subtitle={`${totalReceitas} fichas técnicas`}
           />
+          <ModuleCard
+            to="/clientes"
+            icon={<Users className="h-5 w-5" />}
+            title="Clientes"
+            subtitle={`${totalClientes} registados`}
+          />
         </nav>
       </div>
     </main>
