@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Package, BookOpen, ChevronRight, Users } from "lucide-react";
+import { Package, BookOpen, ChevronRight, Users, ClipboardList } from "lucide-react";
 import { db } from "@/lib/db";
 import { useHydrated } from "@/hooks/use-hydrated";
 
@@ -22,6 +22,11 @@ function Index() {
   );
   const totalClientes = useLiveQuery(
     () => (hydrated ? db.clientes.count() : 0),
+    [hydrated],
+    0,
+  );
+  const totalPedidos = useLiveQuery(
+    () => (hydrated ? db.pedidos.count() : 0),
     [hydrated],
     0,
   );
@@ -60,6 +65,12 @@ function Index() {
             icon={<Users className="h-5 w-5" />}
             title="Clientes"
             subtitle={`${totalClientes} registados`}
+          />
+          <ModuleCard
+            to="/pedidos"
+            icon={<ClipboardList className="h-5 w-5" />}
+            title="Pedidos"
+            subtitle={`${totalPedidos} encomendas`}
           />
         </nav>
       </div>
