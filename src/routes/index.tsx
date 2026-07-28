@@ -25,6 +25,11 @@ function Index() {
     [hydrated],
     0,
   );
+  const totalPedidos = useLiveQuery(
+    () => (hydrated ? db.pedidos.count() : 0),
+    [hydrated],
+    0,
+  );
 
 
   return (
@@ -60,6 +65,12 @@ function Index() {
             icon={<Users className="h-5 w-5" />}
             title="Clientes"
             subtitle={`${totalClientes} registados`}
+          />
+          <ModuleCard
+            to="/pedidos"
+            icon={<ClipboardList className="h-5 w-5" />}
+            title="Pedidos"
+            subtitle={`${totalPedidos} encomendas`}
           />
         </nav>
       </div>
