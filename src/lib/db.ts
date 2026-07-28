@@ -30,12 +30,28 @@ export interface Receita {
   createdAt: Date;
 }
 
+export interface Cliente {
+  id: number;
+  nome: string;
+  telefone: string;
+  endereco: string;
+  nif: string;
+  createdAt: Date;
+}
+
 export const db = new Dexie("ChefGestaoDB") as Dexie & {
   ingredientes: EntityTable<Ingrediente, "id">;
   receitas: EntityTable<Receita, "id">;
+  clientes: EntityTable<Cliente, "id">;
 };
 
 db.version(1).stores({
   ingredientes: "++id, nome, createdAt",
   receitas: "++id, nome, createdAt",
+});
+
+db.version(2).stores({
+  ingredientes: "++id, nome, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
 });
