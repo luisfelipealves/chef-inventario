@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Package, BookOpen, ChevronRight, Users } from "lucide-react";
+import { Package, BookOpen, ChevronRight, Users, ClipboardList } from "lucide-react";
 import { db } from "@/lib/db";
 import { useHydrated } from "@/hooks/use-hydrated";
 
