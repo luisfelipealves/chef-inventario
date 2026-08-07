@@ -281,15 +281,14 @@ export function PedidoFormDialog({
                                   ? {
                                       ...l,
                                       receitaId: Number(v),
-                                      precoUnitario:
-                                        l.precoUnitario === ""
-                                          ? (
-                                              custoDoseReceita(
-                                                receitaMap.get(Number(v)),
-                                                ingMap,
-                                              ) * 3
-                                            ).toFixed(2)
-                                          : l.precoUnitario,
+                                      precoUnitario: (() => {
+                                        if (l.precoUnitario !== "") return l.precoUnitario;
+                                        const r = receitaMap.get(Number(v));
+                                        if (r?.precoVenda != null && r.rendimento > 0) {
+                                          return (r.precoVenda / r.rendimento).toFixed(2);
+                                        }
+                                        return (custoDoseReceita(r, ingMap) * 3).toFixed(2);
+                                      })(),
                                     }
                                   : l,
                               ),

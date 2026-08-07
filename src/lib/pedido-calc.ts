@@ -22,7 +22,7 @@ export function totaisPedido(
     venda += item.precoUnitario * item.quantidade;
   }
   const lucro = venda - custo;
-  const margem = venda > 0 ? (lucro / venda) * 100 : 0;
+  const margem = custo > 0 ? (lucro / custo) * 100 : 0;
   return { custo, venda, lucro, margem };
 }
 
