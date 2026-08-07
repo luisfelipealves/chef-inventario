@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Tauri / Rust
+src-tauri/target/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
