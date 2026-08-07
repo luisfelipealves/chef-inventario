@@ -27,6 +27,7 @@ export interface Receita {
   rendimento: number;
   unidadeRendimento: UnidadeMedida;
   ingredientes: IngredienteReceita[];
+  precoVenda?: number;
   createdAt: Date;
 }
 

@@ -36,12 +36,17 @@ const schema = z.object({
     .number({ invalid_type_error: "Número inválido" })
     .positive("Deve ser maior que 0"),
   unidadeRendimento: z.enum(["g", "kg", "ml", "l", "un"]),
+  precoVenda: z.preprocess(
+    (v) => (v === "" ? undefined : v),
+    z.coerce.number({ invalid_type_error: "Número inválido" }).nonnegative("Deve ser ≥ 0").optional(),
+  ),
 });
 
 type FormValues = {
   nome: string;
   rendimento: string;
   unidadeRendimento: UnidadeMedida;
+  precoVenda: string;
 };
 
 type LinhaDraft = {
@@ -50,7 +55,7 @@ type LinhaDraft = {
   quantidade: string;
 };
 
-const empty: FormValues = { nome: "", rendimento: "", unidadeRendimento: "un" };
+const empty: FormValues = { nome: "", rendimento: "", unidadeRendimento: "un", precoVenda: "" };
 
 function newLinha(): LinhaDraft {
   return {
@@ -85,6 +90,7 @@ export function ReceitaFormDialog({
         nome: receita.nome,
         rendimento: String(receita.rendimento),
         unidadeRendimento: receita.unidadeRendimento,
+        precoVenda: receita.precoVenda != null ? String(receita.precoVenda) : "",
       });
       setLinhas(
         receita.ingredientes.length > 0
@@ -120,6 +126,9 @@ export function ReceitaFormDialog({
   const custoTotal = custoTotalReceita({ ingredientes: linhasValidas }, ingMap);
   const rendimentoNum = Number(values.rendimento) || 0;
   const custoDose = custoPorDose(custoTotal, rendimentoNum);
+  const precoVendaNum = Number(values.precoVenda) || 0;
+  const margem = precoVendaNum > 0 ? precoVendaNum - custoTotal : null;
+  const margemPct = margem != null && custoTotal > 0 ? (margem / custoTotal) * 100 : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -144,6 +153,7 @@ export function ReceitaFormDialog({
         rendimento: parsed.data.rendimento,
         unidadeRendimento: parsed.data.unidadeRendimento,
         ingredientes: linhasValidas,
+        precoVenda: parsed.data.precoVenda,
       };
       if (isEdit && receita) {
         await db.receitas.update(receita.id, payload);
@@ -347,6 +357,21 @@ export function ReceitaFormDialog({
             )}
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="precoVenda">Preço de venda (receita completa)</Label>
+            <Input
+              id="precoVenda"
+              inputMode="decimal"
+              placeholder="Ex: 45.00"
+              value={values.precoVenda}
+              onChange={(e) => setValues((v) => ({ ...v, precoVenda: e.target.value }))}
+              className="h-12 text-base"
+            />
+            {errors.precoVenda && (
+              <p className="text-xs text-destructive">{errors.precoVenda}</p>
+            )}
+          </div>
+
           <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Custo total</span>
@@ -362,6 +387,28 @@ export function ReceitaFormDialog({
                 {formatEuro(custoDose)}
               </span>
             </div>
+            {margem != null && (
+              <>
+                <div className="my-1 border-t border-border" />
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Preço de venda</span>
+                  <span className="font-semibold tabular-nums">
+                    {formatEuro(precoVendaNum, { compact: true })}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Margem</span>
+                  <span className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}>
+                    {formatEuro(margem, { compact: true })}
+                    {margemPct != null && (
+                      <span className="ml-1 text-xs font-normal">
+                        ({margemPct >= 0 ? "+" : ""}{margemPct.toFixed(0)}%)
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
 
           <DialogFooter className="gap-2 sm:gap-2">

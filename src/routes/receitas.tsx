@@ -109,12 +109,15 @@ function ReceitasPage() {
               const emFalta = r.ingredientes.filter(
                 (l) => !ingMap.has(l.ingredienteId),
               ).length;
+              const margem =
+                r.precoVenda != null ? r.precoVenda - total : null;
               return (
                 <ReceitaCard
                   key={r.id}
                   receita={r}
                   custoTotal={total}
                   custoDose={dose}
+                  margem={margem}
                   emFalta={emFalta}
                   onEdit={() => openEdit(r)}
                   onDelete={() => setToDelete(r)}
@@ -166,6 +169,7 @@ function ReceitaCard({
   receita,
   custoTotal,
   custoDose,
+  margem,
   emFalta,
   onEdit,
   onDelete,
@@ -173,10 +177,14 @@ function ReceitaCard({
   receita: Receita;
   custoTotal: number;
   custoDose: number;
+  margem: number | null;
   emFalta: number;
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const margemPct =
+    margem != null && custoTotal > 0 ? (margem / custoTotal) * 100 : null;
+
   return (
     <li className="rounded-xl border border-border bg-card p-4 shadow-sm">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
@@ -211,7 +219,7 @@ function ReceitaCard({
         </div>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-3 text-sm">
+      <div className={`mt-3 grid gap-2 rounded-lg bg-muted/40 p-3 text-sm ${margem != null ? "grid-cols-3" : "grid-cols-2"}`}>
         <div>
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Custo total
@@ -220,7 +228,7 @@ function ReceitaCard({
             {formatEuro(custoTotal, { compact: true })}
           </p>
         </div>
-        <div className="text-right">
+        <div className={margem != null ? "text-center" : "text-right"}>
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Por {receita.unidadeRendimento === "un" ? "dose" : receita.unidadeRendimento}
           </p>
@@ -228,7 +236,31 @@ function ReceitaCard({
             {formatEuro(custoDose)}
           </p>
         </div>
+        {margem != null && (
+          <div className="text-right">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Margem
+            </p>
+            <p className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}>
+              {formatEuro(margem, { compact: true })}
+              {margemPct != null && (
+                <span className="ml-1 text-xs font-normal">
+                  ({margemPct >= 0 ? "+" : ""}{margemPct.toFixed(0)}%)
+                </span>
+              )}
+            </p>
+          </div>
+        )}
       </div>
+
+      {receita.precoVenda != null && (
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          Preço de venda:{" "}
+          <span className="font-medium text-foreground">
+            {formatEuro(receita.precoVenda, { compact: true })}
+          </span>
+        </p>
+      )}
 
       {emFalta > 0 && (
         <p className="mt-2 text-xs text-destructive">
