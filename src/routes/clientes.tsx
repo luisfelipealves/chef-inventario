@@ -48,6 +48,17 @@ function ClientesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
   const [toDelete, setToDelete] = useState<Cliente | null>(null);
+  const [search, setSearch] = useState("");
+
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredClientes = useMemo(() => {
+    if (!clientes || !normalizedSearch) return clientes;
+    return clientes.filter((c) =>
+      [c.nome, c.telefone, c.endereco, c.nif]
+        .filter(Boolean)
+        .some((v) => v.toLowerCase().includes(normalizedSearch)),
+    );
+  }, [clientes, normalizedSearch]);
 
   function openNew() {
     setEditing(null);
