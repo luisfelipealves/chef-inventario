@@ -67,14 +67,25 @@ const empty: FormValues = {
 
 const emptyAdd: AddValues = { quantidade: "", preco: "" };
 
+export type IngredientePrefill = {
+  nome?: string;
+  unidade?: UnidadeMedida;
+  quantidadeEmbalagem?: number;
+  codigoBarras?: string;
+};
+
 export function IngredienteFormDialog({
   open,
   onOpenChange,
   ingrediente,
+  prefill,
+  initialTab = "dados",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ingrediente?: Ingrediente | null;
+  prefill?: IngredientePrefill | null;
+  initialTab?: "dados" | "compra";
 }) {
   const isEdit = !!ingrediente;
   const [tab, setTab] = useState<"dados" | "compra">("dados");
@@ -85,6 +96,7 @@ export function IngredienteFormDialog({
   const [submitting, setSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [codigoBarras, setCodigoBarras] = useState<string | undefined>(undefined);
   const lastScannedRef = useRef<string | null>(null);
 
   async function handleBarcode(code: string) {
@@ -92,6 +104,7 @@ export function IngredienteFormDialog({
     lastScannedRef.current = code;
     setScannerOpen(false);
     setScanning(true);
+    setCodigoBarras(code);
     try {
       const produto = await fetchProdutoOFF(code);
       if (!produto || !produto.nome) {
@@ -124,12 +137,9 @@ export function IngredienteFormDialog({
       setErrors({});
       setAddErrors({});
       setAddValues(emptyAdd);
-      setTab("dados");
+      setTab(initialTab);
       lastScannedRef.current = null;
-      setErrors({});
-      setAddErrors({});
-      setAddValues(emptyAdd);
-      setTab("dados");
+      setCodigoBarras(ingrediente?.codigoBarras ?? prefill?.codigoBarras);
       setValues(
         ingrediente
           ? {
@@ -138,10 +148,20 @@ export function IngredienteFormDialog({
               quantidadeEmbalagem: String(ingrediente.quantidadeEmbalagem),
               precoEmbalagem: String(ingrediente.precoEmbalagem),
             }
-          : empty,
+          : prefill
+            ? {
+                nome: prefill.nome ?? "",
+                unidade: prefill.unidade ?? "g",
+                quantidadeEmbalagem:
+                  prefill.quantidadeEmbalagem != null
+                    ? String(prefill.quantidadeEmbalagem)
+                    : "",
+                precoEmbalagem: "",
+              }
+            : empty,
       );
     }
-  }, [open, ingrediente]);
+  }, [open, ingrediente, prefill, initialTab]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
