@@ -125,6 +125,68 @@ function Index() {
             subtitle={`${totalPedidos} encomendas`}
           />
         </nav>
+
+        {(pedidos ?? []).length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                Pedidos abertos
+              </h2>
+              <Link
+                to="/pedidos"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Ver todos
+              </Link>
+            </div>
+            <ul className="space-y-2">
+              {pedidos.map((p) => {
+                const totais = totaisPedido(p.itens, receitaMap, ingMap);
+                const cliente = clienteMap.get(p.clienteId);
+                return (
+                  <li key={p.id}>
+                    <Link
+                      to="/pedidos"
+                      className="block rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-accent"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-card-foreground">
+                            {cliente?.nome ?? "Cliente removido"}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <CalendarDays className="h-3 w-3" />
+                              Entrega {p.dataEntrega}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {p.itens.length} receita
+                              {p.itens.length > 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <Badge
+                            variant={
+                              p.estado === "pendente" ? "outline" : "secondary"
+                            }
+                            className="text-[10px]"
+                          >
+                            {estadoLabel[p.estado]}
+                          </Badge>
+                          <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                            {formatEuro(totais.venda, { compact: true })}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );
