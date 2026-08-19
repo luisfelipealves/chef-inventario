@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, ArrowLeft, Users, Phone, MapPin, Hash, Search } from "lucide-react";
 import { db, type Cliente } from "@/lib/db";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
