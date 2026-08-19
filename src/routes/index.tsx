@@ -1,8 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Package, BookOpen, ChevronRight, Users, ClipboardList } from "lucide-react";
+import { useMemo } from "react";
+import {
+  Package,
+  BookOpen,
+  ChevronRight,
+  Users,
+  ClipboardList,
+  CalendarDays,
+  Clock,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/db";
+import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { estadoLabel, totaisPedido } from "@/lib/pedido-calc";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
