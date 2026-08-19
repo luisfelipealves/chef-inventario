@@ -86,3 +86,10 @@ db.version(3).stores({
   clientes: "++id, nome, telefone, nif, createdAt",
   pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
 });
+
+db.version(4).stores({
+  ingredientes: "++id, nome, codigoBarras, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+  pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+});
