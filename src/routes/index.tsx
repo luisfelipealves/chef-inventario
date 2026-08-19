@@ -43,6 +43,45 @@ function Index() {
     [hydrated],
     0,
   );
+  const pedidos = useLiveQuery(
+    () =>
+      hydrated
+        ? db.pedidos
+            .filter((p) => p.estado === "pendente" || p.estado === "confirmado")
+            .sortBy("dataEntrega")
+        : [],
+    [hydrated],
+    [],
+  );
+  const clientes = useLiveQuery(
+    () => (hydrated ? db.clientes.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+  const receitas = useLiveQuery(
+    () => (hydrated ? db.receitas.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+  const ingredientes = useLiveQuery(
+    () => (hydrated ? db.ingredientes.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+
+  const clienteMap = useMemo(
+    () => new Map((clientes ?? []).map((c) => [c.id, c])),
+    [clientes],
+  );
+  const receitaMap = useMemo(
+    () => new Map((receitas ?? []).map((r) => [r.id, r])),
+    [receitas],
+  );
+  const ingMap = useMemo(
+    () => new Map((ingredientes ?? []).map((i) => [i.id, i])),
+    [ingredientes],
+  );
+
 
 
   return (
