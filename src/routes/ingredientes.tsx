@@ -1,9 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
-import { Plus, Pencil, Trash2, ArrowLeft, Package } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowLeft,
+  Package,
+  Search,
+  ScanLine,
+} from "lucide-react";
 import { db, type Ingrediente } from "@/lib/db";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +24,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { IngredienteFormDialog } from "@/components/ingredientes/IngredienteFormDialog";
+import {
+  IngredienteFormDialog,
+  type IngredientePrefill,
+} from "@/components/ingredientes/IngredienteFormDialog";
+import { BarcodeScannerDialog } from "@/components/ingredientes/BarcodeScannerDialog";
+import { fetchProdutoOFF } from "@/lib/open-food-facts";
 import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
 
