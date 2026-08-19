@@ -107,16 +107,36 @@ function ClientesPage() {
         ) : clientes.length === 0 ? (
           <EmptyState onAdd={openNew} />
         ) : (
-          <ul className="space-y-3">
-            {clientes.map((c) => (
-              <ClienteCard
-                key={c.id}
-                cliente={c}
-                onEdit={() => openEdit(c)}
-                onDelete={() => setToDelete(c)}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Pesquisar clientes…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-12 pl-9 text-base"
+                aria-label="Pesquisar clientes"
               />
-            ))}
-          </ul>
+            </div>
+
+            {filteredClientes && filteredClientes.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Nenhum cliente encontrado.
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {filteredClientes?.map((c) => (
+                  <ClienteCard
+                    key={c.id}
+                    cliente={c}
+                    onEdit={() => openEdit(c)}
+                    onDelete={() => setToDelete(c)}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
         )}
       </main>
 
