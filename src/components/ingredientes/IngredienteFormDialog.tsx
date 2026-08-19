@@ -234,6 +234,7 @@ export function IngredienteFormDialog({
       await db.ingredientes.update(ingrediente.id, {
         quantidadeEmbalagem: novaQuantidade,
         precoEmbalagem: novoPreco,
+        ...(codigoBarras ? { codigoBarras } : {}),
       });
       toast.success("Compra adicionada ao stock");
       onOpenChange(false);
