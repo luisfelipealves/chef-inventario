@@ -13,6 +13,8 @@ export interface Ingrediente {
   unidade: UnidadeMedida;
   quantidadeEmbalagem: number;
   precoEmbalagem: number;
+  /** EAN-13 lido pela câmara (opcional) */
+  codigoBarras?: string;
   createdAt: Date;
 }
 
@@ -80,6 +82,13 @@ db.version(2).stores({
 
 db.version(3).stores({
   ingredientes: "++id, nome, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+  pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+});
+
+db.version(4).stores({
+  ingredientes: "++id, nome, codigoBarras, createdAt",
   receitas: "++id, nome, createdAt",
   clientes: "++id, nome, telefone, nif, createdAt",
   pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
