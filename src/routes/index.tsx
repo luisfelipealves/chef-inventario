@@ -1,8 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Package, BookOpen, ChevronRight, Users, ClipboardList } from "lucide-react";
+import { useMemo } from "react";
+import {
+  Package,
+  BookOpen,
+  ChevronRight,
+  Users,
+  ClipboardList,
+  CalendarDays,
+  Clock,
+} from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { db } from "@/lib/db";
+import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { estadoLabel, totaisPedido } from "@/lib/pedido-calc";
+
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -30,6 +43,45 @@ function Index() {
     [hydrated],
     0,
   );
+  const pedidos = useLiveQuery(
+    () =>
+      hydrated
+        ? db.pedidos
+            .filter((p) => p.estado === "pendente" || p.estado === "confirmado")
+            .sortBy("dataEntrega")
+        : [],
+    [hydrated],
+    [],
+  );
+  const clientes = useLiveQuery(
+    () => (hydrated ? db.clientes.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+  const receitas = useLiveQuery(
+    () => (hydrated ? db.receitas.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+  const ingredientes = useLiveQuery(
+    () => (hydrated ? db.ingredientes.orderBy("nome").toArray() : []),
+    [hydrated],
+    [],
+  );
+
+  const clienteMap = useMemo(
+    () => new Map((clientes ?? []).map((c) => [c.id, c])),
+    [clientes],
+  );
+  const receitaMap = useMemo(
+    () => new Map((receitas ?? []).map((r) => [r.id, r])),
+    [receitas],
+  );
+  const ingMap = useMemo(
+    () => new Map((ingredientes ?? []).map((i) => [i.id, i])),
+    [ingredientes],
+  );
+
 
 
   return (
@@ -73,6 +125,68 @@ function Index() {
             subtitle={`${totalPedidos} encomendas`}
           />
         </nav>
+
+        {(pedidos ?? []).length > 0 && (
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-foreground">
+                Pedidos abertos
+              </h2>
+              <Link
+                to="/pedidos"
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Ver todos
+              </Link>
+            </div>
+            <ul className="space-y-2">
+              {pedidos.map((p) => {
+                const totais = totaisPedido(p.itens, receitaMap, ingMap);
+                const cliente = clienteMap.get(p.clienteId);
+                return (
+                  <li key={p.id}>
+                    <Link
+                      to="/pedidos"
+                      className="block rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-accent"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-card-foreground">
+                            {cliente?.nome ?? "Cliente removido"}
+                          </p>
+                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <CalendarDays className="h-3 w-3" />
+                              Entrega {p.dataEntrega}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {p.itens.length} receita
+                              {p.itens.length > 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right">
+                          <Badge
+                            variant={
+                              p.estado === "pendente" ? "outline" : "secondary"
+                            }
+                            className="text-[10px]"
+                          >
+                            {estadoLabel[p.estado]}
+                          </Badge>
+                          <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
+                            {formatEuro(totais.venda, { compact: true })}
+                          </p>
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );
