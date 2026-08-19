@@ -13,6 +13,8 @@ export interface Ingrediente {
   unidade: UnidadeMedida;
   quantidadeEmbalagem: number;
   precoEmbalagem: number;
+  /** EAN-13 lido pela câmara (opcional) */
+  codigoBarras?: string;
   createdAt: Date;
 }
 
