@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
-import { Plus, Pencil, Trash2, ArrowLeft, Users, Phone, MapPin, Hash } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Pencil, Trash2, ArrowLeft, Users, Phone, MapPin, Hash, Search } from "lucide-react";
 import { db, type Cliente } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import {
