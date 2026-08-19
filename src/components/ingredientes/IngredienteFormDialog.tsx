@@ -183,6 +183,7 @@ export function IngredienteFormDialog({
           unidade: parsed.data.unidade,
           quantidadeEmbalagem: parsed.data.quantidadeEmbalagem,
           precoEmbalagem: parsed.data.precoEmbalagem,
+          ...(codigoBarras ? { codigoBarras } : {}),
         });
         toast.success("Ingrediente atualizado");
       } else {
@@ -191,6 +192,7 @@ export function IngredienteFormDialog({
           unidade: parsed.data.unidade,
           quantidadeEmbalagem: parsed.data.quantidadeEmbalagem,
           precoEmbalagem: parsed.data.precoEmbalagem,
+          ...(codigoBarras ? { codigoBarras } : {}),
           createdAt: new Date(),
         } as Ingrediente);
         toast.success("Ingrediente adicionado");
