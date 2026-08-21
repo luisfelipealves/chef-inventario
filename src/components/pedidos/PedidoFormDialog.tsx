@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -105,14 +105,8 @@ export function PedidoFormDialog({
     }
   }, [open, pedido]);
 
-  const receitaMap = useMemo(
-    () => new Map(receitas.map((r) => [r.id, r])),
-    [receitas],
-  );
-  const ingMap = useMemo(
-    () => new Map(ingredientes.map((i) => [i.id, i])),
-    [ingredientes],
-  );
+  const receitaMap = useMemo(() => new Map(receitas.map((r) => [r.id, r])), [receitas]);
+  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   const itensValidos: ItemPedido[] = useMemo(
     () =>
@@ -170,14 +164,20 @@ export function PedidoFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar pedido" : "Novo pedido"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+      >
+        <SheetHeader>
+          <span className="card-kicker">Pedido</span>
+          <SheetTitle className="font-heading text-2xl font-normal">
+            {isEdit ? "Editar pedido" : "Novo pedido"}
+          </SheetTitle>
+          <SheetDescription>
             Junta um cliente às receitas encomendadas e vê o valor final.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <form
           onSubmit={handleSubmit}
@@ -202,9 +202,7 @@ export function PedidoFormDialog({
                 Ainda não tens clientes. Regista-os primeiro em Clientes.
               </p>
             )}
-            {errors.clienteId && (
-              <p className="text-xs text-destructive">{errors.clienteId}</p>
-            )}
+            {errors.clienteId && <p className="text-xs text-destructive">{errors.clienteId}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -260,17 +258,12 @@ export function PedidoFormDialog({
             ) : (
               <ul className="space-y-2">
                 {linhas.map((linha, idx) => {
-                  const receita = linha.receitaId
-                    ? receitaMap.get(linha.receitaId)
-                    : undefined;
+                  const receita = linha.receitaId ? receitaMap.get(linha.receitaId) : undefined;
                   const custoUnit = custoDoseReceita(receita, ingMap);
                   const qtd = Number(linha.quantidade) || 0;
                   const subtotal = (Number(linha.precoUnitario) || 0) * qtd;
                   return (
-                    <li
-                      key={linha.key}
-                      className="rounded-lg border border-border bg-card p-3"
-                    >
+                    <li key={linha.key} className="rounded-lg border border-border bg-card p-3">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <Select
                           value={linha.receitaId != null ? String(linha.receitaId) : ""}
@@ -313,9 +306,7 @@ export function PedidoFormDialog({
                           className="h-11 w-11 text-destructive hover:text-destructive"
                           onClick={() =>
                             setLinhas((ls) =>
-                              ls.length === 1
-                                ? [newLinha()]
-                                : ls.filter((_, i) => i !== idx),
+                              ls.length === 1 ? [newLinha()] : ls.filter((_, i) => i !== idx),
                             )
                           }
                           aria-label="Remover linha"
@@ -326,9 +317,7 @@ export function PedidoFormDialog({
 
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-muted-foreground">
-                            Quantidade
-                          </Label>
+                          <Label className="text-[11px] text-muted-foreground">Quantidade</Label>
                           <Input
                             inputMode="decimal"
                             placeholder="1"
@@ -354,9 +343,7 @@ export function PedidoFormDialog({
                             onChange={(e) =>
                               setLinhas((ls) =>
                                 ls.map((l, i) =>
-                                  i === idx
-                                    ? { ...l, precoUnitario: e.target.value }
-                                    : l,
+                                  i === idx ? { ...l, precoUnitario: e.target.value } : l,
                                 ),
                               )
                             }
@@ -414,21 +401,21 @@ export function PedidoFormDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-12 flex-1"
+              className="h-11 flex-1 rounded-full"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting} className="h-12 flex-1">
+            <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
               {submitting ? "A gravar…" : isEdit ? "Guardar" : "Criar pedido"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -2,20 +2,62 @@
 @source "../src";
 @import "tw-animate-css";
 
+/* Organic theme fonts — Caprasimo + Figtree served locally (woff2) so the Tauri
+   app works fully offline, no Google Fonts request. Figtree is a variable font:
+   one file covers weights 400–700. latin + latin-ext subsets cover Portuguese. */
+@font-face {
+  font-family: "Caprasimo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/caprasimo-400-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Caprasimo";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("./assets/fonts/caprasimo-400-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/figtree-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Figtree";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/figtree-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF,
+    U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020,
+    U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
+ * Design system — "Organic" (creme / terracota / sálvia).
  *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
+ * Two token layers live here:
+ *  1. shadcn semantic tokens (--background, --primary, --accent, …) so the
+ *     existing shadcn/ui components inherit the theme without being rewritten.
+ *  2. Design tokens (--color-bg, --color-surface, --color-neutral-*, ramps, …)
+ *     referenced directly by the app shell, routes and helper classes below.
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * The @theme inline block maps CSS custom properties to Tailwind utilities.
  */
 
 @theme inline {
@@ -26,6 +68,8 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --font-heading: "Caprasimo", system-ui, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -62,74 +106,100 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-}
+  --radius: 16px;
 
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  /* ── shadcn semantic tokens ─────────────────────────────────────────── */
+  --background: #f5ead8;
+  --foreground: #201e1d;
+  --card: #f9f4ed;
+  --card-foreground: #201e1d;
+  --popover: #f9f4ed;
+  --popover-foreground: #201e1d;
+  --primary: #c67139;
+  --primary-foreground: #f5ead8;
+  --secondary: #ebddc5;
+  --secondary-foreground: #201e1d;
+  --muted: #eee7db;
+  --muted-foreground: #645c50;
+  --accent: #ffe1d0;
+  --accent-foreground: #8c491a;
+  /* No red in the palette — kept only for the destructive AlertDialog confirm
+     button; trash icons / stock warnings use the terracota ramp instead. */
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: #f5ead8;
+  --border: color-mix(in srgb, #201e1d 16%, transparent);
+  --input: color-mix(in srgb, #201e1d 16%, transparent);
+  --ring: #c67139;
+  --chart-1: #c67139;
+  --chart-2: #7a8a5e;
+  --chart-3: #d67f48;
+  --chart-4: #8fa073;
+  --chart-5: #b2622d;
+  --sidebar: #ebddc5;
+  --sidebar-foreground: #201e1d;
+  --sidebar-primary: #c67139;
+  --sidebar-primary-foreground: #f5ead8;
+  --sidebar-accent: color-mix(in srgb, #201e1d 7%, transparent);
+  --sidebar-accent-foreground: #201e1d;
+  --sidebar-border: color-mix(in srgb, #201e1d 16%, transparent);
+  --sidebar-ring: #c67139;
+
+  /* ── design tokens ──────────────────────────────────────────────────── */
+  --color-bg: #f5ead8;
+  --color-surface: #ebddc5;
+  --color-text: #201e1d;
+  --color-accent: #c67139;
+  --color-accent-2: #7a8a5e;
+  --color-divider: color-mix(in srgb, #201e1d 16%, transparent);
+
+  --color-neutral-100: #f9f4ed;
+  --color-neutral-200: #eee7db;
+  --color-neutral-300: #dcd3c4;
+  --color-neutral-400: #c0b6a5;
+  --color-neutral-500: #a19786;
+  --color-neutral-600: #82796a;
+  --color-neutral-700: #645c50;
+  --color-neutral-800: #474238;
+  --color-neutral-900: #2e2b25;
+
+  --color-accent-100: #fff2eb;
+  --color-accent-200: #ffe1d0;
+  --color-accent-300: #ffc6a5;
+  --color-accent-400: #f6a06b;
+  --color-accent-500: #d67f48;
+  --color-accent-600: #b2622d;
+  --color-accent-700: #8c491a;
+  --color-accent-800: #643312;
+  --color-accent-900: #402310;
+
+  --color-accent-2-100: #f0fae1;
+  --color-accent-2-200: #e1eecc;
+  --color-accent-2-300: #ccdbb2;
+  --color-accent-2-400: #aebf92;
+  --color-accent-2-500: #8fa073;
+  --color-accent-2-600: #728157;
+  --color-accent-2-700: #56633f;
+  --color-accent-2-800: #3d472b;
+  --color-accent-2-900: #272e1b;
+
+  --font-heading: "Caprasimo", system-ui, sans-serif;
+  --font-heading-weight: 400;
+  --font-body: "Figtree", system-ui, sans-serif;
+
+  --space-1: 4.4px;
+  --space-2: 8.8px;
+  --space-3: 13.2px;
+  --space-4: 17.6px;
+  --space-6: 26.4px;
+  --space-8: 35.2px;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 28px;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #2e2b25 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #2e2b25 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
 }
 
 @layer base {
@@ -138,7 +208,427 @@
   }
 
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: var(--font-heading-weight);
+    line-height: 1.12;
+    letter-spacing: -0.015em;
+  }
+
+  /* Terracota focus ring everywhere — never the default blue. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Helper classes ported from the Organic design system. Used by the app shell
+   and routes; shadcn components keep their own styling and inherit the tokens.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.card-kicker {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+
+/* — buttons — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  font-family: var(--font-heading);
+  font-weight: var(--font-heading-weight);
+  font-size: 14px;
+  line-height: 1.2;
+  color: var(--color-text);
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 0 16px;
+  height: 40px;
+  border-radius: 999px;
+}
+.btn svg { display: block; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); }
+.btn-primary:hover { background: var(--color-accent-600); }
+.btn-primary:active { background: var(--color-accent-700); }
+.btn-secondary { border-color: var(--color-divider); }
+.btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
+.btn-ghost { color: var(--color-accent-700); padding-inline: 8px; height: auto; }
+.btn-ghost:hover { background: color-mix(in srgb, var(--color-accent) 10%, transparent); }
+.btn-ghost:active { background: color-mix(in srgb, var(--color-accent) 18%, transparent); }
+.btn-icon { width: 40px; height: 40px; padding: 0; flex: none; }
+.btn-block { width: 100%; }
+
+/* — segmented control — */
+.seg {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--color-divider);
+  border-radius: 999px;
+}
+.seg-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.seg-opt + .seg-opt { border-left: 1px solid var(--color-divider); }
+.seg-opt[data-active="true"] { background: var(--color-accent); color: var(--color-bg); }
+.seg-opt:not([data-active="true"]):hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+
+/* — tags — */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tag-accent { background: var(--color-accent-100); color: var(--color-accent-800); }
+.tag-accent-2 { background: var(--color-accent-2-100); color: var(--color-accent-2-800); }
+.tag-neutral { background: var(--color-neutral-100); color: var(--color-neutral-800); }
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent-700); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   App shell — persistent sidebar + topbar frame around the routed content.
+   All vertical scroll happens inside panels, never on the page.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+html, body, #root { height: 100%; }
+body { margin: 0; }
+#root { overflow-x: auto; overflow-y: hidden; }
+
+.shell-root {
+  position: relative;
+  display: flex;
+  height: 100dvh;
+  min-width: 1180px;
+  background: var(--color-bg);
+}
+
+.shell-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.shell-content {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* — sidebar — */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 244px;
+  background: var(--color-surface);
+  transition: width 0.18s ease;
+}
+.sidebar[data-collapsed="true"] { width: 76px; }
+
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 68px;
+  padding: 0 14px;
+  flex: none;
+}
+.sidebar-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-family: var(--font-heading);
+  font-size: 18px;
+}
+.sidebar-brand-name {
+  font-family: var(--font-heading);
+  font-size: 17px;
+  line-height: 1.1;
+}
+.sidebar-brand-tag {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-neutral-600);
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: var(--color-neutral-800);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-decoration: none;
+  width: 100%;
+}
+.nav-item svg { flex: none; }
+.nav-item-label { flex: 1; min-width: 0; text-align: left; white-space: nowrap; overflow: hidden; }
+.nav-item-count { font-size: 12px; opacity: 0.65; }
+.nav-item:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); }
+.nav-item[data-active="true"] {
+  background: var(--color-accent);
+  color: var(--color-bg);
+  font-family: var(--font-heading);
+}
+.sidebar[data-collapsed="true"] .nav-item { justify-content: center; padding: 0; }
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  flex: none;
+}
+.sidebar-alert {
+  display: block;
+  text-align: left;
+  border: 0;
+  cursor: pointer;
+  background: var(--color-accent-100);
+  color: var(--color-accent-800);
+  border-radius: 20px;
+  padding: 12px;
+  width: 100%;
+}
+
+/* — topbar — */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 68px;
+  padding: 0 28px;
+  flex: none;
+}
+.topbar-title {
+  font-family: var(--font-heading);
+  font-size: 27px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.topbar-search {
+  position: relative;
+  margin-left: auto;
+  flex: 1;
+  max-width: 420px;
+}
+.topbar-search input {
+  width: 100%;
+  height: 40px;
+  padding: 0 14px 0 40px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-divider);
+  font: inherit;
+  font-size: 14px;
+  color: var(--color-text);
+}
+.topbar-search input:focus-visible { border-color: var(--color-accent); outline-offset: 0; }
+.topbar-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-neutral-600);
+  pointer-events: none;
+}
+
+/* — global search dropdown — */
+.search-dropdown {
+  position: absolute;
+  top: 48px;
+  left: 0;
+  right: 0;
+  z-index: 40;
+  max-height: 380px;
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 24px;
+  background: var(--color-neutral-100);
+  box-shadow: var(--shadow-lg);
+}
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+.search-result:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); }
+.search-result-icon { color: var(--color-accent); flex: none; }
+.search-result-name { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.search-result-meta { font-size: 11px; color: var(--color-neutral-600); white-space: nowrap; }
+.search-empty { padding: 18px; text-align: center; font-size: 13px; color: var(--color-neutral-600); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   List view — list panel (table) + fixed detail panel. Shared by
+   Pedidos / Receitas / Ingredientes / Clientes.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.lista-view {
+  display: flex;
+  gap: 16px;
+  padding: 4px 28px 28px;
+  flex: 1;
+  min-height: 0;
+}
+
+.lista-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  border-radius: 32px;
+  background: var(--color-neutral-100);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.lista-filtros {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  flex-shrink: 0;
+}
+.lista-count { font-size: 12px; color: var(--color-neutral-600); white-space: nowrap; }
+
+.lista-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 22px 18px;
+}
+.lista-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.lista-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--color-neutral-100);
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--color-text) 60%, transparent);
+  padding: 8.8px;
+  border-bottom: 1px solid var(--color-divider);
+  white-space: nowrap;
+}
+.lista-table td {
+  padding: 8.8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text) 8%, transparent);
+  white-space: nowrap;
+}
+.lista-table tbody tr { cursor: pointer; }
+.lista-table tbody tr:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+.lista-table tbody tr[data-selected="true"] { background: var(--color-accent-200); }
+.lista-table th.num, .lista-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.lista-table td.primeira { font-weight: 600; }
+
+.lista-skeleton {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--color-neutral-200);
+}
+.lista-empty {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 40px;
+}
+.lista-empty-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 999px;
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-600);
+}
+
+/* — detail panel — */
+.detalhe-panel {
+  width: 392px;
+  flex: none;
+  border-radius: 32px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+  overflow-y: auto;
+  padding: 24px;
+}
+.detalhe-empty {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-neutral-600);
+}
+.detalhe-card { background: var(--color-bg); border-radius: 22px; padding: 16px 18px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; padding: 5px 0; }
+.kv-label { color: var(--color-neutral-700); }
+.detalhe-actions { display: flex; gap: 8px; margin-top: 4px; }

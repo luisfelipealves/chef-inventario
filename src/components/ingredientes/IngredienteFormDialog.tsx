@@ -4,13 +4,13 @@ import { z } from "zod";
 import { BarcodeScannerDialog } from "@/components/ingredientes/BarcodeScannerDialog";
 import { fetchProdutoOFF } from "@/lib/open-food-facts";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -153,9 +153,7 @@ export function IngredienteFormDialog({
                 nome: prefill.nome ?? "",
                 unidade: prefill.unidade ?? "g",
                 quantidadeEmbalagem:
-                  prefill.quantidadeEmbalagem != null
-                    ? String(prefill.quantidadeEmbalagem)
-                    : "",
+                  prefill.quantidadeEmbalagem != null ? String(prefill.quantidadeEmbalagem) : "",
                 precoEmbalagem: "",
               }
             : empty,
@@ -221,15 +219,12 @@ export function IngredienteFormDialog({
     }
     setSubmitting(true);
     try {
-      const novaQuantidade =
-        ingrediente.quantidadeEmbalagem + parsed.data.quantidade;
+      const novaQuantidade = ingrediente.quantidadeEmbalagem + parsed.data.quantidade;
       // Custo unitário refere-se a esta compra (preço / quantidade comprada),
       // não à média ponderada com o stock antigo. Guardamos o preço equivalente
       // para o stock total mantendo esse custo unitário.
       const custoUnitarioCompra =
-        parsed.data.quantidade > 0
-          ? parsed.data.preco / parsed.data.quantidade
-          : 0;
+        parsed.data.quantidade > 0 ? parsed.data.preco / parsed.data.quantidade : 0;
       const novoPreco = custoUnitarioCompra * novaQuantidade;
       await db.ingredientes.update(ingrediente.id, {
         quantidadeEmbalagem: novaQuantidade,
@@ -253,20 +248,23 @@ export function IngredienteFormDialog({
   const previewUnitario = addQtd > 0 ? addPreco / addQtd : 0;
   const previewPreco = previewUnitario * previewQtd;
 
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+      >
+        <SheetHeader>
+          <span className="card-kicker">Ingrediente</span>
+          <SheetTitle className="font-heading text-2xl font-normal">
             {isEdit ? "Editar ingrediente" : "Novo ingrediente"}
-          </DialogTitle>
-          <DialogDescription>
+          </SheetTitle>
+          <SheetDescription>
             {isEdit
               ? "Corrige os dados ou adiciona uma nova compra ao stock."
               : "Regista a compra: quanto trouxeste e quanto pagaste."}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {isEdit ? (
           <Tabs value={tab} onValueChange={(v) => setTab(v as "dados" | "compra")}>
@@ -309,9 +307,7 @@ export function IngredienteFormDialog({
                     inputMode="decimal"
                     placeholder="500"
                     value={addValues.quantidade}
-                    onChange={(e) =>
-                      setAddValues((v) => ({ ...v, quantidade: e.target.value }))
-                    }
+                    onChange={(e) => setAddValues((v) => ({ ...v, quantidade: e.target.value }))}
                     className="h-12 text-base"
                     autoFocus
                   />
@@ -327,14 +323,10 @@ export function IngredienteFormDialog({
                     inputMode="decimal"
                     placeholder="2.50"
                     value={addValues.preco}
-                    onChange={(e) =>
-                      setAddValues((v) => ({ ...v, preco: e.target.value }))
-                    }
+                    onChange={(e) => setAddValues((v) => ({ ...v, preco: e.target.value }))}
                     className="h-12 text-base"
                   />
-                  {addErrors.preco && (
-                    <p className="text-xs text-destructive">{addErrors.preco}</p>
-                  )}
+                  {addErrors.preco && <p className="text-xs text-destructive">{addErrors.preco}</p>}
                 </div>
 
                 {addQtd > 0 && (
@@ -349,9 +341,7 @@ export function IngredienteFormDialog({
                     <div className="flex justify-between text-muted-foreground">
                       <span>
                         Novo custo por{" "}
-                        {ingrediente
-                          ? unidadeMinimaLabel(ingrediente.unidade)
-                          : "unidade"}
+                        {ingrediente ? unidadeMinimaLabel(ingrediente.unidade) : "unidade"}
                       </span>
                       <span className="font-semibold tabular-nums text-foreground">
                         {formatEuro(previewUnitario)}
@@ -360,19 +350,19 @@ export function IngredienteFormDialog({
                   </div>
                 )}
 
-                <DialogFooter className="gap-2 sm:gap-2">
+                <SheetFooter className="gap-2 sm:gap-2">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => onOpenChange(false)}
-                    className="h-12 flex-1"
+                    className="h-11 flex-1 rounded-full"
                   >
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={submitting} className="h-12 flex-1">
+                  <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
                     {submitting ? "A gravar…" : "Adicionar ao stock"}
                   </Button>
-                </DialogFooter>
+                </SheetFooter>
               </form>
             </TabsContent>
           </Tabs>
@@ -399,13 +389,13 @@ export function IngredienteFormDialog({
             />
           </div>
         )}
-      </DialogContent>
+      </SheetContent>
       <BarcodeScannerDialog
         open={scannerOpen}
         onOpenChange={setScannerOpen}
         onDetected={handleBarcode}
       />
-    </Dialog>
+    </Sheet>
   );
 }
 
@@ -450,9 +440,7 @@ function EditFields({
             inputMode="decimal"
             placeholder="1000"
             value={values.quantidadeEmbalagem}
-            onChange={(e) =>
-              setValues((v) => ({ ...v, quantidadeEmbalagem: e.target.value }))
-            }
+            onChange={(e) => setValues((v) => ({ ...v, quantidadeEmbalagem: e.target.value }))}
             className="h-12 text-base"
           />
           {errors.quantidadeEmbalagem && (
@@ -463,9 +451,7 @@ function EditFields({
           <Label htmlFor="unidade">Unidade</Label>
           <Select
             value={values.unidade}
-            onValueChange={(u) =>
-              setValues((v) => ({ ...v, unidade: u as UnidadeMedida }))
-            }
+            onValueChange={(u) => setValues((v) => ({ ...v, unidade: u as UnidadeMedida }))}
           >
             <SelectTrigger id="unidade" className="h-12 text-base">
               <SelectValue />
@@ -488,9 +474,7 @@ function EditFields({
           inputMode="decimal"
           placeholder="5.00"
           value={values.precoEmbalagem}
-          onChange={(e) =>
-            setValues((v) => ({ ...v, precoEmbalagem: e.target.value }))
-          }
+          onChange={(e) => setValues((v) => ({ ...v, precoEmbalagem: e.target.value }))}
           className="h-12 text-base"
         />
         {errors.precoEmbalagem && (
@@ -498,19 +482,19 @@ function EditFields({
         )}
       </div>
 
-      <DialogFooter className="gap-2 sm:gap-2">
+      <SheetFooter className="gap-2 sm:gap-2">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
-          className="h-12 flex-1"
+          className="h-11 flex-1 rounded-full"
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={submitting} className="h-12 flex-1">
+        <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
           {submitting ? "A gravar…" : submitLabel}
         </Button>
-      </DialogFooter>
+      </SheetFooter>
     </form>
   );
 }

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -97,14 +97,18 @@ export function ClienteFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar cliente" : "Novo cliente"}</DialogTitle>
-          <DialogDescription>
-            Guarda os contactos dos teus clientes no dispositivo.
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+      >
+        <SheetHeader>
+          <span className="card-kicker">Cliente</span>
+          <SheetTitle className="font-heading text-2xl font-normal">
+            {isEdit ? "Editar cliente" : "Novo cliente"}
+          </SheetTitle>
+          <SheetDescription>Guarda os contactos dos teus clientes no dispositivo.</SheetDescription>
+        </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
@@ -131,9 +135,7 @@ export function ClienteFormDialog({
               className="h-12 text-base"
               autoComplete="tel"
             />
-            {errors.telefone && (
-              <p className="text-xs text-destructive">{errors.telefone}</p>
-            )}
+            {errors.telefone && <p className="text-xs text-destructive">{errors.telefone}</p>}
           </div>
 
           <div className="space-y-2">
@@ -146,9 +148,7 @@ export function ClienteFormDialog({
               className="h-12 text-base"
               autoComplete="street-address"
             />
-            {errors.endereco && (
-              <p className="text-xs text-destructive">{errors.endereco}</p>
-            )}
+            {errors.endereco && <p className="text-xs text-destructive">{errors.endereco}</p>}
           </div>
 
           <div className="space-y-2">
@@ -164,21 +164,21 @@ export function ClienteFormDialog({
             {errors.nif && <p className="text-xs text-destructive">{errors.nif}</p>}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
-              className="h-12 w-full sm:w-auto"
+              className="h-11 flex-1 rounded-full"
               onClick={() => onOpenChange(false)}
             >
               Cancelar
             </Button>
-            <Button type="submit" className="h-12 w-full sm:w-auto" disabled={submitting}>
+            <Button type="submit" className="h-11 flex-1 rounded-full" disabled={submitting}>
               {isEdit ? "Guardar" : "Adicionar"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

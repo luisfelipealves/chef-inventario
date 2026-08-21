@@ -1,10 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, ArrowLeft, ClipboardList } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Trash2, ClipboardList, Plus } from "lucide-react";
 import { db, type Pedido } from "@/lib/db";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +16,12 @@ import {
 import { toast } from "sonner";
 import { PedidoFormDialog } from "@/components/pedidos/PedidoFormDialog";
 import { formatEuro } from "@/lib/format";
-import { estadoLabel, totaisPedido } from "@/lib/pedido-calc";
+import { totaisPedido, custoDoseReceita } from "@/lib/pedido-calc";
+import { dataEntregaCurta, dataEntregaLonga } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useShell } from "@/lib/shell";
+import { EstadoTag } from "@/components/EstadoTag";
+import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 
 export const Route = createFileRoute("/pedidos")({
   head: () => ({
@@ -27,20 +29,32 @@ export const Route = createFileRoute("/pedidos")({
       { title: "Pedidos — ChefGestão" },
       {
         name: "description",
-        content:
-          "Junta clientes e receitas num pedido e calcula custo, lucro e valor final.",
+        content: "Junta clientes e receitas num pedido e calcula custo, lucro e valor final.",
       },
-      { property: "og:title", content: "Pedidos — ChefGestão" },
-      {
-        property: "og:description",
-        content: "Gere encomendas e calcula o valor final de cada pedido.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PedidosPage,
 });
+
+const FILTROS: FiltroOpcao[] = [
+  { key: "abertos", label: "Abertos" },
+  { key: "todos", label: "Todos" },
+  { key: "entregues", label: "Entregues" },
+  { key: "cancelados", label: "Cancelados" },
+];
+
+function passaFiltro(p: Pedido, filtro: string): boolean {
+  switch (filtro) {
+    case "abertos":
+      return p.estado === "pendente" || p.estado === "confirmado";
+    case "entregues":
+      return p.estado === "entregue";
+    case "cancelados":
+      return p.estado === "cancelado";
+    default:
+      return true;
+  }
+}
 
 function PedidosPage() {
   const hydrated = useHydrated();
@@ -64,27 +78,37 @@ function PedidosPage() {
     [],
   );
 
-  const clienteMap = useMemo(
-    () => new Map((clientes ?? []).map((c) => [c.id, c])),
-    [clientes],
+  const clienteMap = useMemo(() => new Map(clientes.map((c) => [c.id, c])), [clientes]);
+  const receitaMap = useMemo(() => new Map(receitas.map((r) => [r.id, r])), [receitas]);
+  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
+
+  const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const filtroAtual = filtro.pedidos;
+
+  const lista = useMemo(() => pedidos ?? [], [pedidos]);
+  const filtrados = useMemo(
+    () => lista.filter((p) => passaFiltro(p, filtroAtual)),
+    [lista, filtroAtual],
   );
-  const receitaMap = useMemo(
-    () => new Map((receitas ?? []).map((r) => [r.id, r])),
-    [receitas],
-  );
-  const ingMap = useMemo(
-    () => new Map((ingredientes ?? []).map((i) => [i.id, i])),
-    [ingredientes],
-  );
+
+  const selecionado = filtrados.find((p) => p.id === selection.pedidos) ?? filtrados[0] ?? null;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Pedido | null>(null);
   const [toDelete, setToDelete] = useState<Pedido | null>(null);
 
-  function openNew() {
-    setEditing(null);
-    setFormOpen(true);
-  }
+  // Botão "Novo pedido" / "Editar pedido" da barra de topo / detalhe.
+  useEffect(() => {
+    if (sheet?.module !== "pedidos") return;
+    if (sheet.mode === "novo") {
+      setEditing(null);
+      setFormOpen(true);
+    } else if (sheet.mode === "editar" && sheet.id != null) {
+      setEditing(lista.find((p) => p.id === sheet.id) ?? null);
+      setFormOpen(true);
+    }
+    closeSheet();
+  }, [sheet, closeSheet, lista]);
 
   async function confirmDelete() {
     if (!toDelete) return;
@@ -100,159 +124,96 @@ function PedidosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <Button asChild variant="ghost" size="icon" className="h-10 w-10 shrink-0">
-            <Link to="/" aria-label="Voltar">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold text-foreground">Pedidos</h1>
-            <p className="text-xs text-muted-foreground">
-              {pedidos?.length ?? 0} encomendas
-            </p>
-          </div>
-        </div>
-      </header>
+    <div className="lista-view">
+      <div className="lista-panel">
+        <FiltroBar
+          opcoes={FILTROS}
+          valor={filtroAtual}
+          onChange={(k) => setFiltro("pedidos", k)}
+          contagem={`${filtrados.length} de ${lista.length} pedidos`}
+        />
 
-      <main className="mx-auto max-w-2xl px-4 pt-4">
         {pedidos === undefined ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">A carregar…</p>
-        ) : pedidos.length === 0 ? (
-          <EmptyState onAdd={openNew} />
+          <SkeletonTabela />
+        ) : lista.length === 0 ? (
+          <EmptyState onAdd={() => openSheet({ module: "pedidos", mode: "novo" })} />
         ) : (
-          <ul className="space-y-3">
-            {pedidos.map((p) => {
-              const totais = totaisPedido(p.itens, receitaMap, ingMap);
-              return (
-                <li
-                  key={p.id}
-                  className="rounded-xl border border-border bg-card p-4 shadow-sm"
-                >
-                  <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-                    <div className="min-w-0">
-                      <h2 className="truncate text-base font-semibold text-card-foreground">
+          <div className="lista-table-wrap">
+            <table className="lista-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th>
+                  <th>Entrega</th>
+                  <th>Itens</th>
+                  <th className="num">Custo</th>
+                  <th className="num">Total</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((p) => {
+                  const t = totaisPedido(p.itens, receitaMap, ingMap);
+                  return (
+                    <tr
+                      key={p.id}
+                      data-selected={selecionado?.id === p.id}
+                      onClick={() => setSelection("pedidos", p.id)}
+                    >
+                      <td className="primeira">
                         {clienteMap.get(p.clienteId)?.nome ?? "Cliente removido"}
-                      </h2>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Entrega {p.dataEntrega} · {p.itens.length} receita
-                        {p.itens.length > 1 ? "s" : ""}
-                      </p>
-                      <Badge
-                        variant={p.estado === "cancelado" ? "destructive" : "secondary"}
-                        className="mt-2"
-                      >
-                        {estadoLabel[p.estado]}
-                      </Badge>
-                    </div>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10"
-                        onClick={() => {
-                          setEditing(p);
-                          setFormOpen(true);
-                        }}
-                        aria-label="Editar"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 text-destructive hover:text-destructive"
-                        onClick={() => setToDelete(p)}
-                        aria-label="Remover"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                    {p.itens.map((item, i) => (
-                      <li key={i} className="flex justify-between gap-2">
-                        <span className="truncate">
-                          {item.quantidade}× {receitaMap.get(item.receitaId)?.nome ?? "—"}
-                        </span>
-                        <span className="tabular-nums">
-                          {formatEuro(item.quantidade * item.precoUnitario, {
-                            compact: true,
-                          })}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  <div className="mt-3 grid grid-cols-3 gap-2 rounded-lg bg-muted/40 p-3 text-sm">
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Custo
-                      </p>
-                      <p className="font-medium tabular-nums text-foreground">
-                        {formatEuro(totais.custo, { compact: true })}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Lucro
-                      </p>
-                      <p className="font-medium tabular-nums text-foreground">
-                        {formatEuro(totais.lucro, { compact: true })}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Total
-                      </p>
-                      <p className="font-semibold tabular-nums text-foreground">
-                        {formatEuro(totais.venda, { compact: true })}
-                      </p>
-                    </div>
-                  </div>
-
-                  {p.notas && (
-                    <p className="mt-2 text-xs text-muted-foreground">{p.notas}</p>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+                      </td>
+                      <td>{dataEntregaCurta(p.dataEntrega)}</td>
+                      <td>
+                        {p.itens.length} receita{p.itens.length === 1 ? "" : "s"}
+                      </td>
+                      <td className="num">{formatEuro(t.custo, { compact: true })}</td>
+                      <td className="num">{formatEuro(t.venda, { compact: true })}</td>
+                      <td>
+                        <EstadoTag estado={p.estado} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </main>
-
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="mx-auto max-w-2xl">
-          <Button onClick={openNew} className="h-14 w-full text-base">
-            <Plus className="mr-2 h-5 w-5" />
-            Novo pedido
-          </Button>
-        </div>
       </div>
+
+      <aside className="detalhe-panel">
+        {selecionado ? (
+          <PedidoDetalhe
+            pedido={selecionado}
+            clienteNome={clienteMap.get(selecionado.clienteId)?.nome ?? "Cliente removido"}
+            cliente={clienteMap.get(selecionado.clienteId)}
+            receitaMap={receitaMap}
+            ingMap={ingMap}
+            onEdit={() => openSheet({ module: "pedidos", mode: "editar", id: selecionado.id })}
+            onDelete={() => setToDelete(selecionado)}
+          />
+        ) : (
+          <div className="detalhe-empty">Selecciona um pedido.</div>
+        )}
+      </aside>
 
       <PedidoFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         pedido={editing}
-        clientes={clientes ?? []}
-        receitas={receitas ?? []}
-        ingredientes={ingredientes ?? []}
+        clientes={clientes}
+        receitas={receitas}
+        ingredientes={ingredientes}
       />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Remover pedido?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-12">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="h-12">
+            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
               Remover
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -262,20 +223,182 @@ function PedidosPage() {
   );
 }
 
+function PedidoDetalhe({
+  pedido,
+  clienteNome,
+  cliente,
+  receitaMap,
+  ingMap,
+  onEdit,
+  onDelete,
+}: {
+  pedido: Pedido;
+  clienteNome: string;
+  cliente: { telefone: string; endereco: string } | undefined;
+  receitaMap: Map<number, import("@/lib/db").Receita>;
+  ingMap: Map<number, import("@/lib/db").Ingrediente>;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const t = totaisPedido(pedido.itens, receitaMap, ingMap);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <span className="card-kicker">Pedido</span>
+        <h3 style={{ fontSize: 25, margin: "2px 0 8px" }}>{clienteNome}</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <EstadoTag estado={pedido.estado} />
+          <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+            Entrega {dataEntregaLonga(pedido.dataEntrega)}
+          </span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {pedido.itens.map((item, i) => {
+          const receita = receitaMap.get(item.receitaId);
+          const custoDose = custoDoseReceita(receita, ingMap);
+          return (
+            <div
+              key={i}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "32px minmax(0,1fr) auto",
+                gap: 12,
+                padding: "11px 14px",
+                borderRadius: 18,
+                background: "var(--color-bg)",
+                alignItems: "center",
+              }}
+            >
+              <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
+                {item.quantidade}×
+              </span>
+              <span style={{ minWidth: 0 }}>
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  {receita?.nome ?? "Receita removida"}
+                </span>
+                <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
+                  {formatEuro(item.precoUnitario, { compact: true })} por dose · custo{" "}
+                  {formatEuro(custoDose, { compact: true })}
+                </span>
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                {formatEuro(item.precoUnitario * item.quantidade, { compact: true })}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="detalhe-card">
+        <div className="kv">
+          <span className="kv-label">Custo de produção</span>
+          <span style={{ fontVariantNumeric: "tabular-nums" }}>
+            {formatEuro(t.custo, { compact: true })}
+          </span>
+        </div>
+        <div className="kv">
+          <span className="kv-label">Lucro</span>
+          <span
+            style={{
+              color: "var(--color-accent-2-700)",
+              fontWeight: 600,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
+            {formatEuro(t.lucro, { compact: true })}
+          </span>
+        </div>
+        <div style={{ borderTop: "1px solid var(--color-divider)", margin: "8px 0" }} />
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>Total</span>
+          <span style={{ textAlign: "right" }}>
+            <span
+              style={{
+                display: "block",
+                fontFamily: "var(--font-heading)",
+                fontSize: 21,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            >
+              {formatEuro(t.venda, { compact: true })}
+            </span>
+            <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
+              margem +{Math.round(t.margem)}%
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div>
+        <span className="card-kicker">Notas</span>
+        <p style={{ fontSize: 13, marginTop: 4, color: "var(--color-neutral-700)" }}>
+          {pedido.notas || "Sem notas."}
+        </p>
+      </div>
+
+      <div>
+        <span className="card-kicker">Cliente</span>
+        <p style={{ fontSize: 13, marginTop: 4, color: "var(--color-neutral-700)" }}>
+          {[cliente?.telefone, cliente?.endereco].filter(Boolean).join(" · ") || "—"}
+        </p>
+      </div>
+
+      <div className="detalhe-actions">
+        <button type="button" className="btn btn-primary btn-block" onClick={onEdit}>
+          <Pencil size={16} strokeWidth={2.75} />
+          Editar pedido
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary btn-icon"
+          onClick={onDelete}
+          aria-label="Remover pedido"
+        >
+          <Trash2 size={16} strokeWidth={2.75} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonTabela() {
+  return (
+    <div className="lista-table-wrap" aria-hidden>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingTop: 12 }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="lista-skeleton" style={{ width: `${90 - i * 6}%` }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="mt-12 flex flex-col items-center text-center">
-      <div className="grid h-16 w-16 place-items-center rounded-full bg-muted">
-        <ClipboardList className="h-7 w-7 text-muted-foreground" />
+    <div className="lista-empty">
+      <div className="lista-empty-icon">
+        <ClipboardList size={28} strokeWidth={2.75} />
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-foreground">Ainda sem pedidos</h2>
-      <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+      <h2 style={{ fontSize: 20 }}>Ainda sem pedidos</h2>
+      <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
         Cria o primeiro pedido a juntar um cliente às receitas encomendadas.
       </p>
-      <Button onClick={onAdd} className="mt-6 h-12">
-        <Plus className="mr-2 h-4 w-4" />
+      <button type="button" className="btn btn-primary" onClick={onAdd}>
+        <Plus size={16} strokeWidth={2.75} />
         Novo pedido
-      </Button>
+      </button>
     </div>
   );
 }

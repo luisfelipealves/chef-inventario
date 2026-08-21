@@ -1,55 +1,49 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
-import {
-  Package,
-  BookOpen,
-  ChevronRight,
-  Users,
-  ClipboardList,
-  CalendarDays,
-  Clock,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { TriangleAlert } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
-import { estadoLabel, totaisPedido } from "@/lib/pedido-calc";
-
+import { totaisPedido } from "@/lib/pedido-calc";
+import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
+import { calcularAlertasStock } from "@/lib/stock-alerta";
+import { useShell } from "@/lib/shell";
+import { EstadoTag } from "@/components/EstadoTag";
 
 export const Route = createFileRoute("/")({
-  component: Index,
+  component: Painel,
 });
 
-function Index() {
+const DIA_MS = 24 * 60 * 60 * 1000;
+
+function nomeMes(d: Date): string {
+  return new Intl.DateTimeFormat("pt-PT", { month: "long" }).format(d);
+}
+function mesCurto(d: Date): string {
+  return new Intl.DateTimeFormat("pt-PT", { month: "short" }).format(d).replace(".", "");
+}
+
+function intervaloDatas(datas: Date[]): string {
+  if (datas.length === 0) return "Sem entregas";
+  const min = datas[0];
+  const max = datas[datas.length - 1];
+  if (min.getTime() === max.getTime()) {
+    return `${min.getDate()} de ${nomeMes(min)}`;
+  }
+  if (min.getMonth() === max.getMonth()) {
+    return `${min.getDate()} a ${max.getDate()} de ${nomeMes(min)}`;
+  }
+  return `${min.getDate()} ${mesCurto(min)} a ${max.getDate()} ${mesCurto(max)}`;
+}
+
+function Painel() {
   const hydrated = useHydrated();
-  const totalIngredientes = useLiveQuery(
-    () => (hydrated ? db.ingredientes.count() : 0),
-    [hydrated],
-    0,
-  );
-  const totalReceitas = useLiveQuery(
-    () => (hydrated ? db.receitas.count() : 0),
-    [hydrated],
-    0,
-  );
-  const totalClientes = useLiveQuery(
-    () => (hydrated ? db.clientes.count() : 0),
-    [hydrated],
-    0,
-  );
-  const totalPedidos = useLiveQuery(
-    () => (hydrated ? db.pedidos.count() : 0),
-    [hydrated],
-    0,
-  );
+  const navigate = useNavigate();
+  const { setSelection } = useShell();
+
   const pedidos = useLiveQuery(
-    () =>
-      hydrated
-        ? db.pedidos
-            .filter((p) => p.estado === "pendente" || p.estado === "confirmado")
-            .sortBy("dataEntrega")
-        : [],
+    () => (hydrated ? db.pedidos.orderBy("dataEntrega").toArray() : []),
     [hydrated],
     [],
   );
@@ -69,157 +63,343 @@ function Index() {
     [],
   );
 
-  const clienteMap = useMemo(
-    () => new Map((clientes ?? []).map((c) => [c.id, c])),
-    [clientes],
-  );
-  const receitaMap = useMemo(
-    () => new Map((receitas ?? []).map((r) => [r.id, r])),
-    [receitas],
-  );
-  const ingMap = useMemo(
-    () => new Map((ingredientes ?? []).map((i) => [i.id, i])),
-    [ingredientes],
+  const clienteMap = useMemo(() => new Map(clientes.map((c) => [c.id, c])), [clientes]);
+  const receitaMap = useMemo(() => new Map(receitas.map((r) => [r.id, r])), [receitas]);
+  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
+
+  const abertos = useMemo(
+    () => pedidos.filter((p) => p.estado === "pendente" || p.estado === "confirmado"),
+    [pedidos],
   );
 
+  const alertas = useMemo(
+    () => calcularAlertasStock(ingredientes, receitas, pedidos),
+    [ingredientes, receitas, pedidos],
+  );
 
+  const resumo = useMemo(() => {
+    let aReceber = 0;
+    let lucro = 0;
+    for (const p of abertos) {
+      const t = totaisPedido(p.itens, receitaMap, ingMap);
+      aReceber += t.venda;
+      lucro += t.lucro;
+    }
+
+    const inicio = new Date();
+    inicio.setHours(0, 0, 0, 0);
+    const fim = new Date(inicio.getTime() + 7 * DIA_MS);
+    const semana = abertos
+      .map((p) => new Date(`${p.dataEntrega}T00:00:00`))
+      .filter((d) => !Number.isNaN(d.getTime()) && d >= inicio && d <= fim)
+      .sort((a, b) => a.getTime() - b.getTime());
+
+    return { aReceber, lucro, semanaCount: semana.length, semanaIntervalo: intervaloDatas(semana) };
+  }, [abertos, receitaMap, ingMap]);
+
+  const topReceitas = useMemo(() => {
+    return receitas
+      .filter((r) => (r.precoVenda ?? 0) > 0)
+      .map((r) => {
+        const custoDose = custoPorDose(custoTotalReceita(r, ingMap), r.rendimento);
+        const margem = custoDose > 0 ? (((r.precoVenda ?? 0) - custoDose) / custoDose) * 100 : 0;
+        return { receita: r, margem };
+      })
+      .sort((a, b) => b.margem - a.margem)
+      .slice(0, 3);
+  }, [receitas, ingMap]);
+
+  function abrirPedido(id: number) {
+    setSelection("pedidos", id);
+    navigate({ to: "/pedidos" });
+  }
+  function abrirIngrediente(id: number) {
+    setSelection("ingredientes", id);
+    navigate({ to: "/ingredientes" });
+  }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-10">
-      <div className="mx-auto w-full max-w-md space-y-8">
-        <header className="text-center">
-          <p className="text-xs font-medium tracking-widest text-muted-foreground uppercase">
-            Local-first · Offline
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-foreground">
-            ChefGestão
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Gere ingredientes e calcula o custo das tuas receitas.
-          </p>
-        </header>
-
-        <nav className="space-y-3">
-          <ModuleCard
-            to="/ingredientes"
-            icon={<Package className="h-5 w-5" />}
-            title="Ingredientes"
-            subtitle={`${totalIngredientes} no stock`}
-          />
-          <ModuleCard
-            to="/receitas"
-            icon={<BookOpen className="h-5 w-5" />}
-            title="Receitas"
-            subtitle={`${totalReceitas} fichas técnicas`}
-          />
-          <ModuleCard
-            to="/clientes"
-            icon={<Users className="h-5 w-5" />}
-            title="Clientes"
-            subtitle={`${totalClientes} registados`}
-          />
-          <ModuleCard
-            to="/pedidos"
-            icon={<ClipboardList className="h-5 w-5" />}
-            title="Pedidos"
-            subtitle={`${totalPedidos} encomendas`}
-          />
-        </nav>
-
-        {(pedidos ?? []).length > 0 && (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-foreground">
-                Pedidos abertos
-              </h2>
-              <Link
-                to="/pedidos"
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                Ver todos
-              </Link>
-            </div>
-            <ul className="space-y-2">
-              {pedidos.map((p) => {
-                const totais = totaisPedido(p.itens, receitaMap, ingMap);
-                const cliente = clienteMap.get(p.clienteId);
-                return (
-                  <li key={p.id}>
-                    <Link
-                      to="/pedidos"
-                      className="block rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-accent"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-card-foreground">
-                            {cliente?.nome ?? "Cliente removido"}
-                          </p>
-                          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <CalendarDays className="h-3 w-3" />
-                              Entrega {p.dataEntrega}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {p.itens.length} receita
-                              {p.itens.length > 1 ? "s" : ""}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <Badge
-                            variant={
-                              p.estado === "pendente" ? "outline" : "secondary"
-                            }
-                            className="text-[10px]"
-                          >
-                            {estadoLabel[p.estado]}
-                          </Badge>
-                          <p className="mt-1 text-sm font-semibold tabular-nums text-foreground">
-                            {formatEuro(totais.venda, { compact: true })}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
+    <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
+      {/* Faixa de indicadores */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+        <Indicador
+          kicker="Pedidos abertos"
+          valor={String(abertos.length)}
+          nota={`${formatEuro(resumo.aReceber, { compact: true })} a receber`}
+        />
+        <Indicador
+          kicker="A entregar esta semana"
+          valor={String(resumo.semanaCount)}
+          nota={resumo.semanaIntervalo}
+        />
+        <Indicador
+          kicker="Lucro previsto"
+          valor={formatEuro(resumo.lucro, { compact: true })}
+          nota="sobre pedidos abertos"
+        />
+        <Indicador
+          kicker="Ingredientes em stock"
+          valor={String(ingredientes.length)}
+          nota={`${alertas.length} abaixo do necessário`}
+        />
       </div>
-    </main>
+
+      {/* Grid principal */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1.35fr 1fr",
+          gap: 16,
+          alignItems: "start",
+          marginTop: 16,
+        }}
+      >
+        {/* Próximas entregas */}
+        <section
+          style={{
+            background: "var(--color-surface)",
+            borderRadius: 32,
+            padding: 22,
+            boxShadow: "var(--shadow-sm)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <h4 style={{ fontSize: 20 }}>Próximas entregas</h4>
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{ fontSize: 13, background: "none", border: 0, cursor: "pointer" }}
+              onClick={() => navigate({ to: "/pedidos" })}
+            >
+              Ver pedidos
+            </button>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
+            {abertos.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--color-neutral-600)", padding: "12px 0" }}>
+                Sem pedidos abertos.
+              </p>
+            ) : (
+              abertos.map((p) => {
+                const t = totaisPedido(p.itens, receitaMap, ingMap);
+                const d = new Date(`${p.dataEntrega}T00:00:00`);
+                const itensStr = p.itens
+                  .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "—"}`)
+                  .join(", ");
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => abrirPedido(p.id)}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "62px minmax(0,1fr) auto auto",
+                      alignItems: "center",
+                      gap: 16,
+                      padding: "12px 14px",
+                      borderRadius: 20,
+                      background: "var(--color-neutral-100)",
+                      border: 0,
+                      cursor: "pointer",
+                      textAlign: "left",
+                      width: "100%",
+                    }}
+                  >
+                    <span>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-heading)",
+                          fontSize: 19,
+                          display: "block",
+                        }}
+                      >
+                        {Number.isNaN(d.getTime()) ? "—" : d.getDate()}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          textTransform: "uppercase",
+                          color: "var(--color-neutral-600)",
+                        }}
+                      >
+                        {Number.isNaN(d.getTime()) ? "" : mesCurto(d)}
+                      </span>
+                    </span>
+                    <span style={{ minWidth: 0 }}>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 14,
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {clienteMap.get(p.clienteId)?.nome ?? "Cliente removido"}
+                      </span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: 12,
+                          color: "var(--color-neutral-600)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {itensStr}
+                      </span>
+                    </span>
+                    <EstadoTag estado={p.estado} />
+                    <span
+                      style={{
+                        fontFamily: "var(--font-heading)",
+                        fontSize: 16,
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {formatEuro(t.venda, { compact: true })}
+                    </span>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        {/* Coluna direita */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {alertas.length > 0 && (
+            <section
+              style={{
+                background: "var(--color-accent-100)",
+                color: "var(--color-accent-800)",
+                padding: 22,
+                borderRadius: 32,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <TriangleAlert size={18} strokeWidth={2.75} />
+                <h4 style={{ fontSize: 20, color: "inherit" }}>Stock baixo</h4>
+              </div>
+              <p style={{ fontSize: 12, opacity: 0.85, margin: "6px 0 12px" }}>
+                Abaixo do necessário para os pedidos confirmados desta semana.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {alertas.map((a) => (
+                  <button
+                    key={a.ingrediente.id}
+                    type="button"
+                    onClick={() => abrirIngrediente(a.ingrediente.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 12,
+                      padding: "10px 14px",
+                      borderRadius: 999,
+                      background: "var(--color-bg)",
+                      border: 0,
+                      cursor: "pointer",
+                      color: "var(--color-text)",
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>{a.ingrediente.nome}</span>
+                    <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                      {Math.round(a.stock)} {a.ingrediente.unidade} · falta {Math.round(a.falta)}{" "}
+                      {a.ingrediente.unidade}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section
+            style={{
+              background: "var(--color-surface)",
+              padding: 22,
+              borderRadius: 32,
+              boxShadow: "var(--shadow-sm)",
+            }}
+          >
+            <h4 style={{ fontSize: 20 }}>Receitas mais rentáveis</h4>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+              {topReceitas.length === 0 ? (
+                <p style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
+                  Define um preço de venda para veres as margens.
+                </p>
+              ) : (
+                topReceitas.map(({ receita, margem }) => (
+                  <div key={receita.id}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{receita.nome}</span>
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--color-accent-2-700)",
+                        }}
+                      >
+                        +{Math.round(margem)}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 7,
+                        borderRadius: 999,
+                        background: "var(--color-neutral-200)",
+                        marginTop: 6,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: "100%",
+                          width: `${Math.min(100, margem / 4)}%`,
+                          background: "var(--color-accent)",
+                          borderRadius: 999,
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function ModuleCard({
-  to,
-  icon,
-  title,
-  subtitle,
-  disabled,
-}: {
-  to: string;
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  disabled?: boolean;
-}) {
-  const content = (
-    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-accent">
-      <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <div className="min-w-0">
-        <p className="truncate text-base font-semibold text-card-foreground">{title}</p>
-        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+function Indicador({ kicker, valor, nota }: { kicker: string; valor: string; nota: string }) {
+  return (
+    <div
+      style={{
+        background: "var(--color-surface)",
+        borderRadius: 32,
+        padding: 13.2,
+        boxShadow: "var(--shadow-sm)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+      }}
+    >
+      <span className="card-kicker">{kicker}</span>
+      <span
+        style={{
+          fontFamily: "var(--font-heading)",
+          fontSize: 30,
+          lineHeight: 1.15,
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {valor}
+      </span>
+      <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>{nota}</span>
     </div>
   );
-
-  if (disabled) {
-    return <div className="pointer-events-none opacity-50">{content}</div>;
-  }
-  return <Link to={to}>{content}</Link>;
 }

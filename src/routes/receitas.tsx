@@ -1,9 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useMemo, useState } from "react";
-import { Plus, Pencil, Trash2, ArrowLeft, BookOpen } from "lucide-react";
-import { db, type Receita } from "@/lib/db";
-import { Button } from "@/components/ui/button";
+import { useEffect, useMemo, useState } from "react";
+import { Pencil, Printer, BookOpen, Plus } from "lucide-react";
+import { db, type Receita, type Ingrediente } from "@/lib/db";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,8 +16,10 @@ import {
 import { toast } from "sonner";
 import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
 import { formatEuro } from "@/lib/format";
-import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
+import { custoTotalReceita, custoPorDose, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useShell } from "@/lib/shell";
+import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 
 export const Route = createFileRoute("/receitas")({
   head: () => ({
@@ -26,13 +27,26 @@ export const Route = createFileRoute("/receitas")({
       { title: "Receitas — ChefGestão" },
       {
         name: "description",
-        content:
-          "Cria fichas técnicas e calcula o custo total e por dose de cada receita.",
+        content: "Cria fichas técnicas e calcula o custo total e por dose de cada receita.",
       },
     ],
   }),
   component: ReceitasPage,
 });
+
+const FILTROS: FiltroOpcao[] = [
+  { key: "todas", label: "Todas" },
+  { key: "rentaveis", label: "Mais rentáveis" },
+  { key: "falhas", label: "Com falhas" },
+];
+
+interface ReceitaCalc {
+  receita: Receita;
+  custoTotal: number;
+  custoDose: number;
+  margem: number | null;
+  temFalha: boolean;
+}
 
 function ReceitasPage() {
   const hydrated = useHydrated();
@@ -46,24 +60,52 @@ function ReceitasPage() {
     [],
   );
 
-  const ingMap = useMemo(
-    () => new Map((ingredientes ?? []).map((i) => [i.id, i])),
-    [ingredientes],
+  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
+
+  const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const filtroAtual = filtro.receitas;
+
+  const lista = useMemo(() => receitas ?? [], [receitas]);
+
+  const calculados = useMemo<ReceitaCalc[]>(
+    () =>
+      lista.map((r) => {
+        const custoTotal = custoTotalReceita(r, ingMap);
+        const custoDose = custoPorDose(custoTotal, r.rendimento);
+        const venda = r.precoVenda ?? 0;
+        const margem = venda > 0 && custoDose > 0 ? ((venda - custoDose) / custoDose) * 100 : null;
+        const temFalha = r.ingredientes.some((l) => !ingMap.has(l.ingredienteId));
+        return { receita: r, custoTotal, custoDose, margem, temFalha };
+      }),
+    [lista, ingMap],
   );
+
+  const filtrados = useMemo(() => {
+    if (filtroAtual === "falhas") return calculados.filter((c) => c.temFalha);
+    if (filtroAtual === "rentaveis") {
+      return [...calculados].sort((a, b) => (b.margem ?? -Infinity) - (a.margem ?? -Infinity));
+    }
+    return calculados;
+  }, [calculados, filtroAtual]);
+
+  const selecionado =
+    filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null;
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Receita | null>(null);
   const [toDelete, setToDelete] = useState<Receita | null>(null);
 
-  function openNew() {
-    setEditing(null);
-    setFormOpen(true);
-  }
-
-  function openEdit(r: Receita) {
-    setEditing(r);
-    setFormOpen(true);
-  }
+  useEffect(() => {
+    if (sheet?.module !== "receitas") return;
+    if (sheet.mode === "novo") {
+      setEditing(null);
+      setFormOpen(true);
+    } else if (sheet.mode === "editar" && sheet.id != null) {
+      setEditing(lista.find((r) => r.id === sheet.id) ?? null);
+      setFormOpen(true);
+    }
+    closeSheet();
+  }, [sheet, closeSheet, lista]);
 
   async function confirmDelete() {
     if (!toDelete) return;
@@ -79,69 +121,85 @@ function ReceitasPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-3">
-          <Button asChild variant="ghost" size="icon" className="h-10 w-10 shrink-0">
-            <Link to="/" aria-label="Voltar">
-              <ArrowLeft className="h-5 w-5" />
-            </Link>
-          </Button>
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold text-foreground">Receitas</h1>
-            <p className="text-xs text-muted-foreground">
-              {receitas?.length ?? 0} fichas técnicas
-            </p>
-          </div>
-        </div>
-      </header>
+    <div className="lista-view">
+      <div className="lista-panel">
+        <FiltroBar
+          opcoes={FILTROS}
+          valor={filtroAtual}
+          onChange={(k) => setFiltro("receitas", k)}
+          contagem={`${filtrados.length} de ${lista.length} fichas técnicas`}
+        />
 
-      <main className="mx-auto max-w-2xl px-4 pt-4">
         {receitas === undefined ? (
-          <p className="py-10 text-center text-sm text-muted-foreground">A carregar…</p>
-        ) : receitas.length === 0 ? (
-          <EmptyState onAdd={openNew} />
+          <SkeletonTabela />
+        ) : lista.length === 0 ? (
+          <EmptyState onAdd={() => openSheet({ module: "receitas", mode: "novo" })} />
         ) : (
-          <ul className="space-y-3">
-            {receitas.map((r) => {
-              const total = custoTotalReceita(r, ingMap);
-              const dose = custoPorDose(total, r.rendimento);
-              const emFalta = r.ingredientes.filter(
-                (l) => !ingMap.has(l.ingredienteId),
-              ).length;
-              const margem =
-                r.precoVenda != null ? r.precoVenda - total : null;
-              return (
-                <ReceitaCard
-                  key={r.id}
-                  receita={r}
-                  custoTotal={total}
-                  custoDose={dose}
-                  margem={margem}
-                  emFalta={emFalta}
-                  onEdit={() => openEdit(r)}
-                  onDelete={() => setToDelete(r)}
-                />
-              );
-            })}
-          </ul>
+          <div className="lista-table-wrap">
+            <table className="lista-table">
+              <thead>
+                <tr>
+                  <th>Receita</th>
+                  <th className="num">Ingredientes</th>
+                  <th>Rende</th>
+                  <th className="num">Custo total</th>
+                  <th className="num">Por dose</th>
+                  <th className="num">Venda</th>
+                  <th className="num">Margem</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtrados.map((c) => (
+                  <tr
+                    key={c.receita.id}
+                    data-selected={selecionado?.receita.id === c.receita.id}
+                    onClick={() => setSelection("receitas", c.receita.id)}
+                  >
+                    <td className="primeira">{c.receita.nome}</td>
+                    <td className="num">{c.receita.ingredientes.length}</td>
+                    <td>
+                      {c.receita.rendimento} {c.receita.unidadeRendimento}
+                    </td>
+                    <td className="num">{formatEuro(c.custoTotal, { compact: true })}</td>
+                    <td className="num">{formatEuro(c.custoDose)}</td>
+                    <td className="num">
+                      {c.receita.precoVenda != null
+                        ? formatEuro(c.receita.precoVenda, { compact: true })
+                        : "—"}
+                    </td>
+                    <td
+                      className="num"
+                      style={{ color: "var(--color-accent-2-700)", fontWeight: 600 }}
+                    >
+                      {c.margem != null ? `+${Math.round(c.margem)}%` : "—"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
-      </main>
-
-      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <div className="mx-auto max-w-2xl">
-          <Button onClick={openNew} className="h-14 w-full text-base">
-            <Plus className="mr-2 h-5 w-5" />
-            Nova receita
-          </Button>
-        </div>
       </div>
+
+      <aside className="detalhe-panel">
+        {selecionado ? (
+          <ReceitaDetalhe
+            calc={selecionado}
+            ingMap={ingMap}
+            onEdit={() =>
+              openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
+            }
+          />
+        ) : (
+          <div className="detalhe-empty">Selecciona uma receita.</div>
+        )}
+      </aside>
 
       <ReceitaFormDialog
         open={formOpen}
         onOpenChange={setFormOpen}
         receita={editing}
-        ingredientes={ingredientes ?? []}
+        ingredientes={ingredientes}
       />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
@@ -149,13 +207,12 @@ function ReceitasPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Remover receita?</AlertDialogTitle>
             <AlertDialogDescription>
-              Vais eliminar <strong>{toDelete?.nome}</strong>. Esta ação não pode
-              ser desfeita.
+              Vais eliminar <strong>{toDelete?.nome}</strong>. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-12">Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="h-12">
+            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
               Remover
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -165,129 +222,217 @@ function ReceitasPage() {
   );
 }
 
-function ReceitaCard({
-  receita,
-  custoTotal,
-  custoDose,
-  margem,
-  emFalta,
+function ReceitaDetalhe({
+  calc,
+  ingMap,
   onEdit,
-  onDelete,
 }: {
-  receita: Receita;
-  custoTotal: number;
-  custoDose: number;
-  margem: number | null;
-  emFalta: number;
+  calc: ReceitaCalc;
+  ingMap: Map<number, Ingrediente>;
   onEdit: () => void;
-  onDelete: () => void;
 }) {
-  const margemPct =
-    margem != null && custoTotal > 0 ? (margem / custoTotal) * 100 : null;
+  const { receita, custoTotal, custoDose, margem } = calc;
 
   return (
-    <li className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
-        <div className="min-w-0">
-          <h2 className="truncate text-base font-semibold text-card-foreground">
-            {receita.nome}
-          </h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {receita.ingredientes.length} ingredientes · rende {receita.rendimento}{" "}
-            {receita.unidadeRendimento}
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10"
-            onClick={onEdit}
-            aria-label="Editar"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 text-destructive hover:text-destructive"
-            onClick={onDelete}
-            aria-label="Remover"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div>
+        <span className="card-kicker">Ficha técnica</span>
+        <h3 style={{ fontSize: 25, margin: "2px 0 4px" }}>{receita.nome}</h3>
+        <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+          Rende {receita.rendimento} {receita.unidadeRendimento}
+        </span>
       </div>
 
-      <div className={`mt-3 grid gap-2 rounded-lg bg-muted/40 p-3 text-sm ${margem != null ? "grid-cols-3" : "grid-cols-2"}`}>
-        <div>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Custo total
-          </p>
-          <p className="font-semibold tabular-nums text-foreground">
+      <div className="detalhe-card" style={{ padding: "14px 18px" }}>
+        {receita.ingredientes.map((l, i) => {
+          const ing = ingMap.get(l.ingredienteId);
+          return (
+            <div
+              key={i}
+              className="kv"
+              style={{
+                borderTop:
+                  i === 0
+                    ? "none"
+                    : "1px solid color-mix(in srgb, var(--color-text) 8%, transparent)",
+                alignItems: "baseline",
+              }}
+            >
+              <span
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  color: ing ? undefined : "var(--color-accent-700)",
+                }}
+              >
+                {ing?.nome ?? "Ingrediente em falta"}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>
+                {l.quantidade} {ing?.unidade ?? ""}
+              </span>
+              <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                {formatEuro(custoLinha(l, ing), { compact: true })}
+              </span>
+            </div>
+          );
+        })}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "baseline",
+            marginTop: 10,
+            paddingTop: 10,
+            borderTop: "1px solid var(--color-divider)",
+          }}
+        >
+          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>Custo total</span>
+          <span
+            style={{
+              fontFamily: "var(--font-heading)",
+              fontSize: 19,
+              fontVariantNumeric: "tabular-nums",
+            }}
+          >
             {formatEuro(custoTotal, { compact: true })}
-          </p>
+          </span>
         </div>
-        <div className={margem != null ? "text-center" : "text-right"}>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            Por {receita.unidadeRendimento === "un" ? "dose" : receita.unidadeRendimento}
-          </p>
-          <p className="font-semibold tabular-nums text-foreground">
-            {formatEuro(custoDose)}
-          </p>
-        </div>
-        {margem != null && (
-          <div className="text-right">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Margem
-            </p>
-            <p className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}>
-              {formatEuro(margem, { compact: true })}
-              {margemPct != null && (
-                <span className="ml-1 text-xs font-normal">
-                  ({margemPct >= 0 ? "+" : ""}{margemPct.toFixed(0)}%)
-                </span>
-              )}
-            </p>
-          </div>
-        )}
       </div>
 
-      {receita.precoVenda != null && (
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          Preço de venda:{" "}
-          <span className="font-medium text-foreground">
-            {formatEuro(receita.precoVenda, { compact: true })}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div className="detalhe-card">
+          <span
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--color-neutral-600)",
+            }}
+          >
+            Custo por dose
           </span>
-        </p>
+          <span
+            style={{
+              display: "block",
+              fontFamily: "var(--font-heading)",
+              fontSize: 20,
+              marginTop: 4,
+            }}
+          >
+            {formatEuro(custoDose)}
+          </span>
+        </div>
+        <div className="detalhe-card">
+          <span
+            style={{
+              fontSize: 11,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              color: "var(--color-neutral-600)",
+            }}
+          >
+            Preço de venda
+          </span>
+          <span
+            style={{
+              display: "block",
+              fontFamily: "var(--font-heading)",
+              fontSize: 20,
+              marginTop: 4,
+            }}
+          >
+            {receita.precoVenda != null ? formatEuro(receita.precoVenda, { compact: true }) : "—"}
+          </span>
+        </div>
+      </div>
+
+      {margem != null && (
+        <div
+          style={{
+            background: "var(--color-accent-2-100)",
+            color: "var(--color-accent-2-800)",
+            borderRadius: 22,
+            padding: "16px 18px",
+          }}
+        >
+          <span
+            style={{
+              display: "block",
+              fontFamily: "var(--font-heading)",
+              fontSize: 19,
+            }}
+          >
+            +{Math.round(margem)}%
+          </span>
+          <div
+            style={{
+              height: 7,
+              borderRadius: 999,
+              background: "color-mix(in srgb, var(--color-accent-2-800) 18%, transparent)",
+              margin: "8px 0 6px",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${Math.min(100, margem / 4)}%`,
+                background: "var(--color-accent-2-600)",
+                borderRadius: 999,
+              }}
+            />
+          </div>
+          <span style={{ fontSize: 12, opacity: 0.85 }}>acima do custo</span>
+        </div>
       )}
 
-      {emFalta > 0 && (
-        <p className="mt-2 text-xs text-destructive">
-          {emFalta} ingrediente{emFalta > 1 ? "s" : ""} em falta no stock — edita a
-          receita.
-        </p>
-      )}
-    </li>
+      <div className="detalhe-actions">
+        <button type="button" className="btn btn-primary btn-block" onClick={onEdit}>
+          <Pencil size={16} strokeWidth={2.75} />
+          Editar ficha
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary btn-icon"
+          onClick={() => window.print()}
+          aria-label="Imprimir ficha"
+        >
+          <Printer size={16} strokeWidth={2.75} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonTabela() {
+  return (
+    <div className="lista-table-wrap" aria-hidden>
+      <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingTop: 12 }}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="lista-skeleton" style={{ width: `${90 - i * 6}%` }} />
+        ))}
+      </div>
+    </div>
   );
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
-    <div className="mt-12 flex flex-col items-center text-center">
-      <div className="grid h-16 w-16 place-items-center rounded-full bg-muted">
-        <BookOpen className="h-7 w-7 text-muted-foreground" />
+    <div className="lista-empty">
+      <div className="lista-empty-icon">
+        <BookOpen size={28} strokeWidth={2.75} />
       </div>
-      <h2 className="mt-4 text-lg font-semibold text-foreground">
-        Ainda sem receitas
-      </h2>
-      <p className="mt-1 max-w-xs text-sm text-muted-foreground">
+      <h2 style={{ fontSize: 20 }}>Ainda sem receitas</h2>
+      <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
         Cria a tua primeira ficha técnica para veres o custo total e por dose.
       </p>
-      <Button onClick={onAdd} className="mt-6 h-12">
-        <Plus className="mr-2 h-4 w-4" />
+      <button type="button" className="btn btn-primary" onClick={onAdd}>
+        <Plus size={16} strokeWidth={2.75} />
         Nova receita
-      </Button>
+      </button>
     </div>
   );
 }

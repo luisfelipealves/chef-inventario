@@ -4,6 +4,8 @@ import { useEffect, type ReactNode } from "react";
 
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { ShellProvider } from "@/lib/shell";
+import { AppShell } from "@/components/shell/AppShell";
 
 function NotFoundComponent() {
   return (
@@ -76,8 +78,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" richColors />
+      <ShellProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+        <Toaster position="top-center" richColors />
+      </ShellProvider>
     </QueryClientProvider>
   );
 }

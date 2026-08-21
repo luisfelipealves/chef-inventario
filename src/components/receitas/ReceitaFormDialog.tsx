@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -38,7 +38,10 @@ const schema = z.object({
   unidadeRendimento: z.enum(["g", "kg", "ml", "l", "un"]),
   precoVenda: z.preprocess(
     (v) => (v === "" ? undefined : v),
-    z.coerce.number({ invalid_type_error: "Número inválido" }).nonnegative("Deve ser ≥ 0").optional(),
+    z.coerce
+      .number({ invalid_type_error: "Número inválido" })
+      .nonnegative("Deve ser ≥ 0")
+      .optional(),
   ),
 });
 
@@ -107,10 +110,7 @@ export function ReceitaFormDialog({
     }
   }, [open, receita]);
 
-  const ingMap = useMemo(
-    () => new Map(ingredientes.map((i) => [i.id, i])),
-    [ingredientes],
-  );
+  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   const linhasValidas: IngredienteReceita[] = useMemo(
     () =>
@@ -175,14 +175,20 @@ export function ReceitaFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90vh] flex-col sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar receita" : "Nova receita"}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+      >
+        <SheetHeader>
+          <span className="card-kicker">Receita</span>
+          <SheetTitle className="font-heading text-2xl font-normal">
+            {isEdit ? "Editar receita" : "Nova receita"}
+          </SheetTitle>
+          <SheetDescription>
             Escolhe os ingredientes e as quantidades para calcular o custo.
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         <form
           onSubmit={handleSubmit}
@@ -210,14 +216,10 @@ export function ReceitaFormDialog({
                 inputMode="decimal"
                 placeholder="20"
                 value={values.rendimento}
-                onChange={(e) =>
-                  setValues((v) => ({ ...v, rendimento: e.target.value }))
-                }
+                onChange={(e) => setValues((v) => ({ ...v, rendimento: e.target.value }))}
                 className="h-12 text-base"
               />
-              {errors.rendimento && (
-                <p className="text-xs text-destructive">{errors.rendimento}</p>
-              )}
+              {errors.rendimento && <p className="text-xs text-destructive">{errors.rendimento}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="unidadeRendimento">Unidade</Label>
@@ -258,33 +260,22 @@ export function ReceitaFormDialog({
 
             {ingredientes.length === 0 ? (
               <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                Ainda não tens ingredientes no stock. Adiciona-os primeiro na página
-                de Ingredientes.
+                Ainda não tens ingredientes no stock. Adiciona-os primeiro na página de
+                Ingredientes.
               </p>
             ) : (
               <ul className="space-y-2">
                 {linhas.map((linha, idx) => {
-                  const ing = linha.ingredienteId
-                    ? ingMap.get(linha.ingredienteId)
-                    : undefined;
+                  const ing = linha.ingredienteId ? ingMap.get(linha.ingredienteId) : undefined;
                   return (
-                    <li
-                      key={linha.key}
-                      className="rounded-lg border border-border bg-card p-3"
-                    >
+                    <li key={linha.key} className="rounded-lg border border-border bg-card p-3">
                       <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <Select
-                          value={
-                            linha.ingredienteId != null
-                              ? String(linha.ingredienteId)
-                              : ""
-                          }
+                          value={linha.ingredienteId != null ? String(linha.ingredienteId) : ""}
                           onValueChange={(v) =>
                             setLinhas((ls) =>
                               ls.map((l, i) =>
-                                i === idx
-                                  ? { ...l, ingredienteId: Number(v) }
-                                  : l,
+                                i === idx ? { ...l, ingredienteId: Number(v) } : l,
                               ),
                             )
                           }
@@ -307,9 +298,7 @@ export function ReceitaFormDialog({
                           className="h-11 w-11 text-destructive hover:text-destructive"
                           onClick={() =>
                             setLinhas((ls) =>
-                              ls.length === 1
-                                ? [newLinha()]
-                                : ls.filter((_, i) => i !== idx),
+                              ls.length === 1 ? [newLinha()] : ls.filter((_, i) => i !== idx),
                             )
                           }
                           aria-label="Remover linha"
@@ -326,9 +315,7 @@ export function ReceitaFormDialog({
                             onChange={(e) =>
                               setLinhas((ls) =>
                                 ls.map((l, i) =>
-                                  i === idx
-                                    ? { ...l, quantidade: e.target.value }
-                                    : l,
+                                  i === idx ? { ...l, quantidade: e.target.value } : l,
                                 ),
                               )
                             }
@@ -367,9 +354,7 @@ export function ReceitaFormDialog({
               onChange={(e) => setValues((v) => ({ ...v, precoVenda: e.target.value }))}
               className="h-12 text-base"
             />
-            {errors.precoVenda && (
-              <p className="text-xs text-destructive">{errors.precoVenda}</p>
-            )}
+            {errors.precoVenda && <p className="text-xs text-destructive">{errors.precoVenda}</p>}
           </div>
 
           <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-sm">
@@ -383,9 +368,7 @@ export function ReceitaFormDialog({
               <span className="text-muted-foreground">
                 Custo por {values.unidadeRendimento === "un" ? "dose" : values.unidadeRendimento}
               </span>
-              <span className="font-semibold tabular-nums">
-                {formatEuro(custoDose)}
-              </span>
+              <span className="font-semibold tabular-nums">{formatEuro(custoDose)}</span>
             </div>
             {margem != null && (
               <>
@@ -398,11 +381,14 @@ export function ReceitaFormDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Margem</span>
-                  <span className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}>
+                  <span
+                    className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}
+                  >
                     {formatEuro(margem, { compact: true })}
                     {margemPct != null && (
                       <span className="ml-1 text-xs font-normal">
-                        ({margemPct >= 0 ? "+" : ""}{margemPct.toFixed(0)}%)
+                        ({margemPct >= 0 ? "+" : ""}
+                        {margemPct.toFixed(0)}%)
                       </span>
                     )}
                   </span>
@@ -411,21 +397,21 @@ export function ReceitaFormDialog({
             )}
           </div>
 
-          <DialogFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
-              className="h-12 flex-1"
+              className="h-11 flex-1 rounded-full"
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={submitting} className="h-12 flex-1">
+            <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
               {submitting ? "A gravar…" : isEdit ? "Guardar" : "Criar receita"}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }
