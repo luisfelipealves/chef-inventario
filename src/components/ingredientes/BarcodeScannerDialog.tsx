@@ -60,7 +60,7 @@ export function BarcodeScannerDialog({
       } catch (err) {
         console.error(err);
         setError(
-          "Não foi possível aceder à câmara. Verifica as permissões do browser.",
+          "Não foi possível aceder à câmara. Autoriza o acesso nas definições de privacidade do sistema (Câmara) e volta a tentar.",
         );
       } finally {
         if (!cancelled) setStarting(false);

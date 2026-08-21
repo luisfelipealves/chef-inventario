@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Package, Plus, ShoppingBasket, TriangleAlert } from "lucide-react";
+import { Pencil, Package, Plus, ShoppingBasket, TriangleAlert, ScanLine } from "lucide-react";
 import { db, type Ingrediente, type Receita } from "@/lib/db";
+import { FaturaSheet } from "@/components/ingredientes/FaturaSheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -80,6 +81,7 @@ function IngredientesPage() {
   const [editing, setEditing] = useState<Ingrediente | null>(null);
   const [initialTab, setInitialTab] = useState<"dados" | "compra">("dados");
   const [toDelete, setToDelete] = useState<Ingrediente | null>(null);
+  const [faturaOpen, setFaturaOpen] = useState(false);
 
   useEffect(() => {
     if (sheet?.module !== "ingredientes") return;
@@ -116,6 +118,25 @@ function IngredientesPage() {
           valor={filtroAtual}
           onChange={(k) => setFiltro("ingredientes", k)}
           contagem={`${filtrados.length} de ${lista.length} ingredientes`}
+          acao={
+            <button
+              type="button"
+              className="btn-ghost"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                background: "none",
+                border: 0,
+                cursor: "pointer",
+                fontSize: 13,
+              }}
+              onClick={() => setFaturaOpen(true)}
+            >
+              <ScanLine size={16} strokeWidth={2.75} />
+              Ler fatura
+            </button>
+          }
         />
 
         {ingredientes === undefined ? (
@@ -191,6 +212,8 @@ function IngredientesPage() {
         ingrediente={editing}
         initialTab={initialTab}
       />
+
+      <FaturaSheet open={faturaOpen} onOpenChange={setFaturaOpen} ingredientes={lista} />
 
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>

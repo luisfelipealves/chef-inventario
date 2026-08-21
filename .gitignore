@@ -16,6 +16,11 @@ dist-ssr
 .nitro
 *.local
 
+# Env (chaves de API — nunca commitar; ver .env.example)
+.env
+.env.local
+.env.*.local
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars

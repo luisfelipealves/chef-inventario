@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!-- Necessário para o WKWebView pedir acesso à câmara (leitor de código de
+       barras e leitura de faturas). Sem esta chave, o macOS nega silenciosamente
+       o getUserMedia. Merged com o Info.plist gerado pelo Tauri. -->
+  <key>NSCameraUsageDescription</key>
+  <string>O ChefGestão usa a câmara para ler códigos de barras e faturas de compras.</string>
+</dict>
+</plist>

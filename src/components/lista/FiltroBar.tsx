@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 export interface FiltroOpcao {
   key: string;
   label: string;
@@ -8,11 +10,13 @@ export function FiltroBar({
   valor,
   onChange,
   contagem,
+  acao,
 }: {
   opcoes: FiltroOpcao[];
   valor: string;
   onChange: (key: string) => void;
   contagem: string;
+  acao?: ReactNode;
 }) {
   return (
     <div className="lista-filtros">
@@ -31,7 +35,10 @@ export function FiltroBar({
           </button>
         ))}
       </div>
-      <span className="lista-count">{contagem}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {acao}
+        <span className="lista-count">{contagem}</span>
+      </div>
     </div>
   );
 }
