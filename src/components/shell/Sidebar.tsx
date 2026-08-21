@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -8,10 +9,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   TriangleAlert,
+  Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useShell, type ModuloLista } from "@/lib/shell";
 import type { AlertaStock } from "@/lib/stock-alerta";
+import { DefinicoesSheet } from "@/components/DefinicoesSheet";
 
 interface NavDef {
   to: string;
@@ -39,6 +42,7 @@ export function Sidebar({
   const { sidebarOpen, toggleSidebar, setFiltro } = useShell();
   const navigate = useNavigate();
   const collapsed = !sidebarOpen;
+  const [definicoesOpen, setDefinicoesOpen] = useState(false);
 
   function verStockBaixo() {
     setFiltro("ingredientes", "stock-baixo");
@@ -115,6 +119,16 @@ export function Sidebar({
           </button>
         )}
 
+        <button
+          type="button"
+          className="nav-item"
+          title={collapsed ? "Definições" : undefined}
+          onClick={() => setDefinicoesOpen(true)}
+        >
+          <Settings size={19} strokeWidth={2.75} />
+          {!collapsed && <span className="nav-item-label">Definições</span>}
+        </button>
+
         <button type="button" className="nav-item" onClick={toggleSidebar}>
           {collapsed ? (
             <PanelLeftOpen size={19} strokeWidth={2.75} />
@@ -124,6 +138,8 @@ export function Sidebar({
           {!collapsed && <span className="nav-item-label">Recolher</span>}
         </button>
       </div>
+
+      <DefinicoesSheet open={definicoesOpen} onOpenChange={setDefinicoesOpen} />
     </aside>
   );
 }
