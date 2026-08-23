@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useTranslation, type UseTranslationResponse } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo } from "react";
 import { TriangleAlert } from "lucide-react";
@@ -10,6 +11,7 @@ import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
 import { calcularAlertasStock } from "@/lib/stock-alerta";
 import { useShell } from "@/lib/shell";
 import { EstadoTag } from "@/components/EstadoTag";
+import { localeAtual } from "@/lib/i18n";
 
 export const Route = createFileRoute("/")({
   component: Painel,
@@ -17,27 +19,39 @@ export const Route = createFileRoute("/")({
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
+type T = UseTranslationResponse<"translation", undefined>["t"];
+
 function nomeMes(d: Date): string {
-  return new Intl.DateTimeFormat("pt-PT", { month: "long" }).format(d);
+  return new Intl.DateTimeFormat(localeAtual(), { month: "long" }).format(d);
 }
 function mesCurto(d: Date): string {
-  return new Intl.DateTimeFormat("pt-PT", { month: "short" }).format(d).replace(".", "");
+  return new Intl.DateTimeFormat(localeAtual(), { month: "short" }).format(d).replace(".", "");
 }
 
-function intervaloDatas(datas: Date[]): string {
-  if (datas.length === 0) return "Sem entregas";
+function intervaloDatas(datas: Date[], t: T): string {
+  if (datas.length === 0) return t("painel.semEntregas");
   const min = datas[0];
   const max = datas[datas.length - 1];
   if (min.getTime() === max.getTime()) {
-    return `${min.getDate()} de ${nomeMes(min)}`;
+    return t("painel.umDia", { dia: min.getDate(), mes: nomeMes(min) });
   }
   if (min.getMonth() === max.getMonth()) {
-    return `${min.getDate()} a ${max.getDate()} de ${nomeMes(min)}`;
+    return t("painel.intervaloMesmoMes", {
+      de: min.getDate(),
+      ate: max.getDate(),
+      mes: nomeMes(min),
+    });
   }
-  return `${min.getDate()} ${mesCurto(min)} a ${max.getDate()} ${mesCurto(max)}`;
+  return t("painel.intervaloDoisMeses", {
+    de: min.getDate(),
+    mesDe: mesCurto(min),
+    ate: max.getDate(),
+    mesAte: mesCurto(max),
+  });
 }
 
 function Painel() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const navigate = useNavigate();
   const { setSelection } = useShell();
@@ -81,9 +95,9 @@ function Painel() {
     let aReceber = 0;
     let lucro = 0;
     for (const p of abertos) {
-      const t = totaisPedido(p.itens, receitaMap, ingMap);
-      aReceber += t.venda;
-      lucro += t.lucro;
+      const totais = totaisPedido(p.itens, receitaMap, ingMap);
+      aReceber += totais.venda;
+      lucro += totais.lucro;
     }
 
     const inicio = new Date();
@@ -94,8 +108,13 @@ function Painel() {
       .filter((d) => !Number.isNaN(d.getTime()) && d >= inicio && d <= fim)
       .sort((a, b) => a.getTime() - b.getTime());
 
-    return { aReceber, lucro, semanaCount: semana.length, semanaIntervalo: intervaloDatas(semana) };
-  }, [abertos, receitaMap, ingMap]);
+    return {
+      aReceber,
+      lucro,
+      semanaCount: semana.length,
+      semanaIntervalo: intervaloDatas(semana, t),
+    };
+  }, [abertos, receitaMap, ingMap, t]);
 
   const topReceitas = useMemo(() => {
     return receitas
@@ -123,24 +142,24 @@ function Painel() {
       {/* Faixa de indicadores */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
         <Indicador
-          kicker="Pedidos abertos"
+          kicker={t("painel.pedidosAbertos")}
           valor={String(abertos.length)}
-          nota={`${formatEuro(resumo.aReceber, { compact: true })} a receber`}
+          nota={t("painel.aReceber", { valor: formatEuro(resumo.aReceber, { compact: true }) })}
         />
         <Indicador
-          kicker="A entregar esta semana"
+          kicker={t("painel.entregarSemana")}
           valor={String(resumo.semanaCount)}
           nota={resumo.semanaIntervalo}
         />
         <Indicador
-          kicker="Lucro previsto"
+          kicker={t("painel.lucroPrevisto")}
           valor={formatEuro(resumo.lucro, { compact: true })}
-          nota="sobre pedidos abertos"
+          nota={t("painel.sobrePedidosAbertos")}
         />
         <Indicador
-          kicker="Ingredientes em stock"
+          kicker={t("painel.ingredientesStock")}
           valor={String(ingredientes.length)}
-          nota={`${alertas.length} abaixo do necessário`}
+          nota={t("painel.abaixoNecessario", { n: alertas.length })}
         />
       </div>
 
@@ -164,25 +183,25 @@ function Painel() {
           }}
         >
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
-            <h4 style={{ fontSize: 20 }}>Próximas entregas</h4>
+            <h4 style={{ fontSize: 20 }}>{t("painel.proximasEntregas")}</h4>
             <button
               type="button"
               className="btn-ghost"
               style={{ fontSize: 13, background: "none", border: 0, cursor: "pointer" }}
               onClick={() => navigate({ to: "/pedidos" })}
             >
-              Ver pedidos
+              {t("painel.verPedidos")}
             </button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
             {abertos.length === 0 ? (
               <p style={{ fontSize: 13, color: "var(--color-neutral-600)", padding: "12px 0" }}>
-                Sem pedidos abertos.
+                {t("painel.semPedidosAbertos")}
               </p>
             ) : (
               abertos.map((p) => {
-                const t = totaisPedido(p.itens, receitaMap, ingMap);
+                const totais = totaisPedido(p.itens, receitaMap, ingMap);
                 const d = new Date(`${p.dataEntrega}T00:00:00`);
                 const itensStr = p.itens
                   .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "—"}`)
@@ -237,7 +256,7 @@ function Painel() {
                           textOverflow: "ellipsis",
                         }}
                       >
-                        {clienteMap.get(p.clienteId)?.nome ?? "Cliente removido"}
+                        {clienteMap.get(p.clienteId)?.nome ?? t("painel.clienteRemovido")}
                       </span>
                       <span
                         style={{
@@ -260,7 +279,7 @@ function Painel() {
                         fontVariantNumeric: "tabular-nums",
                       }}
                     >
-                      {formatEuro(t.venda, { compact: true })}
+                      {formatEuro(totais.venda, { compact: true })}
                     </span>
                   </button>
                 );
@@ -282,10 +301,10 @@ function Painel() {
             >
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <TriangleAlert size={18} strokeWidth={2.75} />
-                <h4 style={{ fontSize: 20, color: "inherit" }}>Stock baixo</h4>
+                <h4 style={{ fontSize: 20, color: "inherit" }}>{t("painel.stockBaixo")}</h4>
               </div>
               <p style={{ fontSize: 12, opacity: 0.85, margin: "6px 0 12px" }}>
-                Abaixo do necessário para os pedidos confirmados desta semana.
+                {t("painel.stockBaixoDesc")}
               </p>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {alertas.map((a) => (
@@ -308,8 +327,8 @@ function Painel() {
                   >
                     <span style={{ fontSize: 13, fontWeight: 600 }}>{a.ingrediente.nome}</span>
                     <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                      {Math.round(a.stock)} {a.ingrediente.unidade} · falta {Math.round(a.falta)}{" "}
-                      {a.ingrediente.unidade}
+                      {Math.round(a.stock)} {a.ingrediente.unidade} · {t("painel.falta")}{" "}
+                      {Math.round(a.falta)} {a.ingrediente.unidade}
                     </span>
                   </button>
                 ))}
@@ -325,11 +344,11 @@ function Painel() {
               boxShadow: "var(--shadow-sm)",
             }}
           >
-            <h4 style={{ fontSize: 20 }}>Receitas mais rentáveis</h4>
+            <h4 style={{ fontSize: 20 }}>{t("painel.receitasRentaveis")}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
               {topReceitas.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
-                  Define um preço de venda para veres as margens.
+                  {t("painel.definePrecoVenda")}
                 </p>
               ) : (
                 topReceitas.map(({ receita, margem }) => (

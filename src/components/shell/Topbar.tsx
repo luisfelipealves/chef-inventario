@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "@tanstack/react-router";
+import { useTranslation, type UseTranslationResponse } from "react-i18next";
 import { Plus } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
 import { useShell, type ModuloLista } from "@/lib/shell";
@@ -21,29 +22,31 @@ interface RotaConfig {
   primario: { label: string; module: ModuloLista };
 }
 
-function saudacao(hora: number): string {
-  if (hora < 12) return "Bom dia";
-  if (hora < 20) return "Boa tarde";
-  return "Boa noite";
+type T = UseTranslationResponse<"translation", undefined>["t"];
+
+function saudacao(hora: number, t: T): string {
+  if (hora < 12) return t("topbar.bomDia");
+  if (hora < 20) return t("topbar.boaTarde");
+  return t("topbar.boaNoite");
 }
 
-function configPara(pathname: string, nome: string): RotaConfig {
+function configPara(pathname: string, nome: string, t: T): RotaConfig {
   switch (pathname) {
     case "/pedidos":
-      return { titulo: "Pedidos", primario: { label: "Novo pedido", module: "pedidos" } };
+      return { titulo: t("nav.pedidos"), primario: { label: t("topbar.novoPedido"), module: "pedidos" } };
     case "/receitas":
-      return { titulo: "Receitas", primario: { label: "Nova receita", module: "receitas" } };
+      return { titulo: t("nav.receitas"), primario: { label: t("topbar.novaReceita"), module: "receitas" } };
     case "/ingredientes":
       return {
-        titulo: "Ingredientes",
-        primario: { label: "Novo ingrediente", module: "ingredientes" },
+        titulo: t("nav.ingredientes"),
+        primario: { label: t("topbar.novoIngrediente"), module: "ingredientes" },
       };
     case "/clientes":
-      return { titulo: "Clientes", primario: { label: "Novo cliente", module: "clientes" } };
+      return { titulo: t("nav.clientes"), primario: { label: t("topbar.novoCliente"), module: "clientes" } };
     case "/financeiro":
-      return { titulo: "Financeiro", primario: { label: "Novo pedido", module: "pedidos" } };
+      return { titulo: t("nav.financeiro"), primario: { label: t("topbar.novoPedido"), module: "pedidos" } };
     default: {
-      const base = saudacao(new Date().getHours());
+      const base = saudacao(new Date().getHours(), t);
       return {
         titulo: nome ? `${base}, ${nome}` : base,
         primario: { label: "Novo pedido", module: "pedidos" },
@@ -56,8 +59,9 @@ export function Topbar({ datasets }: { datasets: Datasets }) {
   const { pathname } = useLocation();
   const { openSheet } = useShell();
   const searchRef = useRef<HTMLInputElement>(null);
+  const { t } = useTranslation();
   const nome = useNomeUtilizador();
-  const { titulo, primario } = configPara(pathname, nome ?? "");
+  const { titulo, primario } = configPara(pathname, nome ?? "", t);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
