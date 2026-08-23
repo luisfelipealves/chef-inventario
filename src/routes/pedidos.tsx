@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2, ClipboardList, Plus, FileDown } from "lucide-react";
@@ -43,11 +44,11 @@ export const Route = createFileRoute("/pedidos")({
   component: PedidosPage,
 });
 
-const FILTROS: FiltroOpcao[] = [
-  { key: "abertos", label: "Abertos" },
-  { key: "todos", label: "Todos" },
-  { key: "entregues", label: "Entregues" },
-  { key: "cancelados", label: "Cancelados" },
+const FILTROS_KEYS = [
+  { key: "abertos", labelKey: "pedidos.filtroAbertos" },
+  { key: "todos", labelKey: "pedidos.filtroTodos" },
+  { key: "entregues", labelKey: "pedidos.filtroEntregues" },
+  { key: "cancelados", labelKey: "pedidos.filtroCancelados" },
 ];
 
 function passaFiltro(p: Pedido, filtro: string): boolean {
@@ -64,6 +65,7 @@ function passaFiltro(p: Pedido, filtro: string): boolean {
 }
 
 function PedidosPage() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const pedidos = useLiveQuery(
     () => (hydrated ? db.pedidos.orderBy("dataEntrega").toArray() : []),
@@ -121,10 +123,10 @@ function PedidosPage() {
     if (!toDelete) return;
     try {
       await db.pedidos.delete(toDelete.id);
-      toast.success("Pedido removido");
+      toast.success(t("pedidos.removido"));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao remover");
+      toast.error(t("pedidos.erroRemover"));
     } finally {
       setToDelete(null);
     }
@@ -134,10 +136,10 @@ function PedidosPage() {
     <div className="lista-view">
       <div className="lista-panel">
         <FiltroBar
-          opcoes={FILTROS}
+          opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
           valor={filtroAtual}
           onChange={(k) => setFiltro("pedidos", k)}
-          contagem={`${filtrados.length} de ${lista.length} pedidos`}
+          contagem={t("pedidos.contagem", { n: filtrados.length, total: lista.length })}
         />
 
         {pedidos === undefined ? (
@@ -149,17 +151,17 @@ function PedidosPage() {
             <table className="lista-table">
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Entrega</th>
-                  <th>Itens</th>
-                  <th className="num">Custo</th>
-                  <th className="num">Total</th>
-                  <th>Estado</th>
+                  <th>{t("pedidos.thCliente")}</th>
+                  <th>{t("pedidos.thEntrega")}</th>
+                  <th>{t("pedidos.thItens")}</th>
+                  <th className="num">{t("pedidos.thCusto")}</th>
+                  <th className="num">{t("pedidos.thTotal")}</th>
+                  <th>{t("pedidos.thEstado")}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtrados.map((p) => {
-                  const t = totaisPedido(p.itens, receitaMap, ingMap);
+                  const totais = totaisPedido(p.itens, receitaMap, ingMap);
                   return (
                     <tr
                       key={p.id}
@@ -167,14 +169,12 @@ function PedidosPage() {
                       onClick={() => setSelection("pedidos", p.id)}
                     >
                       <td className="primeira">
-                        {clienteMap.get(p.clienteId)?.nome ?? "Cliente removido"}
+                        {clienteMap.get(p.clienteId)?.nome ?? t("painel.clienteRemovido")}
                       </td>
                       <td>{dataEntregaCurta(p.dataEntrega)}</td>
-                      <td>
-                        {p.itens.length} receita{p.itens.length === 1 ? "" : "s"}
-                      </td>
-                      <td className="num">{formatEuro(t.custo, { compact: true })}</td>
-                      <td className="num">{formatEuro(t.venda, { compact: true })}</td>
+                      <td>{t("pedidos.nReceitas", { count: p.itens.length })}</td>
+                      <td className="num">{formatEuro(totais.custo, { compact: true })}</td>
+                      <td className="num">{formatEuro(totais.venda, { compact: true })}</td>
                       <td>
                         <EstadoSelect pedido={p} />
                       </td>
@@ -191,7 +191,7 @@ function PedidosPage() {
         {selecionado ? (
           <PedidoDetalhe
             pedido={selecionado}
-            clienteNome={clienteMap.get(selecionado.clienteId)?.nome ?? "Cliente removido"}
+            clienteNome={clienteMap.get(selecionado.clienteId)?.nome ?? t("painel.clienteRemovido")}
             cliente={clienteMap.get(selecionado.clienteId)}
             receitaMap={receitaMap}
             ingMap={ingMap}
@@ -199,7 +199,7 @@ function PedidosPage() {
             onDelete={() => setToDelete(selecionado)}
           />
         ) : (
-          <div className="detalhe-empty">Selecciona um pedido.</div>
+          <div className="detalhe-empty">{t("pedidos.seleciona")}</div>
         )}
       </aside>
 
@@ -215,13 +215,15 @@ function PedidosPage() {
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover pedido?</AlertDialogTitle>
-            <AlertDialogDescription>Esta ação não pode ser desfeita.</AlertDialogDescription>
+            <AlertDialogTitle>{t("pedidos.removerTitulo")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("comum.acaoIrreversivel")}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
-              Remover
+              {t("comum.remover")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -247,27 +249,28 @@ function PedidoDetalhe({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const t = totaisPedido(pedido.itens, receitaMap, ingMap);
+  const { t } = useTranslation();
+  const totais = totaisPedido(pedido.itens, receitaMap, ingMap);
 
   async function exportarPdf(tipo: TipoDocumento) {
     try {
       const nome = await exportarPedidoPdf({ tipo, pedido, cliente, receitaMap });
-      if (nome) toast.success(`PDF guardado: ${nome}`);
+      if (nome) toast.success(t("pedidos.pdfGuardado", { nome }));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gerar o PDF");
+      toast.error(t("pedidos.erroPdf"));
     }
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <span className="card-kicker">Pedido</span>
+        <span className="card-kicker">{t("pedidos.kicker")}</span>
         <h3 style={{ fontSize: 25, margin: "2px 0 8px" }}>{clienteNome}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <EstadoSelect pedido={pedido} />
           <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-            Entrega {dataEntregaLonga(pedido.dataEntrega)}
+            {t("pedidos.entregaData", { data: dataEntregaLonga(pedido.dataEntrega) })}
           </span>
         </div>
       </div>
@@ -306,8 +309,10 @@ function PedidoDetalhe({
                   {receita?.nome ?? "Receita removida"}
                 </span>
                 <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
-                  {formatEuro(item.precoUnitario, { compact: true })} por dose · custo{" "}
-                  {formatEuro(custoDose, { compact: true })}
+                  {t("pedidos.porDose", {
+                    preco: formatEuro(item.precoUnitario, { compact: true }),
+                    custo: formatEuro(custoDose, { compact: true }),
+                  })}
                 </span>
               </span>
               <span style={{ fontSize: 14, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
@@ -320,13 +325,13 @@ function PedidoDetalhe({
 
       <div className="detalhe-card">
         <div className="kv">
-          <span className="kv-label">Custo de produção</span>
+          <span className="kv-label">{t("pedidos.custoProducao")}</span>
           <span style={{ fontVariantNumeric: "tabular-nums" }}>
-            {formatEuro(t.custo, { compact: true })}
+            {formatEuro(totais.custo, { compact: true })}
           </span>
         </div>
         <div className="kv">
-          <span className="kv-label">Lucro</span>
+          <span className="kv-label">{t("pedidos.lucro")}</span>
           <span
             style={{
               color: "var(--color-accent-2-700)",
@@ -334,12 +339,14 @@ function PedidoDetalhe({
               fontVariantNumeric: "tabular-nums",
             }}
           >
-            {formatEuro(t.lucro, { compact: true })}
+            {formatEuro(totais.lucro, { compact: true })}
           </span>
         </div>
         <div style={{ borderTop: "1px solid var(--color-divider)", margin: "8px 0" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
-          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>Total</span>
+          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
+            {t("pedidos.total")}
+          </span>
           <span style={{ textAlign: "right" }}>
             <span
               style={{
@@ -349,24 +356,24 @@ function PedidoDetalhe({
                 fontVariantNumeric: "tabular-nums",
               }}
             >
-              {formatEuro(t.venda, { compact: true })}
+              {formatEuro(totais.venda, { compact: true })}
             </span>
             <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
-              margem +{Math.round(t.margem)}%
+              {t("pedidos.margem", { pct: Math.round(totais.margem) })}
             </span>
           </span>
         </div>
       </div>
 
       <div>
-        <span className="card-kicker">Notas</span>
+        <span className="card-kicker">{t("pedidos.notas")}</span>
         <p style={{ fontSize: 13, marginTop: 4, color: "var(--color-neutral-700)" }}>
-          {pedido.notas || "Sem notas."}
+          {pedido.notas || t("pedidos.semNotas")}
         </p>
       </div>
 
       <div>
-        <span className="card-kicker">Cliente</span>
+        <span className="card-kicker">{t("pedidos.cliente")}</span>
         <p style={{ fontSize: 13, marginTop: 4, color: "var(--color-neutral-700)" }}>
           {[cliente?.telefone, cliente?.endereco].filter(Boolean).join(" · ") || "—"}
         </p>
@@ -375,20 +382,24 @@ function PedidoDetalhe({
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onEdit}>
           <Pencil size={16} strokeWidth={2.75} />
-          Editar pedido
+          {t("pedidos.editarPedido")}
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button type="button" className="btn btn-secondary btn-icon" aria-label="Exportar PDF">
+            <button
+              type="button"
+              className="btn btn-secondary btn-icon"
+              aria-label={t("pedidos.exportarPdf")}
+            >
               <FileDown size={16} strokeWidth={2.75} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onSelect={() => void exportarPdf("orcamento")}>
-              Orçamento (PDF)
+              {t("pedidos.orcamentoPdf")}
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => void exportarPdf("pedido")}>
-              Resumo do pedido (PDF)
+              {t("pedidos.resumoPdf")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -396,7 +407,7 @@ function PedidoDetalhe({
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={onDelete}
-          aria-label="Remover pedido"
+          aria-label={t("pedidos.removerPedido")}
         >
           <Trash2 size={16} strokeWidth={2.75} />
         </button>
@@ -418,18 +429,19 @@ function SkeletonTabela() {
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="lista-empty">
       <div className="lista-empty-icon">
         <ClipboardList size={28} strokeWidth={2.75} />
       </div>
-      <h2 style={{ fontSize: 20 }}>Ainda sem pedidos</h2>
+      <h2 style={{ fontSize: 20 }}>{t("pedidos.vazioTitulo")}</h2>
       <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
-        Cria o primeiro pedido a juntar um cliente às receitas encomendadas.
+        {t("pedidos.vazioDesc")}
       </p>
       <button type="button" className="btn btn-primary" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.75} />
-        Novo pedido
+        {t("topbar.novoPedido")}
       </button>
     </div>
   );

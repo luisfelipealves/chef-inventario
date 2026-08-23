@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Check, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -18,7 +19,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { db, type EstadoPedido, type Pedido } from "@/lib/db";
-import { estadoLabel } from "@/lib/pedido-calc";
 import { entregarPedido, faltasParaEntrega, type FaltaEntrega } from "@/lib/producao";
 import { EstadoTag } from "@/components/EstadoTag";
 
@@ -26,11 +26,12 @@ const ESTADOS: EstadoPedido[] = ["pendente", "confirmado", "entregue", "cancelad
 
 /** Etiqueta de estado clicável: muda o estado do pedido sem abrir o formulário. */
 export function EstadoSelect({ pedido }: { pedido: Pedido }) {
+  const { t } = useTranslation();
   const [faltas, setFaltas] = useState<FaltaEntrega[] | null>(null);
   const [aEntregar, setAEntregar] = useState(false);
 
   function mostrarAvisos(avisos: string[]) {
-    if (avisos.length === 0) toast.success("Pedido entregue — doses prontas atualizadas.");
+    if (avisos.length === 0) toast.success(t("pedidos.entregueOk"));
     else avisos.forEach((a) => toast.warning(a));
   }
 
@@ -42,7 +43,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
       setFaltas(null);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao entregar o pedido.");
+      toast.error(t("pedidos.erroEntregar"));
     } finally {
       setAEntregar(false);
     }
@@ -61,10 +62,10 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
         return;
       }
       await db.pedidos.update(pedido.id, { estado });
-      toast.success(`Pedido marcado como ${estadoLabel[estado].toLowerCase()}`);
+      toast.success(t("pedidos.marcado", { estado: t(`estado.${estado}`).toLowerCase() }));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao atualizar o estado");
+      toast.error(t("pedidos.erroEstado"));
     }
   }
 
@@ -74,7 +75,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
-            aria-label="Alterar estado do pedido"
+            aria-label={t("pedidos.mudarEstado")}
             style={{
               display: "inline-flex",
               alignItems: "center",
@@ -96,7 +97,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
         <DropdownMenuContent align="start">
           {ESTADOS.map((e) => (
             <DropdownMenuItem key={e} onSelect={() => void mudar(e)}>
-              <span style={{ flex: 1 }}>{estadoLabel[e]}</span>
+              <span style={{ flex: 1 }}>{t(`estado.${e}`)}</span>
               {e === pedido.estado && <Check size={14} strokeWidth={2.75} />}
             </DropdownMenuItem>
           ))}
@@ -106,23 +107,24 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
       <AlertDialog open={!!faltas} onOpenChange={(o) => !o && setFaltas(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Doses prontas insuficientes</AlertDialogTitle>
+            <AlertDialogTitle>{t("pedidos.dosesInsuf")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {faltas
-                ?.map(
-                  (f) =>
-                    `${f.receita.nome}: precisas de ${f.dosesNecessarias}, tens ${
-                      f.dosesNecessarias - f.faltam
-                    } prontas`,
-                )
-                .join(" · ")}
-              . Queres registar a produção em falta (em lotes inteiros, abatendo os ingredientes da
-              despensa) antes de entregar?
+              {t("pedidos.dosesInsufDesc", {
+                lista: faltas
+                  ?.map((f) =>
+                    t("pedidos.dosesInsufItem", {
+                      nome: f.receita.nome,
+                      n: f.dosesNecessarias,
+                      p: f.dosesNecessarias - f.faltam,
+                    }),
+                  )
+                  .join(" · "),
+              })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="h-11 rounded-full" disabled={aEntregar}>
-              Cancelar
+              {t("comum.cancelar")}
             </AlertDialogCancel>
             <button
               type="button"
@@ -131,7 +133,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
               onClick={() => void entregar(false)}
               disabled={aEntregar}
             >
-              Entregar sem produzir
+              {t("pedidos.entregarSemProduzir")}
             </button>
             <AlertDialogAction
               className="h-11 rounded-full"
@@ -141,7 +143,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
               }}
               disabled={aEntregar}
             >
-              {aEntregar ? "A registar…" : "Produzir e entregar"}
+              {aEntregar ? t("pedidos.aRegistar") : t("pedidos.produzirEntregar")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
