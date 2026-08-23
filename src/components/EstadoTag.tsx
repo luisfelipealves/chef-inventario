@@ -1,5 +1,5 @@
+import { useTranslation } from "react-i18next";
 import type { EstadoPedido } from "@/lib/db";
-import { estadoLabel } from "@/lib/pedido-calc";
 
 const CLASSE: Record<EstadoPedido, string> = {
   pendente: "tag tag-outline",
@@ -9,5 +9,6 @@ const CLASSE: Record<EstadoPedido, string> = {
 };
 
 export function EstadoTag({ estado }: { estado: EstadoPedido }) {
-  return <span className={CLASSE[estado]}>{estadoLabel[estado]}</span>;
+  const { t } = useTranslation();
+  return <span className={CLASSE[estado]}>{t(`estado.${estado}`)}</span>;
 }

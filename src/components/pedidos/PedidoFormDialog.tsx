@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { entregarPedido } from "@/lib/producao";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
@@ -32,12 +33,9 @@ import {
   type Receita,
 } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
-import { custoDoseReceita, estadoLabel, totaisPedido } from "@/lib/pedido-calc";
+import { custoDoseReceita, totaisPedido } from "@/lib/pedido-calc";
 
-const schema = z.object({
-  clienteId: z.string().min(1, "Escolhe o cliente"),
-  dataEntrega: z.string().min(1, "Indica a data de entrega"),
-});
+const ESTADOS: EstadoPedido[] = ["pendente", "confirmado", "entregue", "cancelado"];
 
 type LinhaDraft = {
   key: string;
@@ -70,7 +68,16 @@ export function PedidoFormDialog({
   receitas: Receita[];
   ingredientes: Ingrediente[];
 }) {
+  const { t } = useTranslation();
   const isEdit = !!pedido;
+  const schema = useMemo(
+    () =>
+      z.object({
+        clienteId: z.string().min(1, t("pedidoForm.errCliente")),
+        dataEntrega: z.string().min(1, t("pedidoForm.errData")),
+      }),
+    [t],
+  );
   const [clienteId, setClienteId] = useState("");
   const [dataEntrega, setDataEntrega] = useState("");
   const [estado, setEstado] = useState<EstadoPedido>("pendente");
@@ -136,7 +143,7 @@ export function PedidoFormDialog({
       return;
     }
     if (itensValidos.length === 0) {
-      toast.error("Adiciona pelo menos uma receita");
+      toast.error(t("pedidoForm.adicionaReceita"));
       return;
     }
     setSubmitting(true);
@@ -150,7 +157,7 @@ export function PedidoFormDialog({
       };
       if (isEdit && pedido) {
         await db.pedidos.update(pedido.id, payload);
-        toast.success("Pedido atualizado");
+        toast.success(t("pedidoForm.pedidoAtualizado"));
         if (estado === "entregue" && pedido.estado !== "entregue") {
           const avisos = await entregarPedido({ ...pedido, ...payload }, { produzirFaltas: false });
           avisos.forEach((a) => toast.warning(a));
@@ -158,7 +165,7 @@ export function PedidoFormDialog({
       } else {
         const novo = { ...payload, createdAt: new Date() } as Pedido;
         const id = await db.pedidos.add(novo);
-        toast.success("Pedido criado");
+        toast.success(t("pedidoForm.pedidoCriado"));
         if (estado === "entregue") {
           const avisos = await entregarPedido(
             { ...novo, id: id as number },
@@ -170,7 +177,7 @@ export function PedidoFormDialog({
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gravar");
+      toast.error(t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -183,13 +190,11 @@ export function PedidoFormDialog({
         className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
-          <span className="card-kicker">Pedido</span>
+          <span className="card-kicker">{t("pedidos.kicker")}</span>
           <SheetTitle className="font-heading text-2xl font-normal">
-            {isEdit ? "Editar pedido" : "Novo pedido"}
+            {isEdit ? t("pedidoForm.editarTitulo") : t("pedidoForm.novoTitulo")}
           </SheetTitle>
-          <SheetDescription>
-            Junta um cliente às receitas encomendadas e vê o valor final.
-          </SheetDescription>
+          <SheetDescription>{t("pedidoForm.desc")}</SheetDescription>
         </SheetHeader>
 
         <form
@@ -197,10 +202,10 @@ export function PedidoFormDialog({
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
         >
           <div className="space-y-2">
-            <Label htmlFor="cliente">Cliente</Label>
+            <Label htmlFor="cliente">{t("pedidoForm.cliente")}</Label>
             <Select value={clienteId} onValueChange={setClienteId}>
               <SelectTrigger id="cliente" className="h-12 text-base">
-                <SelectValue placeholder="Escolher cliente" />
+                <SelectValue placeholder={t("pedidoForm.escolherCliente")} />
               </SelectTrigger>
               <SelectContent>
                 {clientes.map((c) => (
@@ -211,16 +216,14 @@ export function PedidoFormDialog({
               </SelectContent>
             </Select>
             {clientes.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Ainda não tens clientes. Regista-os primeiro em Clientes.
-              </p>
+              <p className="text-xs text-muted-foreground">{t("pedidoForm.semClientes")}</p>
             )}
             {errors.clienteId && <p className="text-xs text-destructive">{errors.clienteId}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2 min-w-0">
-              <Label htmlFor="dataEntrega">Entrega</Label>
+              <Label htmlFor="dataEntrega">{t("pedidoForm.entrega")}</Label>
               <Input
                 id="dataEntrega"
                 type="date"
@@ -233,15 +236,15 @@ export function PedidoFormDialog({
               )}
             </div>
             <div className="space-y-2 min-w-0">
-              <Label htmlFor="estado">Estado</Label>
+              <Label htmlFor="estado">{t("pedidoForm.estado")}</Label>
               <Select value={estado} onValueChange={(v) => setEstado(v as EstadoPedido)}>
                 <SelectTrigger id="estado" className="h-12 text-base">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(Object.keys(estadoLabel) as EstadoPedido[]).map((e) => (
+                  {ESTADOS.map((e) => (
                     <SelectItem key={e} value={e}>
-                      {estadoLabel[e]}
+                      {t(`estado.${e}`)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -251,7 +254,7 @@ export function PedidoFormDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Receitas</Label>
+              <Label>{t("pedidoForm.receitas")}</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -260,13 +263,13 @@ export function PedidoFormDialog({
                 className="h-9"
               >
                 <Plus className="mr-1 h-4 w-4" />
-                Adicionar
+                {t("pedidoForm.adicionar")}
               </Button>
             </div>
 
             {receitas.length === 0 ? (
               <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-                Ainda não tens receitas. Cria fichas técnicas primeiro.
+                {t("pedidoForm.semReceitas")}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -302,7 +305,7 @@ export function PedidoFormDialog({
                           }
                         >
                           <SelectTrigger className="h-11 text-base">
-                            <SelectValue placeholder="Escolher receita" />
+                            <SelectValue placeholder={t("pedidoForm.escolherReceita")} />
                           </SelectTrigger>
                           <SelectContent>
                             {receitas.map((r) => (
@@ -322,7 +325,7 @@ export function PedidoFormDialog({
                               ls.length === 1 ? [newLinha()] : ls.filter((_, i) => i !== idx),
                             )
                           }
-                          aria-label="Remover linha"
+                          aria-label={t("pedidoForm.removerLinha")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -330,7 +333,9 @@ export function PedidoFormDialog({
 
                       <div className="mt-2 grid grid-cols-2 gap-2">
                         <div className="space-y-1">
-                          <Label className="text-[11px] text-muted-foreground">Quantidade</Label>
+                          <Label className="text-[11px] text-muted-foreground">
+                            {t("pedidoForm.quantidade")}
+                          </Label>
                           <Input
                             inputMode="decimal"
                             placeholder="1"
@@ -347,7 +352,7 @@ export function PedidoFormDialog({
                         </div>
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">
-                            Preço / unidade
+                            {t("pedidoForm.precoUnidade")}
                           </Label>
                           <Input
                             inputMode="decimal"
@@ -367,7 +372,7 @@ export function PedidoFormDialog({
 
                       <div className="mt-2 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">
-                          Custo {formatEuro(custoUnit)} / un
+                          {t("pedidoForm.custoUn", { v: formatEuro(custoUnit) })}
                         </span>
                         <span className="font-medium tabular-nums text-foreground">
                           {formatEuro(subtotal, { compact: true })}
@@ -381,10 +386,10 @@ export function PedidoFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="notas">Notas</Label>
+            <Label htmlFor="notas">{t("pedidos.notas")}</Label>
             <Textarea
               id="notas"
-              placeholder="Ex: sem lactose, entregar às 15h"
+              placeholder={t("pedidoForm.notasPlaceholder")}
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
               rows={2}
@@ -395,19 +400,19 @@ export function PedidoFormDialog({
 
           <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Custo de produção</span>
+              <span className="text-muted-foreground">{t("pedidoForm.custoProducao")}</span>
               <span className="font-medium tabular-nums">
                 {formatEuro(totais.custo, { compact: true })}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Lucro estimado</span>
+              <span className="text-muted-foreground">{t("pedidoForm.lucroEstimado")}</span>
               <span className="font-medium tabular-nums">
                 {formatEuro(totais.lucro, { compact: true })} ({totais.margem.toFixed(0)}%)
               </span>
             </div>
             <div className="flex justify-between border-t border-border pt-1 text-base">
-              <span className="font-medium">Valor final</span>
+              <span className="font-medium">{t("pedidoForm.valorFinal")}</span>
               <span className="font-bold tabular-nums">
                 {formatEuro(totais.venda, { compact: true })}
               </span>
@@ -421,10 +426,14 @@ export function PedidoFormDialog({
               onClick={() => onOpenChange(false)}
               className="h-11 flex-1 rounded-full"
             >
-              Cancelar
+              {t("comum.cancelar")}
             </Button>
             <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
-              {submitting ? "A gravar…" : isEdit ? "Guardar" : "Criar pedido"}
+              {submitting
+                ? t("comum.aGravar")
+                : isEdit
+                  ? t("comum.guardar")
+                  : t("pedidoForm.criarPedido")}
             </Button>
           </SheetFooter>
         </form>

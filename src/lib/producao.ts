@@ -1,4 +1,5 @@
 import { db, type Pedido, type Producao, type Receita } from "@/lib/db";
+import i18n from "@/lib/i18n";
 
 /**
  * Produção e entrega — a ponte entre receitas e a despensa.
@@ -99,7 +100,11 @@ export async function entregarPedido(
       const faltasIng = await registarProducao(f.receita, lotes);
       for (const fi of faltasIng) {
         avisos.push(
-          `Despensa sem ${fi.nome} suficiente (faltaram ${arredonda(fi.falta)} ${fi.unidade}).`,
+          i18n.t("producao.avisoDespensa", {
+            nome: fi.nome,
+            qtd: arredonda(fi.falta),
+            unidade: fi.unidade,
+          }),
         );
       }
     }
@@ -111,7 +116,7 @@ export async function entregarPedido(
       if (!receita) continue;
       const prontas = receita.dosesProntas ?? 0;
       if (doses > prontas) {
-        avisos.push(`${receita.nome}: vendidas ${doses} doses, só havia ${prontas} prontas.`);
+        avisos.push(i18n.t("producao.avisoDoses", { nome: receita.nome, doses, prontas }));
       }
       await db.receitas.update(receitaId, { dosesProntas: Math.max(0, prontas - doses) });
     }
