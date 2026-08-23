@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from "react";
 import { db, type UnidadeMedida } from "@/lib/db";
+import { idiomaAtual } from "@/lib/i18n";
 
 /**
  * Dados de exemplo para o onboarding. Os IDs criados ficam registados em
@@ -60,17 +61,22 @@ function dataISO(d: Date): string {
   return `${d.getFullYear()}-${m}-${dia}`;
 }
 
+/** Escolhe o texto conforme o idioma ativo do onboarding. */
+function n(pt: string, en: string): string {
+  return idiomaAtual() === "en" ? en : pt;
+}
+
 export async function criarDadosExemplo(): Promise<void> {
   // Ingredientes: [nome, unidade, quantidade em stock, preço da embalagem, criado há N dias]
   const ING: [string, UnidadeMedida, number, number, number][] = [
-    ["Farinha de trigo", "kg", 5, 4.5, 28],
-    ["Açúcar", "kg", 3, 3.3, 28],
-    ["Manteiga", "g", 750, 5.6, 25],
-    ["Ovos", "un", 30, 6.9, 21],
-    ["Chocolate 70%", "g", 600, 7.8, 21],
-    ["Natas", "ml", 1000, 2.4, 14],
-    ["Leite condensado", "g", 790, 2.95, 14],
-    ["Fermento em pó", "g", 150, 1.8, 25],
+    [n("Farinha de trigo", "Wheat flour"), "kg", 5, 4.5, 28],
+    [n("Açúcar", "Sugar"), "kg", 3, 3.3, 28],
+    [n("Manteiga", "Butter"), "g", 750, 5.6, 25],
+    [n("Ovos", "Eggs"), "un", 30, 6.9, 21],
+    [n("Chocolate 70%", "70% chocolate"), "g", 600, 7.8, 21],
+    [n("Natas", "Cream"), "ml", 1000, 2.4, 14],
+    [n("Leite condensado", "Condensed milk"), "g", 790, 2.95, 14],
+    [n("Fermento em pó", "Baking powder"), "g", 150, 1.8, 25],
   ];
   const ingIds = (await db.ingredientes.bulkAdd(
     ING.map(([nome, unidade, qtd, preco, ha]) => ({
@@ -82,58 +88,58 @@ export async function criarDadosExemplo(): Promise<void> {
     })),
     { allKeys: true },
   )) as number[];
-  const ing = (nome: string) => ingIds[ING.findIndex(([n]) => n === nome)];
+  const ing = (nome: string) => ingIds[ING.findIndex(([nm]) => nm === nome)];
 
   const receitaIds = (await db.receitas.bulkAdd(
     [
       {
-        nome: "Bolo de chocolate",
+        nome: n("Bolo de chocolate", "Chocolate cake"),
         rendimento: 12,
         unidadeRendimento: "un" as UnidadeMedida,
         precoVenda: 3.5,
         ingredientes: [
-          { ingredienteId: ing("Farinha de trigo"), quantidade: 0.25 },
-          { ingredienteId: ing("Açúcar"), quantidade: 0.2 },
-          { ingredienteId: ing("Manteiga"), quantidade: 200 },
-          { ingredienteId: ing("Ovos"), quantidade: 4 },
-          { ingredienteId: ing("Chocolate 70%"), quantidade: 200 },
-          { ingredienteId: ing("Fermento em pó"), quantidade: 10 },
+          { ingredienteId: ing(n("Farinha de trigo", "Wheat flour")), quantidade: 0.25 },
+          { ingredienteId: ing(n("Açúcar", "Sugar")), quantidade: 0.2 },
+          { ingredienteId: ing(n("Manteiga", "Butter")), quantidade: 200 },
+          { ingredienteId: ing(n("Ovos", "Eggs")), quantidade: 4 },
+          { ingredienteId: ing(n("Chocolate 70%", "70% chocolate")), quantidade: 200 },
+          { ingredienteId: ing(n("Fermento em pó", "Baking powder")), quantidade: 10 },
         ],
         createdAt: diasAtras(20),
       },
       {
-        nome: "Brigadeiros",
+        nome: n("Brigadeiros", "Chocolate truffles"),
         rendimento: 30,
         unidadeRendimento: "un" as UnidadeMedida,
         precoVenda: 1.2,
         ingredientes: [
-          { ingredienteId: ing("Leite condensado"), quantidade: 395 },
-          { ingredienteId: ing("Chocolate 70%"), quantidade: 150 },
-          { ingredienteId: ing("Manteiga"), quantidade: 30 },
+          { ingredienteId: ing(n("Leite condensado", "Condensed milk")), quantidade: 395 },
+          { ingredienteId: ing(n("Chocolate 70%", "70% chocolate")), quantidade: 150 },
+          { ingredienteId: ing(n("Manteiga", "Butter")), quantidade: 30 },
         ],
         createdAt: diasAtras(18),
       },
       {
-        nome: "Pão de ló",
+        nome: n("Pão de ló", "Sponge cake"),
         rendimento: 10,
         unidadeRendimento: "un" as UnidadeMedida,
         precoVenda: 2.5,
         ingredientes: [
-          { ingredienteId: ing("Ovos"), quantidade: 6 },
-          { ingredienteId: ing("Açúcar"), quantidade: 0.25 },
-          { ingredienteId: ing("Farinha de trigo"), quantidade: 0.25 },
+          { ingredienteId: ing(n("Ovos", "Eggs")), quantidade: 6 },
+          { ingredienteId: ing(n("Açúcar", "Sugar")), quantidade: 0.25 },
+          { ingredienteId: ing(n("Farinha de trigo", "Wheat flour")), quantidade: 0.25 },
         ],
         createdAt: diasAtras(15),
       },
       {
-        nome: "Bolo de bolacha",
+        nome: n("Bolo de bolacha", "Icebox cake"),
         rendimento: 10,
         unidadeRendimento: "un" as UnidadeMedida,
         precoVenda: 2.8,
         ingredientes: [
-          { ingredienteId: ing("Natas"), quantidade: 400 },
-          { ingredienteId: ing("Manteiga"), quantidade: 250 },
-          { ingredienteId: ing("Açúcar"), quantidade: 0.15 },
+          { ingredienteId: ing(n("Natas", "Cream")), quantidade: 400 },
+          { ingredienteId: ing(n("Manteiga", "Butter")), quantidade: 250 },
+          { ingredienteId: ing(n("Açúcar", "Sugar")), quantidade: 0.15 },
         ],
         createdAt: diasAtras(12),
       },
@@ -145,23 +151,23 @@ export async function criarDadosExemplo(): Promise<void> {
   const clienteIds = (await db.clientes.bulkAdd(
     [
       {
-        nome: "Maria Silva",
+        nome: n("Maria Silva", "Emma Johnson"),
         telefone: "912 345 678",
-        endereco: "Rua das Flores 12, Lisboa",
+        endereco: n("Rua das Flores 12, Lisboa", "12 Flower St, Springfield"),
         nif: "234567890",
         createdAt: diasAtras(25),
       },
       {
-        nome: "João Ferreira",
+        nome: n("João Ferreira", "James Miller"),
         telefone: "936 222 111",
-        endereco: "Av. da Liberdade 45, Porto",
+        endereco: n("Av. da Liberdade 45, Porto", "45 Liberty Ave, Riverside"),
         nif: "187654321",
         createdAt: diasAtras(20),
       },
       {
-        nome: "Café Central",
+        nome: n("Café Central", "Corner Café"),
         telefone: "213 456 789",
-        endereco: "Praça do Comércio 3, Lisboa",
+        endereco: n("Praça do Comércio 3, Lisboa", "3 Market Square, Springfield"),
         nif: "509876543",
         createdAt: diasAtras(15),
       },
@@ -177,7 +183,10 @@ export async function criarDadosExemplo(): Promise<void> {
         itens: [{ receitaId: boloChoc, quantidade: 12, precoUnitario: 3.5 }],
         dataEntrega: dataISO(diasAtras(7)),
         estado: "entregue" as const,
-        notas: "Festa de aniversário — escrever 'Parabéns Rita' no bolo.",
+        notas: n(
+          "Festa de aniversário — escrever 'Parabéns Rita' no bolo.",
+          "Birthday party — write 'Happy Birthday Rita' on the cake.",
+        ),
         createdAt: diasAtras(12),
       },
       {
@@ -188,7 +197,7 @@ export async function criarDadosExemplo(): Promise<void> {
         ],
         dataEntrega: dataISO(diasAtras(3)),
         estado: "entregue" as const,
-        notas: "Entrega semanal.",
+        notas: n("Entrega semanal.", "Weekly delivery."),
         createdAt: diasAtras(8),
       },
       {
@@ -207,7 +216,7 @@ export async function criarDadosExemplo(): Promise<void> {
         ],
         dataEntrega: dataISO(diasAtras(-5)),
         estado: "pendente" as const,
-        notas: "Confirmar sabor dos brigadeiros.",
+        notas: n("Confirmar sabor dos brigadeiros.", "Confirm the truffle flavour."),
         createdAt: diasAtras(1),
       },
       {
@@ -215,7 +224,7 @@ export async function criarDadosExemplo(): Promise<void> {
         itens: [{ receitaId: paoDeLo, quantidade: 20, precoUnitario: 2.5 }],
         dataEntrega: dataISO(diasAtras(1)),
         estado: "cancelado" as const,
-        notas: "Cancelado pelo cliente.",
+        notas: n("Cancelado pelo cliente.", "Cancelled by the customer."),
         createdAt: diasAtras(6),
       },
     ],
@@ -224,17 +233,17 @@ export async function criarDadosExemplo(): Promise<void> {
 
   // Compras espalhadas pelas últimas semanas, para o Financeiro ter histórico.
   const COMPRAS: [string, number, number, number][] = [
-    ["Farinha de trigo", 5, 4.5, 20],
-    ["Açúcar", 3, 3.3, 20],
-    ["Ovos", 30, 6.9, 15],
-    ["Chocolate 70%", 600, 7.8, 12],
-    ["Manteiga", 750, 5.6, 8],
-    ["Leite condensado", 790, 2.95, 5],
-    ["Natas", 1000, 2.4, 2],
+    [n("Farinha de trigo", "Wheat flour"), 5, 4.5, 20],
+    [n("Açúcar", "Sugar"), 3, 3.3, 20],
+    [n("Ovos", "Eggs"), 30, 6.9, 15],
+    [n("Chocolate 70%", "70% chocolate"), 600, 7.8, 12],
+    [n("Manteiga", "Butter"), 750, 5.6, 8],
+    [n("Leite condensado", "Condensed milk"), 790, 2.95, 5],
+    [n("Natas", "Cream"), 1000, 2.4, 2],
   ];
   const compraIds = (await db.compras.bulkAdd(
     COMPRAS.map(([nome, quantidade, valor, ha]) => {
-      const idx = ING.findIndex(([n]) => n === nome);
+      const idx = ING.findIndex(([nm]) => nm === nome);
       return {
         ingredienteId: ingIds[idx],
         nome,

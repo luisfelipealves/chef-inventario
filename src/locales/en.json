@@ -393,7 +393,8 @@
     "estadosTitulo": "Orders by status",
     "semPedidosPeriodo": "No orders in this period.",
     "comprasTitulo": "Latest purchases",
-    "semCompras": "No purchases recorded in this period. Purchases are kept in the history from now on — via \"Add purchase\" or receipt import."
+    "semCompras": "No purchases recorded in this period. Purchases are kept in the history from now on — via \"Add purchase\" or receipt import.",
+    "movPedido": "Order no. {{id}} — {{itens}}"
   },
   "definicoes": {
     "kicker": "Settings",
@@ -488,5 +489,39 @@
     "jsonIlegivel": "Invalid file — not readable JSON.",
     "naoEBackup": "This file is not a Caderninho de Receitas backup.",
     "filtroNome": "Backup"
+  },
+  "csv": {
+    "cabecalho": "Date,Type,Description,Customer/Supplier,Status,Amount (EUR)",
+    "receita": "Revenue",
+    "despesa": "Expense"
+  },
+  "pdf": {
+    "orcamento": "Quote",
+    "resumo": "Order summary",
+    "para": "FOR",
+    "entrega": "DELIVERY",
+    "qtd": "QTY",
+    "receita": "RECIPE",
+    "preco": "PRICE",
+    "total": "TOTAL",
+    "totalEstimado": "Estimated total",
+    "totalLabel": "Total",
+    "notas": "NOTES",
+    "nif": "Tax ID {{nif}}",
+    "numEmitido": "No. {{id}} · issued {{data}}",
+    "rodape": "Not a fiscal document · Generated with Caderninho de Receitas on {{data}}",
+    "clienteFallback": "Customer",
+    "receitaRemovida": "Deleted recipe",
+    "fichOrcamento": "quote",
+    "fichPedido": "order",
+    "fichClienteFallback": "customer"
+  },
+  "ocr": {
+    "semRede": "No internet connection. Receipt scanning needs a network.",
+    "chaveInvalida": "Invalid or unauthorised API key. Check your Gemini key.",
+    "limite": "Free quota reached for now. Try again later.",
+    "erroGemini": "Gemini error ({{status}}). Try again.",
+    "naoLeu": "Could not read the receipt. Try another photo.",
+    "respostaInesperada": "Unexpected Gemini response. Try another photo."
   }
 }

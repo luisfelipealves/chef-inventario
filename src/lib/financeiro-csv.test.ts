@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import i18n from "@/lib/i18n";
 import { gerarCsv, type MovimentoCsv } from "@/lib/financeiro-csv";
 
 function mov(parcial: Partial<MovimentoCsv>): MovimentoCsv {
   return {
     data: new Date(2026, 7, 23),
-    tipo: "Receita",
+    tipo: "receita",
     descricao: "Pedido nº 1",
     contraparte: "Maria",
     estado: "Entregue",
@@ -13,7 +14,11 @@ function mov(parcial: Partial<MovimentoCsv>): MovimentoCsv {
   };
 }
 
-describe("gerarCsv", () => {
+describe("gerarCsv (pt-PT)", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("pt-PT");
+  });
+
   it("começa com BOM e cabeçalho", () => {
     const csv = gerarCsv([]);
     expect(csv.startsWith("\uFEFF")).toBe(true);
@@ -41,5 +46,22 @@ describe("gerarCsv", () => {
   it("usa CRLF entre linhas", () => {
     const csv = gerarCsv([mov({})]);
     expect(csv).toContain("\r\n");
+  });
+});
+
+describe("gerarCsv (en)", () => {
+  beforeEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
+  it("usa vírgula como separador e ponto decimal", () => {
+    const csv = gerarCsv([mov({ data: new Date(2026, 0, 5), valor: 1234.5 })]);
+    expect(csv).toContain("Date,Type,Description,Customer/Supplier,Status,Amount (EUR)");
+    expect(csv).toContain("2026-01-05,Revenue,Pedido nº 1,Maria,Entregue,1234.50");
+  });
+
+  it("protege campos com vírgulas", () => {
+    const csv = gerarCsv([mov({ descricao: "Cake, big" })]);
+    expect(csv).toContain('"Cake, big"');
   });
 });

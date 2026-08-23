@@ -393,7 +393,8 @@
     "estadosTitulo": "Pedidos por estado",
     "semPedidosPeriodo": "Sem pedidos no período.",
     "comprasTitulo": "Últimas compras",
-    "semCompras": "Sem compras registadas no período. As compras passam a ficar no histórico a partir de agora — via \"Adicionar compra\" ou importação de fatura."
+    "semCompras": "Sem compras registadas no período. As compras passam a ficar no histórico a partir de agora — via \"Adicionar compra\" ou importação de fatura.",
+    "movPedido": "Pedido nº {{id}} — {{itens}}"
   },
   "definicoes": {
     "kicker": "Definições",
@@ -488,5 +489,39 @@
     "jsonIlegivel": "Ficheiro inválido — não é um JSON legível.",
     "naoEBackup": "Este ficheiro não é uma cópia de segurança do Caderninho de Receitas.",
     "filtroNome": "Cópia de segurança"
+  },
+  "csv": {
+    "cabecalho": "Data;Tipo;Descrição;Cliente/Fornecedor;Estado;Valor (EUR)",
+    "receita": "Receita",
+    "despesa": "Despesa"
+  },
+  "pdf": {
+    "orcamento": "Orçamento",
+    "resumo": "Resumo do pedido",
+    "para": "PARA",
+    "entrega": "ENTREGA",
+    "qtd": "QTD",
+    "receita": "RECEITA",
+    "preco": "PREÇO",
+    "total": "TOTAL",
+    "totalEstimado": "Total estimado",
+    "totalLabel": "Total",
+    "notas": "NOTAS",
+    "nif": "NIF {{nif}}",
+    "numEmitido": "Nº {{id}} · emitido a {{data}}",
+    "rodape": "Documento sem valor fiscal · Gerado com o Caderninho de Receitas a {{data}}",
+    "clienteFallback": "Cliente",
+    "receitaRemovida": "Receita removida",
+    "fichOrcamento": "orcamento",
+    "fichPedido": "pedido",
+    "fichClienteFallback": "cliente"
+  },
+  "ocr": {
+    "semRede": "Sem ligação à internet. A leitura de faturas precisa de rede.",
+    "chaveInvalida": "Chave da API inválida ou sem acesso. Verifica a chave do Gemini.",
+    "limite": "Limite gratuito atingido por agora. Tenta novamente mais tarde.",
+    "erroGemini": "Erro do Gemini ({{status}}). Tenta novamente.",
+    "naoLeu": "Não foi possível ler a fatura. Tenta outra foto.",
+    "respostaInesperada": "Resposta inesperada do Gemini. Tenta outra foto."
   }
 }
