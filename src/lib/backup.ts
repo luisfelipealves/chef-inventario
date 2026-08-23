@@ -7,6 +7,7 @@ import {
   type Producao,
   type Receita,
 } from "@/lib/db";
+import i18n from "@/lib/i18n";
 
 /**
  * Cópia de segurança / migração de dados.
@@ -82,7 +83,7 @@ export async function exportarBackup(): Promise<string | null> {
     const { writeTextFile } = await import("@tauri-apps/plugin-fs");
     const caminho = await save({
       defaultPath: nome,
-      filters: [{ name: "Cópia de segurança", extensions: ["json"] }],
+      filters: [{ name: i18n.t("backupLib.filtroNome"), extensions: ["json"] }],
     });
     if (!caminho) return null;
     await writeTextFile(caminho, json);
@@ -111,7 +112,7 @@ export async function abrirBackupNativo(): Promise<string | null> {
   const caminho = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: "Cópia de segurança", extensions: ["json"] }],
+    filters: [{ name: i18n.t("backupLib.filtroNome"), extensions: ["json"] }],
   });
   if (!caminho || typeof caminho !== "string") return null;
   return readTextFile(caminho);
@@ -127,7 +128,7 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
   try {
     dados = JSON.parse(texto);
   } catch {
-    throw new Error("Ficheiro inválido — não é um JSON legível.");
+    throw new Error(i18n.t("backupLib.jsonIlegivel"));
   }
   const ok =
     dados &&
@@ -137,7 +138,7 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
     Array.isArray(dados.clientes) &&
     Array.isArray(dados.pedidos);
   if (!ok) {
-    throw new Error("Este ficheiro não é uma cópia de segurança do Caderninho de Receitas.");
+    throw new Error(i18n.t("backupLib.naoEBackup"));
   }
   return {
     dados,

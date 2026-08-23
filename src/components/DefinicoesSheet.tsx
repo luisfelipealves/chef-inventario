@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Download, Upload, Database, Trash2 } from "lucide-react";
 import {
@@ -58,6 +59,7 @@ export function DefinicoesSheet({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const contagem = useLiveQuery(async () => {
     if (!hydrated) return null;
@@ -84,7 +86,9 @@ export function DefinicoesSheet({
   function guardarNomePerfil() {
     gravarNome(nomeInput);
     toast.success(
-      nomeInput.trim() ? `Nome atualizado para ${nomeInput.trim()}.` : "Nome removido.",
+      nomeInput.trim()
+        ? t("definicoes.nomeAtualizado", { nome: nomeInput.trim() })
+        : t("definicoes.nomeRemovido"),
     );
   }
 
@@ -98,7 +102,9 @@ export function DefinicoesSheet({
 
   function guardarNegocio() {
     gravarNomeNegocio(negocioInput);
-    toast.success(negocioInput.trim() ? "Nome do negócio guardado." : "Nome do negócio removido.");
+    toast.success(
+      negocioInput.trim() ? t("definicoes.negocioGuardado") : t("definicoes.negocioRemovido"),
+    );
   }
 
   async function escolherLogo(e: React.ChangeEvent<HTMLInputElement>) {
@@ -107,17 +113,17 @@ export function DefinicoesSheet({
     if (!ficheiro) return;
     try {
       const dataUrl = await carregarLogoDeFicheiro(ficheiro);
-      if (gravarLogoNegocio(dataUrl)) toast.success("Logótipo guardado.");
-      else toast.error("Imagem demasiado grande para guardar. Tenta uma mais pequena.");
+      if (gravarLogoNegocio(dataUrl)) toast.success(t("definicoes.logoGuardado"));
+      else toast.error(t("definicoes.logoGrande"));
     } catch (err) {
       console.error(err);
-      toast.error("Não foi possível ler a imagem.");
+      toast.error(t("definicoes.logoIlegivel"));
     }
   }
 
   function removerLogo() {
     gravarLogoNegocio("");
-    toast.success("Logótipo removido.");
+    toast.success(t("definicoes.logoRemovido"));
   }
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -132,10 +138,10 @@ export function DefinicoesSheet({
     setAExportar(true);
     try {
       const nome = await exportarBackup();
-      if (nome) toast.success(`Cópia de segurança guardada: ${nome}`);
+      if (nome) toast.success(t("definicoes.backupGuardado", { nome }));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao exportar os dados.");
+      toast.error(t("definicoes.erroExportar"));
     } finally {
       setAExportar(false);
     }
@@ -146,7 +152,7 @@ export function DefinicoesSheet({
       const { dados, contagem } = validarBackup(texto);
       setPendente({ dados, contagem });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Ficheiro inválido.");
+      toast.error(err instanceof Error ? err.message : t("backupLib.jsonIlegivel"));
     }
   }
 
@@ -157,7 +163,7 @@ export function DefinicoesSheet({
         if (texto) prepararImport(texto);
       } catch (err) {
         console.error(err);
-        toast.error("Não foi possível abrir o ficheiro.");
+        toast.error(t("definicoes.erroAbrirFicheiro"));
       }
     } else {
       fileRef.current?.click();
@@ -186,21 +192,21 @@ export function DefinicoesSheet({
     setGeminiKey(chaveInput);
     setTemChave(Boolean(chaveInput.trim()));
     setChaveInput("");
-    toast.success("Chave guardada — a leitura de faturas está ativa.");
+    toast.success(t("definicoes.iaGuardada"));
   }
 
   function removerChaveGemini() {
     setGeminiKey("");
     setTemChave(false);
-    toast.success("Chave removida.");
+    toast.success(t("definicoes.iaRemovida"));
   }
 
   async function copiarLinkChave() {
     try {
       await navigator.clipboard.writeText("https://aistudio.google.com/apikey");
-      toast.success("Link copiado — abre-o no browser.");
+      toast.success(t("definicoes.linkCopiado"));
     } catch {
-      toast.error("Não foi possível copiar. O endereço é aistudio.google.com/apikey");
+      toast.error(t("definicoes.erroCopiar"));
     }
   }
 
@@ -210,32 +216,32 @@ export function DefinicoesSheet({
       const dir = await abrirDialogo({
         directory: true,
         multiple: false,
-        title: "Pasta para os backups automáticos",
+        title: t("definicoes.pastaTitulo"),
       });
       if (typeof dir !== "string") return;
       definirPastaBackupExtra(dir);
       await backupParaPasta(dir);
-      toast.success("Pasta definida — o backup de hoje já ficou guardado lá.");
+      toast.success(t("definicoes.pastaDefinida"));
     } catch (err) {
       console.error(err);
-      toast.error("Não foi possível definir a pasta de backup.");
+      toast.error(t("definicoes.erroPasta"));
     }
   }
 
   function removerPastaBackup() {
     definirPastaBackupExtra(null);
-    toast.success("Backup para pasta adicional desativado.");
+    toast.success(t("definicoes.pastaDesativada"));
   }
 
   async function confirmarApagarDemo() {
     setAApagarDemo(true);
     try {
       await apagarDadosExemplo();
-      toast.success("Dados de exemplo apagados.");
+      toast.success(t("definicoes.demoApagados"));
       setConfirmarDemo(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao apagar os dados de exemplo.");
+      toast.error(t("definicoes.erroDemoApagar"));
     } finally {
       setAApagarDemo(false);
     }
@@ -246,12 +252,12 @@ export function DefinicoesSheet({
     setAImportar(true);
     try {
       await importarBackup(pendente.dados);
-      toast.success("Dados importados com sucesso.");
+      toast.success(t("definicoes.importado"));
       setPendente(null);
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao importar os dados.");
+      toast.error(t("definicoes.erroImportar"));
     } finally {
       setAImportar(false);
     }
@@ -265,20 +271,17 @@ export function DefinicoesSheet({
           className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
         >
           <SheetHeader>
-            <span className="card-kicker">Definições</span>
+            <span className="card-kicker">{t("definicoes.kicker")}</span>
             <SheetTitle className="font-heading text-2xl font-normal">
-              Perfil e cópia de segurança
+              {t("definicoes.titulo")}
             </SheetTitle>
-            <SheetDescription>
-              Os dados vivem só neste dispositivo. Exporta um ficheiro para guardar ou migrar para
-              um computador novo.
-            </SheetDescription>
+            <SheetDescription>{t("definicoes.desc")}</SheetDescription>
           </SheetHeader>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="card-kicker">Perfil</span>
+            <span className="card-kicker">{t("definicoes.perfil")}</span>
             <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-              O nome usado na saudação do painel.
+              {t("definicoes.perfilDesc")}
             </p>
             <form
               onSubmit={(e) => {
@@ -290,7 +293,7 @@ export function DefinicoesSheet({
               <Input
                 value={nomeInput}
                 onChange={(e) => setNomeInput(e.target.value)}
-                placeholder="O teu nome"
+                placeholder={t("definicoes.teuNome")}
                 maxLength={40}
                 className="h-11"
               />
@@ -305,8 +308,7 @@ export function DefinicoesSheet({
             </form>
 
             <p style={{ fontSize: 12, color: "var(--color-neutral-700)", marginTop: 6 }}>
-              O nome do negócio e o logótipo aparecem no cabeçalho dos PDFs de orçamento e resumo do
-              pedido.
+              {t("definicoes.negocioDesc")}
             </p>
             <form
               onSubmit={(e) => {
@@ -318,7 +320,7 @@ export function DefinicoesSheet({
               <Input
                 value={negocioInput}
                 onChange={(e) => setNegocioInput(e.target.value)}
-                placeholder="Nome do negócio (ex.: Doces da Maria)"
+                placeholder={t("definicoes.negocioPlaceholder")}
                 maxLength={60}
                 className="h-11"
               />
@@ -335,7 +337,7 @@ export function DefinicoesSheet({
               {logo && (
                 <img
                   src={logo}
-                  alt="Logótipo do negócio"
+                  alt={t("definicoes.logoAlt")}
                   style={{
                     height: 44,
                     width: 44,
@@ -352,7 +354,7 @@ export function DefinicoesSheet({
                 onClick={() => logoRef.current?.click()}
                 style={{ height: 38, flex: 1 }}
               >
-                {logo ? "Mudar logótipo…" : "Escolher logótipo…"}
+                {logo ? t("definicoes.mudarLogo") : t("definicoes.escolherLogo")}
               </button>
               {logo && (
                 <button
@@ -361,7 +363,7 @@ export function DefinicoesSheet({
                   onClick={removerLogo}
                   style={{ height: 38 }}
                 >
-                  Remover
+                  {t("comum.remover")}
                 </button>
               )}
               <input
@@ -379,14 +381,14 @@ export function DefinicoesSheet({
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <Database size={16} strokeWidth={2.75} />
                 <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
-                  Dados atuais
+                  {t("definicoes.dadosAtuais")}
                 </span>
               </div>
               {[
-                ["Ingredientes", contagem.ingredientes],
-                ["Receitas", contagem.receitas],
-                ["Clientes", contagem.clientes],
-                ["Pedidos", contagem.pedidos],
+                [t("nav.ingredientes"), contagem.ingredientes],
+                [t("nav.receitas"), contagem.receitas],
+                [t("nav.clientes"), contagem.clientes],
+                [t("nav.pedidos"), contagem.pedidos],
               ].map(([label, n]) => (
                 <div key={label as string} className="kv">
                   <span className="kv-label">{label}</span>
@@ -397,12 +399,13 @@ export function DefinicoesSheet({
           )}
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="card-kicker">Exportar</span>
+            <span className="card-kicker">{t("definicoes.exportar")}</span>
             {emTauri() && (
               <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                A app guarda sozinha um backup por dia no arranque (últimos 60 dias, na pasta da
-                aplicação).{" "}
-                {ultimoBackupAuto() ? `Último: ${ultimoBackupAuto()}.` : "Ainda nenhum."}
+                {t("definicoes.autoBackup")}{" "}
+                {ultimoBackupAuto()
+                  ? t("definicoes.autoBackupUltimo", { data: ultimoBackupAuto() })
+                  : t("definicoes.autoBackupNenhum")}
               </p>
             )}
             <button
@@ -413,14 +416,14 @@ export function DefinicoesSheet({
               style={{ height: 44 }}
             >
               <Download size={16} strokeWidth={2.75} />
-              {aExportar ? "A exportar…" : "Exportar cópia de segurança"}
+              {aExportar ? t("definicoes.aExportar") : t("definicoes.exportarBtn")}
             </button>
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="card-kicker">Importar</span>
+            <span className="card-kicker">{t("definicoes.importar")}</span>
             <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-              Importar substitui todos os dados atuais. Faz uma exportação antes, por segurança.
+              {t("definicoes.importarAviso")}
             </p>
             <button
               type="button"
@@ -429,7 +432,7 @@ export function DefinicoesSheet({
               style={{ height: 44 }}
             >
               <Upload size={16} strokeWidth={2.75} />
-              Importar de ficheiro…
+              {t("definicoes.importarBtn")}
             </button>
             <input
               ref={fileRef}
@@ -442,10 +445,9 @@ export function DefinicoesSheet({
 
           {emTauri() && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span className="card-kicker">Backup na nuvem</span>
+              <span className="card-kicker">{t("definicoes.nuvem")}</span>
               <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                Escolhe uma pasta sincronizada (iCloud Drive, Google Drive, Dropbox…) e o backup
-                diário fica também lá — a nuvem trata do resto.
+                {t("definicoes.nuvemDesc")}
               </p>
               {pastaExtra && (
                 <p
@@ -466,7 +468,7 @@ export function DefinicoesSheet({
                   onClick={() => void escolherPastaBackup()}
                   style={{ height: 44, flex: 1 }}
                 >
-                  {pastaExtra ? "Mudar pasta…" : "Escolher pasta…"}
+                  {pastaExtra ? t("definicoes.mudarPasta") : t("definicoes.escolherPasta")}
                 </button>
                 {pastaExtra && (
                   <button
@@ -475,7 +477,7 @@ export function DefinicoesSheet({
                     onClick={removerPastaBackup}
                     style={{ height: 44 }}
                   >
-                    Desativar
+                    {t("definicoes.desativar")}
                   </button>
                 )}
               </div>
@@ -487,31 +489,26 @@ export function DefinicoesSheet({
           <SeletorIdioma />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <span className="card-kicker">Leitura de faturas (IA)</span>
+            <span className="card-kicker">{t("definicoes.ia")}</span>
             <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-              Funcionalidade opcional: fotografa um talão e o stock atualiza-se sozinho. Usa a API
-              gratuita do Google Gemini com uma chave tua, guardada só neste dispositivo — sem
-              chave, a app funciona na mesma e registas as compras manualmente.
+              {t("definicoes.iaDesc")}
             </p>
             {temChave ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <p style={{ fontSize: 12, flex: 1 }}>
-                  Chave configurada — a leitura de faturas está ativa.
-                </p>
+                <p style={{ fontSize: 12, flex: 1 }}>{t("definicoes.iaConfigurada")}</p>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={removerChaveGemini}
                   style={{ height: 38 }}
                 >
-                  Remover
+                  {t("comum.remover")}
                 </button>
               </div>
             ) : (
               <>
                 <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                  1. Abre <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span> no
-                  browser (conta Google, grátis) · 2. "Create API key" · 3. Cola a chave aqui.
+                  {t("definicoes.iaPassos", { site: "aistudio.google.com/apikey" })}
                 </p>
                 <form
                   onSubmit={(e) => {
@@ -524,7 +521,7 @@ export function DefinicoesSheet({
                     type="password"
                     value={chaveInput}
                     onChange={(e) => setChaveInput(e.target.value)}
-                    placeholder="Chave da API do Gemini"
+                    placeholder={t("fatura.chavePlaceholder")}
                     className="h-11"
                   />
                   <button
@@ -533,7 +530,7 @@ export function DefinicoesSheet({
                     disabled={!chaveInput.trim()}
                     style={{ height: 44 }}
                   >
-                    Guardar
+                    {t("comum.guardar")}
                   </button>
                 </form>
                 <button
@@ -542,7 +539,7 @@ export function DefinicoesSheet({
                   onClick={() => void copiarLinkChave()}
                   style={{ height: 38 }}
                 >
-                  Copiar link para obter a chave
+                  {t("definicoes.copiarLink")}
                 </button>
               </>
             )}
@@ -550,10 +547,9 @@ export function DefinicoesSheet({
 
           {temDemo && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span className="card-kicker">Dados de exemplo</span>
+              <span className="card-kicker">{t("definicoes.demo")}</span>
               <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-                A app tem dados de exemplo do onboarding. Apaga-os quando quiseres começar a usar os
-                teus dados reais — os registos criados por ti ficam intactos.
+                {t("definicoes.demoDesc")}
               </p>
               <button
                 type="button"
@@ -562,7 +558,7 @@ export function DefinicoesSheet({
                 style={{ height: 44 }}
               >
                 <Trash2 size={16} strokeWidth={2.75} />
-                Apagar dados de exemplo
+                {t("definicoes.demoApagarBtn")}
               </button>
             </div>
           )}
@@ -572,20 +568,21 @@ export function DefinicoesSheet({
       <AlertDialog open={confirmarDemo} onOpenChange={(o) => !o && setConfirmarDemo(false)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Apagar os dados de exemplo?</AlertDialogTitle>
+            <AlertDialogTitle>{t("definicoes.demoTitulo")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Remove os ingredientes, receitas, clientes, pedidos e compras criados no onboarding.
-              Os dados que criaste manualmente não são afetados. Esta ação não pode ser desfeita.
+              {t("definicoes.demoDialogo")} {t("comum.acaoIrreversivel")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmarApagarDemo}
               disabled={aApagarDemo}
               className="h-11 rounded-full"
             >
-              {aApagarDemo ? "A apagar…" : "Apagar"}
+              {aApagarDemo ? t("definicoes.aApagar") : t("definicoes.apagar")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -594,21 +591,27 @@ export function DefinicoesSheet({
       <AlertDialog open={!!pendente} onOpenChange={(o) => !o && setPendente(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Importar e substituir dados?</AlertDialogTitle>
+            <AlertDialogTitle>{t("definicoes.importarTitulo")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vais substituir todos os dados atuais por: {pendente?.contagem.ingredientes}{" "}
-              ingredientes, {pendente?.contagem.receitas} receitas, {pendente?.contagem.clientes}{" "}
-              clientes e {pendente?.contagem.pedidos} pedidos. Esta ação não pode ser desfeita.
+              {t("definicoes.importarDesc", {
+                ingredientes: pendente?.contagem.ingredientes ?? 0,
+                receitas: pendente?.contagem.receitas ?? 0,
+                clientes: pendente?.contagem.clientes ?? 0,
+                pedidos: pendente?.contagem.pedidos ?? 0,
+              })}{" "}
+              {t("comum.acaoIrreversivel")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmarImport}
               disabled={aImportar}
               className="h-11 rounded-full"
             >
-              {aImportar ? "A importar…" : "Substituir"}
+              {aImportar ? t("definicoes.aImportar") : t("definicoes.substituir")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

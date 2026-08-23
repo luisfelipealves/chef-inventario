@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -19,6 +20,7 @@ import { criarDadosExemplo } from "@/lib/demo-data";
  * exemplo. Fechar sem responder grava "" para não voltar a perguntar.
  */
 export function PrimeiroArranqueDialog() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const nome = useNomeUtilizador();
   const [valor, setValor] = useState("");
@@ -37,11 +39,11 @@ export function PrimeiroArranqueDialog() {
     setACriar(true);
     try {
       await criarDadosExemplo();
-      toast.success("Dados de exemplo criados. Podes apagá-los nas Definições.");
+      toast.success(t("onboarding.exemploCriado"));
       setFechado(true);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao criar os dados de exemplo.");
+      toast.error(t("onboarding.erroExemplo"));
     } finally {
       setACriar(false);
     }
@@ -60,10 +62,8 @@ export function PrimeiroArranqueDialog() {
         {etapa === "nome" ? (
           <>
             <DialogHeader>
-              <DialogTitle>Bem-vindo ao Caderninho de Receitas!</DialogTitle>
-              <DialogDescription>
-                Como te chamas? Usamos o teu nome para te dar as boas-vindas.
-              </DialogDescription>
+              <DialogTitle>{t("onboarding.bemVindo")}</DialogTitle>
+              <DialogDescription>{t("onboarding.comoTeChamas")}</DialogDescription>
             </DialogHeader>
 
             <form
@@ -76,29 +76,26 @@ export function PrimeiroArranqueDialog() {
               <Input
                 value={valor}
                 onChange={(e) => setValor(e.target.value)}
-                placeholder="O teu nome"
+                placeholder={t("onboarding.teuNome")}
                 autoFocus
                 maxLength={40}
               />
               <Button type="submit" disabled={!valor.trim()} className="h-11 w-full">
-                Continuar
+                {t("onboarding.continuar")}
               </Button>
             </form>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Como queres começar?</DialogTitle>
-              <DialogDescription>
-                Podes explorar a app já com ingredientes, receitas e pedidos de exemplo — e
-                apagá-los a qualquer momento nas Definições.
-              </DialogDescription>
+              <DialogTitle>{t("onboarding.comoComecar")}</DialogTitle>
+              <DialogDescription>{t("onboarding.comecarDesc")}</DialogDescription>
             </DialogHeader>
 
             <div className="flex flex-col gap-2">
               <Button onClick={carregarExemplo} disabled={aCriar} className="h-11 w-full">
                 <Sparkles size={16} strokeWidth={2.75} />
-                {aCriar ? "A criar…" : "Carregar dados de exemplo"}
+                {aCriar ? t("onboarding.aCriar") : t("onboarding.carregarExemplo")}
               </Button>
               <Button
                 variant="outline"
@@ -106,7 +103,7 @@ export function PrimeiroArranqueDialog() {
                 disabled={aCriar}
                 className="h-11 w-full"
               >
-                Começar vazio
+                {t("onboarding.comecarVazio")}
               </Button>
             </div>
           </>
