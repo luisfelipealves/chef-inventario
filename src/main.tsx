@@ -2,7 +2,10 @@ import { RouterProvider } from "@tanstack/react-router";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { getRouter } from "./router";
+import { inicializarTema } from "./lib/tema";
 import "./styles.css";
+
+inicializarTema();
 
 const router = getRouter();
 

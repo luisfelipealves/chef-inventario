@@ -38,6 +38,7 @@ import {
   backupParaPasta,
 } from "@/lib/backup-auto";
 import { getGeminiKey, setGeminiKey } from "@/lib/fatura-ocr";
+import { SeletorTema } from "@/components/SeletorTema";
 import { Input } from "@/components/ui/input";
 import {
   gravarNome,
@@ -479,6 +480,8 @@ export function DefinicoesSheet({
               </div>
             </div>
           )}
+
+          <SeletorTema />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="card-kicker">Leitura de faturas (IA)</span>
