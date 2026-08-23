@@ -30,6 +30,25 @@ export interface Receita {
   unidadeRendimento: UnidadeMedida;
   ingredientes: IngredienteReceita[];
   precoVenda?: number;
+  /** Doses produzidas e ainda não vendidas (stock de produto acabado). */
+  dosesProntas?: number;
+  createdAt: Date;
+}
+
+/**
+ * Registo de uma produção ("fiz N lotes desta receita").
+ * Ao registar, os ingredientes baixam na despensa e as doses prontas sobem.
+ */
+export interface Producao {
+  id: number;
+  /** Pode apontar para uma receita entretanto removida. */
+  receitaId: number;
+  /** Nome da receita no momento da produção. */
+  nome: string;
+  /** Nº de vezes que a receita foi feita. */
+  lotes: number;
+  /** Doses produzidas = lotes × rendimento no momento. */
+  doses: number;
   createdAt: Date;
 }
 
@@ -85,6 +104,7 @@ export const db = new Dexie("ChefGestaoDB") as Dexie & {
   clientes: EntityTable<Cliente, "id">;
   pedidos: EntityTable<Pedido, "id">;
   compras: EntityTable<Compra, "id">;
+  producoes: EntityTable<Producao, "id">;
 };
 
 db.version(1).stores({
@@ -118,4 +138,13 @@ db.version(5).stores({
   clientes: "++id, nome, telefone, nif, createdAt",
   pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
   compras: "++id, ingredienteId, createdAt",
+});
+
+db.version(6).stores({
+  ingredientes: "++id, nome, codigoBarras, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+  pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+  compras: "++id, ingredienteId, createdAt",
+  producoes: "++id, receitaId, createdAt",
 });

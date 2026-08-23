@@ -4,6 +4,7 @@ import {
   type Compra,
   type Ingrediente,
   type Pedido,
+  type Producao,
   type Receita,
 } from "@/lib/db";
 
@@ -26,6 +27,8 @@ export interface BackupData {
   pedidos: Pedido[];
   /** Ausente em backups anteriores à v0.6 — importa como vazio. */
   compras?: Compra[];
+  /** Ausente em backups anteriores à v1.1 — importa como vazio. */
+  producoes?: Producao[];
 }
 
 export interface ContagemBackup {
@@ -36,12 +39,13 @@ export interface ContagemBackup {
 }
 
 export async function recolherDados(): Promise<BackupData> {
-  const [ingredientes, receitas, clientes, pedidos, compras] = await Promise.all([
+  const [ingredientes, receitas, clientes, pedidos, compras, producoes] = await Promise.all([
     db.ingredientes.toArray(),
     db.receitas.toArray(),
     db.clientes.toArray(),
     db.pedidos.toArray(),
     db.compras.toArray(),
+    db.producoes.toArray(),
   ]);
   return {
     app: "chefgestao",
@@ -52,6 +56,7 @@ export async function recolherDados(): Promise<BackupData> {
     clientes,
     pedidos,
     compras,
+    producoes,
   };
 }
 
@@ -152,7 +157,7 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
 export async function importarBackup(dados: BackupData): Promise<ContagemBackup> {
   await db.transaction(
     "rw",
-    [db.ingredientes, db.receitas, db.clientes, db.pedidos, db.compras],
+    [db.ingredientes, db.receitas, db.clientes, db.pedidos, db.compras, db.producoes],
     async () => {
       await Promise.all([
         db.ingredientes.clear(),
@@ -160,12 +165,14 @@ export async function importarBackup(dados: BackupData): Promise<ContagemBackup>
         db.clientes.clear(),
         db.pedidos.clear(),
         db.compras.clear(),
+        db.producoes.clear(),
       ]);
       await db.ingredientes.bulkAdd(reviverDatas(dados.ingredientes));
       await db.receitas.bulkAdd(reviverDatas(dados.receitas));
       await db.clientes.bulkAdd(reviverDatas(dados.clientes));
       await db.pedidos.bulkAdd(reviverDatas(dados.pedidos));
       await db.compras.bulkAdd(reviverDatas(dados.compras ?? []));
+      await db.producoes.bulkAdd(reviverDatas(dados.producoes ?? []));
     },
   );
   return {
