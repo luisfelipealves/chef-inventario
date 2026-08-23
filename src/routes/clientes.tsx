@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Trash2, Users, Plus } from "lucide-react";
@@ -37,12 +38,13 @@ export const Route = createFileRoute("/clientes")({
   component: ClientesPage,
 });
 
-const FILTROS: FiltroOpcao[] = [
-  { key: "todos", label: "Todos" },
-  { key: "abertos", label: "Com pedidos abertos" },
+const FILTROS_KEYS = [
+  { key: "todos", labelKey: "clientes.filtroTodos" },
+  { key: "abertos", labelKey: "clientes.filtroAbertos" },
 ];
 
 function ClientesPage() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const navigate = useNavigate();
   const clientes = useLiveQuery(
@@ -116,10 +118,10 @@ function ClientesPage() {
     if (!toDelete) return;
     try {
       await db.clientes.delete(toDelete.id);
-      toast.success("Cliente removido");
+      toast.success(t("clientes.removido"));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao remover");
+      toast.error(t("clientes.erroRemover"));
     } finally {
       setToDelete(null);
     }
@@ -129,10 +131,10 @@ function ClientesPage() {
     <div className="lista-view">
       <div className="lista-panel">
         <FiltroBar
-          opcoes={FILTROS}
+          opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
           valor={filtroAtual}
           onChange={(k) => setFiltro("clientes", k)}
-          contagem={`${filtrados.length} de ${lista.length} clientes`}
+          contagem={t("clientes.contagem", { n: filtrados.length, total: lista.length })}
         />
 
         {clientes === undefined ? (
@@ -144,11 +146,11 @@ function ClientesPage() {
             <table className="lista-table">
               <thead>
                 <tr>
-                  <th>Cliente</th>
-                  <th>Telefone</th>
-                  <th>Endereço</th>
-                  <th>NIF</th>
-                  <th className="num">Pedidos</th>
+                  <th>{t("clientes.thCliente")}</th>
+                  <th>{t("clientes.thTelefone")}</th>
+                  <th>{t("clientes.thEndereco")}</th>
+                  <th>{t("clientes.thNif")}</th>
+                  <th className="num">{t("clientes.thPedidos")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,7 +196,7 @@ function ClientesPage() {
             }}
           />
         ) : (
-          <div className="detalhe-empty">Selecciona um cliente.</div>
+          <div className="detalhe-empty">{t("clientes.seleciona")}</div>
         )}
       </aside>
 
@@ -203,15 +205,18 @@ function ClientesPage() {
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover cliente?</AlertDialogTitle>
+            <AlertDialogTitle>{t("clientes.removerTitulo")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vais eliminar <strong>{toDelete?.nome}</strong>. Esta ação não pode ser desfeita.
+              {t("clientes.removerDesc", { nome: toDelete?.nome ?? "" })}{" "}
+              {t("comum.acaoIrreversivel")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
-              Remover
+              {t("comum.remover")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -237,6 +242,7 @@ function ClienteDetalhe({
   onDelete: () => void;
   onAbrirPedido: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const historico = useMemo(
     () =>
       [...pedidos]
@@ -250,28 +256,28 @@ function ClienteDetalhe({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <span className="card-kicker">Cliente</span>
+        <span className="card-kicker">{t("clientes.kicker")}</span>
         <h3 style={{ fontSize: 25, margin: "2px 0" }}>{cliente.nome}</h3>
       </div>
 
       <div className="detalhe-card">
         <div className="kv">
-          <span className="kv-label">Telefone</span>
+          <span className="kv-label">{t("clientes.telefone")}</span>
           <span>{cliente.telefone || "—"}</span>
         </div>
         <div className="kv">
-          <span className="kv-label">Endereço</span>
+          <span className="kv-label">{t("clientes.endereco")}</span>
           <span style={{ textAlign: "right", maxWidth: 220 }}>{cliente.endereco || "—"}</span>
         </div>
         <div className="kv">
-          <span className="kv-label">NIF</span>
+          <span className="kv-label">{t("clientes.nif")}</span>
           <span>{cliente.nif || "—"}</span>
         </div>
       </div>
 
       {historico.length > 0 && (
         <div>
-          <span className="card-kicker">Histórico</span>
+          <span className="card-kicker">{t("clientes.historico")}</span>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
             {historico.map(({ pedido, total }) => (
               <button
@@ -314,7 +320,7 @@ function ClienteDetalhe({
           justifyContent: "space-between",
         }}
       >
-        <span style={{ fontSize: 13 }}>Total encomendado</span>
+        <span style={{ fontSize: 13 }}>{t("clientes.totalEncomendado")}</span>
         <span
           style={{
             fontFamily: "var(--font-heading)",
@@ -335,7 +341,7 @@ function ClienteDetalhe({
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={onDelete}
-          aria-label="Remover cliente"
+          aria-label={t("clientes.removerCliente")}
         >
           <Trash2 size={16} strokeWidth={2.75} />
         </button>
@@ -357,18 +363,19 @@ function SkeletonTabela() {
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="lista-empty">
       <div className="lista-empty-icon">
         <Users size={28} strokeWidth={2.75} />
       </div>
-      <h2 style={{ fontSize: 20 }}>Ainda sem clientes</h2>
+      <h2 style={{ fontSize: 20 }}>{t("clientes.vazioTitulo")}</h2>
       <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
-        Regista o nome, telefone, endereço e NIF dos teus clientes para encomendas futuras.
+        {t("clientes.vazioDesc")}
       </p>
       <button type="button" className="btn btn-primary" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.75} />
-        Novo cliente
+        {t("topbar.novoCliente")}
       </button>
     </div>
   );

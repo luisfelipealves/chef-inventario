@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { z } from "zod";
 import {
   Sheet,
@@ -11,25 +11,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { db, type Cliente } from "@/lib/db";
 
-const schema = z.object({
-  nome: z.string().trim().min(1, "Indica o nome").max(80, "Máximo 80 caracteres"),
-  telefone: z
-    .string()
-    .trim()
-    .max(20, "Máximo 20 caracteres")
-    .refine((v) => v === "" || /^[+0-9 ()-]{6,20}$/.test(v), "Telefone inválido"),
-  endereco: z.string().trim().max(160, "Máximo 160 caracteres"),
-  nif: z
-    .string()
-    .trim()
-    .max(15, "Máximo 15 caracteres")
-    .refine((v) => v === "" || /^[0-9]{9,15}$/.test(v), "NIF inválido"),
-});
+function criarSchema(t: (k: string, o?: Record<string, unknown>) => string) {
+  return z.object({
+    nome: z
+      .string()
+      .trim()
+      .min(1, t("clienteForm.errNome"))
+      .max(80, t("clienteForm.errMax", { n: 80 })),
+    telefone: z
+      .string()
+      .trim()
+      .max(20, t("clienteForm.errMax", { n: 20 }))
+      .refine((v) => v === "" || /^[+0-9 ()-]{6,20}$/.test(v), t("clienteForm.errTelefone")),
+    endereco: z
+      .string()
+      .trim()
+      .max(160, t("clienteForm.errMax", { n: 160 })),
+    nif: z
+      .string()
+      .trim()
+      .max(15, t("clienteForm.errMax", { n: 15 }))
+      .refine((v) => v === "" || /^[0-9]{9,15}$/.test(v), t("clienteForm.errNif")),
+  });
+}
 
-type FormValues = z.infer<typeof schema>;
+type FormValues = z.infer<ReturnType<typeof criarSchema>>;
 
 const empty: FormValues = { nome: "", telefone: "", endereco: "", nif: "" };
 
@@ -42,6 +52,8 @@ export function ClienteFormDialog({
   onOpenChange: (open: boolean) => void;
   cliente?: Cliente | null;
 }) {
+  const { t } = useTranslation();
+  const schema = useMemo(() => criarSchema(t), [t]);
   const isEdit = !!cliente;
   const [values, setValues] = useState<FormValues>(empty);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
@@ -82,15 +94,15 @@ export function ClienteFormDialog({
     try {
       if (isEdit && cliente) {
         await db.clientes.update(cliente.id, parsed.data);
-        toast.success("Cliente atualizado");
+        toast.success(t("clienteForm.atualizado"));
       } else {
         await db.clientes.add({ ...parsed.data, createdAt: new Date() } as Cliente);
-        toast.success("Cliente adicionado");
+        toast.success(t("clienteForm.adicionado"));
       }
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao guardar");
+      toast.error(t("clienteForm.erroGuardar"));
     } finally {
       setSubmitting(false);
     }
@@ -103,21 +115,21 @@ export function ClienteFormDialog({
         className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
-          <span className="card-kicker">Cliente</span>
+          <span className="card-kicker">{t("clienteForm.kicker")}</span>
           <SheetTitle className="font-heading text-2xl font-normal">
-            {isEdit ? "Editar cliente" : "Novo cliente"}
+            {isEdit ? t("clienteForm.editarTitulo") : t("clienteForm.novoTitulo")}
           </SheetTitle>
-          <SheetDescription>Guarda os contactos dos teus clientes no dispositivo.</SheetDescription>
+          <SheetDescription>{t("clienteForm.desc")}</SheetDescription>
         </SheetHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="cliente-nome">Nome</Label>
+            <Label htmlFor="cliente-nome">{t("clienteForm.nome")}</Label>
             <Input
               id="cliente-nome"
               value={values.nome}
               onChange={(e) => set("nome", e.target.value)}
-              placeholder="Ex.: Maria Silva"
+              placeholder={t("clienteForm.nomePlaceholder")}
               className="h-12 text-base"
               autoComplete="name"
             />
@@ -125,13 +137,13 @@ export function ClienteFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cliente-telefone">Telefone</Label>
+            <Label htmlFor="cliente-telefone">{t("clienteForm.telefone")}</Label>
             <Input
               id="cliente-telefone"
               inputMode="tel"
               value={values.telefone}
               onChange={(e) => set("telefone", e.target.value)}
-              placeholder="Ex.: 912 345 678"
+              placeholder={t("clienteForm.telefonePlaceholder")}
               className="h-12 text-base"
               autoComplete="tel"
             />
@@ -139,12 +151,12 @@ export function ClienteFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cliente-endereco">Endereço</Label>
+            <Label htmlFor="cliente-endereco">{t("clienteForm.endereco")}</Label>
             <Input
               id="cliente-endereco"
               value={values.endereco}
               onChange={(e) => set("endereco", e.target.value)}
-              placeholder="Rua, nº, código postal, localidade"
+              placeholder={t("clienteForm.enderecoPlaceholder")}
               className="h-12 text-base"
               autoComplete="street-address"
             />
@@ -152,13 +164,13 @@ export function ClienteFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="cliente-nif">NIF</Label>
+            <Label htmlFor="cliente-nif">{t("clienteForm.nif")}</Label>
             <Input
               id="cliente-nif"
               inputMode="numeric"
               value={values.nif}
               onChange={(e) => set("nif", e.target.value)}
-              placeholder="Ex.: 123456789"
+              placeholder={t("clienteForm.nifPlaceholder")}
               className="h-12 text-base"
             />
             {errors.nif && <p className="text-xs text-destructive">{errors.nif}</p>}
@@ -171,10 +183,10 @@ export function ClienteFormDialog({
               className="h-11 flex-1 rounded-full"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              {t("comum.cancelar")}
             </Button>
             <Button type="submit" className="h-11 flex-1 rounded-full" disabled={submitting}>
-              {isEdit ? "Guardar" : "Adicionar"}
+              {isEdit ? t("comum.guardar") : t("clienteForm.adicionar")}
             </Button>
           </SheetFooter>
         </form>

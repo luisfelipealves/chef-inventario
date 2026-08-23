@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo, useState, type CSSProperties } from "react";
 import { FileDown } from "lucide-react";
@@ -17,11 +18,12 @@ import {
 } from "recharts";
 import { db, type Compra, type Pedido } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
-import { totaisPedido, estadoLabel } from "@/lib/pedido-calc";
+import { totaisPedido } from "@/lib/pedido-calc";
 import { parseData } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 import { exportarFinanceiroCsv, type MovimentoCsv } from "@/lib/financeiro-csv";
+import { localeAtual } from "@/lib/i18n";
 import type { Cliente, EstadoPedido, Ingrediente, Receita } from "@/lib/db";
 
 export const Route = createFileRoute("/financeiro")({
@@ -39,12 +41,12 @@ export const Route = createFileRoute("/financeiro")({
 
 const DIA_MS = 24 * 60 * 60 * 1000;
 
-const PERIODOS: FiltroOpcao[] = [
-  { key: "este-mes", label: "Este mês" },
-  { key: "30d", label: "30 dias" },
-  { key: "90d", label: "90 dias" },
-  { key: "este-ano", label: "Este ano" },
-  { key: "perso", label: "Personalizado" },
+const PERIODOS_KEYS = [
+  { key: "este-mes", labelKey: "financeiro.pEsteMes" },
+  { key: "30d", labelKey: "financeiro.p30d" },
+  { key: "90d", labelKey: "financeiro.p90d" },
+  { key: "este-ano", labelKey: "financeiro.pEsteAno" },
+  { key: "perso", labelKey: "financeiro.pPerso" },
 ];
 
 function hoje(): Date {
@@ -85,7 +87,7 @@ function periodoDe(preset: string, de: string, ate: string): { inicio: Date; fim
 }
 
 function mesCurto(d: Date): string {
-  return new Intl.DateTimeFormat("pt-PT", { month: "short" }).format(d).replace(".", "");
+  return new Intl.DateTimeFormat(localeAtual(), { month: "short" }).format(d).replace(".", "");
 }
 
 interface Ponto {
@@ -165,6 +167,7 @@ const COR_ESTADO: Record<EstadoPedido, string> = {
 };
 
 function FinanceiroPage() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const pedidos = useLiveQuery(() => (hydrated ? db.pedidos.toArray() : []), [hydrated], []);
   const compras = useLiveQuery(() => (hydrated ? db.compras.toArray() : []), [hydrated], []);
@@ -237,7 +240,7 @@ function FinanceiroPage() {
       ticketMedio: ativos.length > 0 ? receita / ativos.length : 0,
       estados: [...porEstado.entries()].map(([estado, n]) => ({
         estado,
-        nome: estadoLabel[estado],
+        nome: t(`estado.${estado}`),
         n,
       })),
       ultimasCompras: [...comprasPeriodo]
@@ -251,7 +254,7 @@ function FinanceiroPage() {
             .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "?"}`)
             .join(", ")}`,
           contraparte: clienteMap.get(p.pedido.clienteId)?.nome ?? "",
-          estado: estadoLabel[p.pedido.estado],
+          estado: t(`estado.${p.pedido.estado}`),
           valor: p.venda,
         })),
         ...comprasPeriodo.map((c): MovimentoCsv => ({
@@ -264,29 +267,29 @@ function FinanceiroPage() {
         })),
       ],
     };
-  }, [pedidos, compras, receitaMap, ingMap, clienteMap, inicio, fim]);
+  }, [pedidos, compras, receitaMap, ingMap, clienteMap, inicio, fim, t]);
 
   async function exportarCsv() {
     if (dados.movimentos.length === 0) {
-      toast.info("Sem movimentos no período para exportar.");
+      toast.info(t("financeiro.semMovimentos"));
       return;
     }
     try {
       const nome = await exportarFinanceiroCsv(dados.movimentos, inicio, fim);
-      if (nome) toast.success(`CSV exportado: ${nome}`);
+      if (nome) toast.success(t("financeiro.csvExportado", { nome }));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao exportar o CSV.");
+      toast.error(t("financeiro.erroCsv"));
     }
   }
 
   return (
     <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
       <FiltroBar
-        opcoes={PERIODOS}
+        opcoes={PERIODOS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
         valor={preset}
         onChange={setPreset}
-        contagem={`${dados.nPedidos} pedidos · ${dados.nCompras} compras`}
+        contagem={t("financeiro.contagem", { pedidos: dados.nPedidos, compras: dados.nCompras })}
         acao={
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
             {preset === "perso" && (
@@ -297,7 +300,9 @@ function FinanceiroPage() {
                   onChange={(e) => setDe(e.target.value)}
                   style={ESTILO_INPUT_DATA}
                 />
-                <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>a</span>
+                <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>
+                  {t("financeiro.a")}
+                </span>
                 <input
                   type="date"
                   value={ate}
@@ -313,7 +318,7 @@ function FinanceiroPage() {
               style={{ height: 34, fontSize: 13 }}
             >
               <FileDown size={15} strokeWidth={2.75} />
-              Exportar CSV
+              {t("financeiro.exportarCsv")}
             </button>
           </span>
         }
@@ -322,24 +327,27 @@ function FinanceiroPage() {
       {/* Indicadores do período */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
         <Indicador
-          kicker="Receita"
+          kicker={t("financeiro.kReceita")}
           valor={formatEuro(dados.receita, { compact: true })}
-          nota={`${dados.nPedidos} pedidos · ticket ${formatEuro(dados.ticketMedio, { compact: true })}`}
+          nota={t("financeiro.kReceitaNota", {
+            pedidos: dados.nPedidos,
+            ticket: formatEuro(dados.ticketMedio, { compact: true }),
+          })}
         />
         <Indicador
-          kicker="Gastos em compras"
+          kicker={t("financeiro.kGastos")}
           valor={formatEuro(dados.gastos, { compact: true })}
-          nota="valor pago em ingredientes"
+          nota={t("financeiro.kGastosNota")}
         />
         <Indicador
-          kicker="Custo de produção"
+          kicker={t("financeiro.kCusto")}
           valor={formatEuro(dados.custoProducao, { compact: true })}
-          nota="teórico, pelos pedidos"
+          nota={t("financeiro.kCustoNota")}
         />
         <Indicador
-          kicker="Lucro estimado"
+          kicker={t("financeiro.kLucro")}
           valor={formatEuro(dados.lucro, { compact: true })}
-          nota="receita − custo de produção"
+          nota={t("financeiro.kLucroNota")}
         />
       </div>
 
@@ -361,7 +369,7 @@ function FinanceiroPage() {
             boxShadow: "var(--shadow-sm)",
           }}
         >
-          <h4 style={{ fontSize: 20 }}>Receita vs. gastos</h4>
+          <h4 style={{ fontSize: 20 }}>{t("financeiro.graficoTitulo")}</h4>
           <div style={{ height: 280, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dados.serie} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
@@ -381,7 +389,9 @@ function FinanceiroPage() {
                 <Tooltip
                   formatter={(v: number | string, nome: string) => [
                     formatEuro(Number(v), { compact: true }),
-                    nome === "receita" ? "Receita" : "Gastos",
+                    nome === "receita"
+                      ? t("financeiro.tooltipReceita")
+                      : t("financeiro.tooltipGastos"),
                   ]}
                   cursor={{ fill: "var(--color-neutral-100)" }}
                 />
@@ -391,8 +401,8 @@ function FinanceiroPage() {
             </ResponsiveContainer>
           </div>
           <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
-            <LegendaCor cor="var(--color-accent-2-500)" label="Receita (pedidos)" />
-            <LegendaCor cor="var(--color-accent-500)" label="Gastos (compras)" />
+            <LegendaCor cor="var(--color-accent-2-500)" label={t("financeiro.legReceita")} />
+            <LegendaCor cor="var(--color-accent-500)" label={t("financeiro.legGastos")} />
           </div>
         </section>
 
@@ -406,10 +416,10 @@ function FinanceiroPage() {
               boxShadow: "var(--shadow-sm)",
             }}
           >
-            <h4 style={{ fontSize: 20 }}>Pedidos por estado</h4>
+            <h4 style={{ fontSize: 20 }}>{t("financeiro.estadosTitulo")}</h4>
             {dados.estados.length === 0 ? (
               <p style={{ fontSize: 13, color: "var(--color-neutral-600)", marginTop: 8 }}>
-                Sem pedidos no período.
+                {t("financeiro.semPedidosPeriodo")}
               </p>
             ) : (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -429,7 +439,12 @@ function FinanceiroPage() {
                           <Cell key={e.estado} fill={COR_ESTADO[e.estado]} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number | string) => [String(v), "pedidos"]} />
+                      <Tooltip
+                        formatter={(v: number | string) => [
+                          String(v),
+                          t("financeiro.tooltipPedidos"),
+                        ]}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -468,12 +483,11 @@ function FinanceiroPage() {
               boxShadow: "var(--shadow-sm)",
             }}
           >
-            <h4 style={{ fontSize: 20 }}>Últimas compras</h4>
+            <h4 style={{ fontSize: 20 }}>{t("financeiro.comprasTitulo")}</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 12 }}>
               {dados.ultimasCompras.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
-                  Sem compras registadas no período. As compras passam a ficar no histórico a partir
-                  de agora — via "Adicionar compra" ou importação de fatura.
+                  {t("financeiro.semCompras")}
                 </p>
               ) : (
                 dados.ultimasCompras.map((c) => (
