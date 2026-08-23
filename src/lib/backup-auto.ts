@@ -16,7 +16,9 @@ import { recolherDados, emTauri } from "@/lib/backup";
  */
 
 const PASTA = "backups";
-const PREFIXO = "chefgestao-backup-";
+const PREFIXO = "caderninho-backup-";
+/** Prefixo da marca anterior — os ficheiros antigos ainda contam para a rotação. */
+const PREFIXO_LEGADO = "chefgestao-backup-";
 const DIAS_RETENCAO = 60;
 
 const ULTIMO_KEY = "chefgestao:ultimo-backup-auto";
@@ -64,8 +66,13 @@ function limiteRetencaoISO(): string {
 }
 
 function ehBackupAntigo(nome: string, limiteISO: string): boolean {
-  if (!nome.startsWith(PREFIXO) || !nome.endsWith(".json")) return false;
-  const data = nome.slice(PREFIXO.length, PREFIXO.length + 10);
+  const prefixo = nome.startsWith(PREFIXO)
+    ? PREFIXO
+    : nome.startsWith(PREFIXO_LEGADO)
+      ? PREFIXO_LEGADO
+      : null;
+  if (!prefixo || !nome.endsWith(".json")) return false;
+  const data = nome.slice(prefixo.length, prefixo.length + 10);
   return data < limiteISO;
 }
 

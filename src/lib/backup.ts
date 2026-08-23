@@ -75,7 +75,7 @@ export function emTauri(): boolean {
 export async function exportarBackup(): Promise<string | null> {
   const dados = await recolherDados();
   const json = JSON.stringify(dados, null, 2);
-  const nome = `chefgestao-backup-${dados.exportadoEm.slice(0, 10)}.json`;
+  const nome = `caderninho-backup-${dados.exportadoEm.slice(0, 10)}.json`;
 
   if (emTauri()) {
     const { save } = await import("@tauri-apps/plugin-dialog");
@@ -137,7 +137,7 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
     Array.isArray(dados.clientes) &&
     Array.isArray(dados.pedidos);
   if (!ok) {
-    throw new Error("Este ficheiro não é uma cópia de segurança do ChefGestão.");
+    throw new Error("Este ficheiro não é uma cópia de segurança do Caderninho de Receitas.");
   }
   return {
     dados,

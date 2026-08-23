@@ -1,7 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 
 /**
- * ChefGestão — Local-First database (IndexedDB via Dexie).
+ * Caderninho de Receitas — base de dados local-first (IndexedDB via Dexie).
  * Os dados vivem todos no dispositivo do utilizador — sem nuvem, sem contas.
  */
 

@@ -27,7 +27,7 @@ import type { Cliente, EstadoPedido, Ingrediente, Receita } from "@/lib/db";
 export const Route = createFileRoute("/financeiro")({
   head: () => ({
     meta: [
-      { title: "Financeiro — ChefGestão" },
+      { title: "Financeiro — Caderninho de Receitas" },
       {
         name: "description",
         content: "Receita, gastos e lucro por período, com gráficos simples.",
