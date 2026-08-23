@@ -37,6 +37,7 @@ import {
   definirPastaBackupExtra,
   backupParaPasta,
 } from "@/lib/backup-auto";
+import { getGeminiKey, setGeminiKey } from "@/lib/fatura-ocr";
 import { Input } from "@/components/ui/input";
 import { gravarNome, useNomeUtilizador } from "@/lib/perfil";
 
@@ -128,6 +129,37 @@ export function DefinicoesSheet({
     const reader = new FileReader();
     reader.onload = () => prepararImport(String(reader.result));
     reader.readAsText(file);
+  }
+
+  const [chaveInput, setChaveInput] = useState("");
+  const [temChave, setTemChave] = useState(false);
+  useEffect(() => {
+    if (open) {
+      setTemChave(Boolean(getGeminiKey()));
+      setChaveInput("");
+    }
+  }, [open]);
+
+  function guardarChaveGemini() {
+    setGeminiKey(chaveInput);
+    setTemChave(Boolean(chaveInput.trim()));
+    setChaveInput("");
+    toast.success("Chave guardada — a leitura de faturas está ativa.");
+  }
+
+  function removerChaveGemini() {
+    setGeminiKey("");
+    setTemChave(false);
+    toast.success("Chave removida.");
+  }
+
+  async function copiarLinkChave() {
+    try {
+      await navigator.clipboard.writeText("https://aistudio.google.com/apikey");
+      toast.success("Link copiado — abre-o no browser.");
+    } catch {
+      toast.error("Não foi possível copiar. O endereço é aistudio.google.com/apikey");
+    }
   }
 
   async function escolherPastaBackup() {
@@ -338,6 +370,68 @@ export function DefinicoesSheet({
               </div>
             </div>
           )}
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span className="card-kicker">Leitura de faturas (IA)</span>
+            <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+              Funcionalidade opcional: fotografa um talão e o stock atualiza-se sozinho. Usa a API
+              gratuita do Google Gemini com uma chave tua, guardada só neste dispositivo — sem
+              chave, a app funciona na mesma e registas as compras manualmente.
+            </p>
+            {temChave ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <p style={{ fontSize: 12, flex: 1 }}>
+                  Chave configurada — a leitura de faturas está ativa.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={removerChaveGemini}
+                  style={{ height: 38 }}
+                >
+                  Remover
+                </button>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                  1. Abre <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span> no
+                  browser (conta Google, grátis) · 2. "Create API key" · 3. Cola a chave aqui.
+                </p>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    guardarChaveGemini();
+                  }}
+                  style={{ display: "flex", gap: 8 }}
+                >
+                  <Input
+                    type="password"
+                    value={chaveInput}
+                    onChange={(e) => setChaveInput(e.target.value)}
+                    placeholder="Chave da API do Gemini"
+                    className="h-11"
+                  />
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={!chaveInput.trim()}
+                    style={{ height: 44 }}
+                  >
+                    Guardar
+                  </button>
+                </form>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block"
+                  onClick={() => void copiarLinkChave()}
+                  style={{ height: 38 }}
+                >
+                  Copiar link para obter a chave
+                </button>
+              </>
+            )}
+          </div>
 
           {temDemo && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
