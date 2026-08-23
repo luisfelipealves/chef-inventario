@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Trash2, ClipboardList, Plus } from "lucide-react";
-import { db, type Pedido } from "@/lib/db";
+import { Pencil, Trash2, ClipboardList, Plus, FileDown } from "lucide-react";
+import { db, type Cliente, type Pedido } from "@/lib/db";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportarPedidoPdf, type TipoDocumento } from "@/lib/pedido-pdf";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,7 +27,7 @@ import { totaisPedido, custoDoseReceita } from "@/lib/pedido-calc";
 import { dataEntregaCurta, dataEntregaLonga } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
-import { EstadoTag } from "@/components/EstadoTag";
+import { EstadoSelect } from "@/components/pedidos/EstadoSelect";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 
 export const Route = createFileRoute("/pedidos")({
@@ -169,7 +176,7 @@ function PedidosPage() {
                       <td className="num">{formatEuro(t.custo, { compact: true })}</td>
                       <td className="num">{formatEuro(t.venda, { compact: true })}</td>
                       <td>
-                        <EstadoTag estado={p.estado} />
+                        <EstadoSelect pedido={p} />
                       </td>
                     </tr>
                   );
@@ -234,7 +241,7 @@ function PedidoDetalhe({
 }: {
   pedido: Pedido;
   clienteNome: string;
-  cliente: { telefone: string; endereco: string } | undefined;
+  cliente: Cliente | undefined;
   receitaMap: Map<number, import("@/lib/db").Receita>;
   ingMap: Map<number, import("@/lib/db").Ingrediente>;
   onEdit: () => void;
@@ -242,13 +249,23 @@ function PedidoDetalhe({
 }) {
   const t = totaisPedido(pedido.itens, receitaMap, ingMap);
 
+  async function exportarPdf(tipo: TipoDocumento) {
+    try {
+      const nome = await exportarPedidoPdf({ tipo, pedido, cliente, receitaMap });
+      if (nome) toast.success(`PDF guardado: ${nome}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar o PDF");
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
         <span className="card-kicker">Pedido</span>
         <h3 style={{ fontSize: 25, margin: "2px 0 8px" }}>{clienteNome}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <EstadoTag estado={pedido.estado} />
+          <EstadoSelect pedido={pedido} />
           <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
             Entrega {dataEntregaLonga(pedido.dataEntrega)}
           </span>
@@ -360,6 +377,21 @@ function PedidoDetalhe({
           <Pencil size={16} strokeWidth={2.75} />
           Editar pedido
         </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="btn btn-secondary btn-icon" aria-label="Exportar PDF">
+              <FileDown size={16} strokeWidth={2.75} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => void exportarPdf("orcamento")}>
+              Orçamento (PDF)
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void exportarPdf("pedido")}>
+              Resumo do pedido (PDF)
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <button
           type="button"
           className="btn btn-secondary btn-icon"
