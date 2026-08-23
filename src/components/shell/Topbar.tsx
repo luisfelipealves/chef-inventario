@@ -3,6 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
 import { useShell, type ModuloLista } from "@/lib/shell";
+import { useNomeUtilizador } from "@/lib/perfil";
 import type { Cliente, Ingrediente, Pedido, Receita } from "@/lib/db";
 
 interface Datasets {
@@ -26,7 +27,7 @@ function saudacao(hora: number): string {
   return "Boa noite";
 }
 
-function configPara(pathname: string): RotaConfig {
+function configPara(pathname: string, nome: string): RotaConfig {
   switch (pathname) {
     case "/pedidos":
       return { titulo: "Pedidos", primario: { label: "Novo pedido", module: "pedidos" } };
@@ -39,11 +40,15 @@ function configPara(pathname: string): RotaConfig {
       };
     case "/clientes":
       return { titulo: "Clientes", primario: { label: "Novo cliente", module: "clientes" } };
-    default:
+    case "/financeiro":
+      return { titulo: "Financeiro", primario: { label: "Novo pedido", module: "pedidos" } };
+    default: {
+      const base = saudacao(new Date().getHours());
       return {
-        titulo: saudacao(new Date().getHours()),
+        titulo: nome ? `${base}, ${nome}` : base,
         primario: { label: "Novo pedido", module: "pedidos" },
       };
+    }
   }
 }
 
@@ -51,7 +56,8 @@ export function Topbar({ datasets }: { datasets: Datasets }) {
   const { pathname } = useLocation();
   const { openSheet } = useShell();
   const searchRef = useRef<HTMLInputElement>(null);
-  const { titulo, primario } = configPara(pathname);
+  const nome = useNomeUtilizador();
+  const { titulo, primario } = configPara(pathname, nome ?? "");
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
