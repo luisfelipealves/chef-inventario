@@ -31,7 +31,12 @@ import {
   type ContagemBackup,
 } from "@/lib/backup";
 import { apagarDadosExemplo, useTemDadosExemplo } from "@/lib/demo-data";
-import { ultimoBackupAuto } from "@/lib/backup-auto";
+import {
+  ultimoBackupAuto,
+  usePastaBackupExtra,
+  definirPastaBackupExtra,
+  backupParaPasta,
+} from "@/lib/backup-auto";
 import { Input } from "@/components/ui/input";
 import { gravarNome, useNomeUtilizador } from "@/lib/perfil";
 
@@ -54,6 +59,7 @@ export function DefinicoesSheet({
     return { ingredientes, receitas, clientes, pedidos };
   }, [hydrated]);
 
+  const pastaExtra = usePastaBackupExtra();
   const temDemo = useTemDadosExemplo();
   const [confirmarDemo, setConfirmarDemo] = useState(false);
   const [aApagarDemo, setAApagarDemo] = useState(false);
@@ -122,6 +128,29 @@ export function DefinicoesSheet({
     const reader = new FileReader();
     reader.onload = () => prepararImport(String(reader.result));
     reader.readAsText(file);
+  }
+
+  async function escolherPastaBackup() {
+    try {
+      const { open: abrirDialogo } = await import("@tauri-apps/plugin-dialog");
+      const dir = await abrirDialogo({
+        directory: true,
+        multiple: false,
+        title: "Pasta para os backups automáticos",
+      });
+      if (typeof dir !== "string") return;
+      definirPastaBackupExtra(dir);
+      await backupParaPasta(dir);
+      toast.success("Pasta definida — o backup de hoje já ficou guardado lá.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível definir a pasta de backup.");
+    }
+  }
+
+  function removerPastaBackup() {
+    definirPastaBackupExtra(null);
+    toast.success("Backup para pasta adicional desativado.");
   }
 
   async function confirmarApagarDemo() {
@@ -267,6 +296,48 @@ export function DefinicoesSheet({
               style={{ display: "none" }}
             />
           </div>
+
+          {emTauri() && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span className="card-kicker">Backup na nuvem</span>
+              <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                Escolhe uma pasta sincronizada (iCloud Drive, Google Drive, Dropbox…) e o backup
+                diário fica também lá — a nuvem trata do resto.
+              </p>
+              {pastaExtra && (
+                <p
+                  style={{
+                    fontSize: 11,
+                    color: "var(--color-neutral-600)",
+                    fontVariantNumeric: "tabular-nums",
+                    wordBreak: "break-all",
+                  }}
+                >
+                  {pastaExtra}
+                </p>
+              )}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => void escolherPastaBackup()}
+                  style={{ height: 44, flex: 1 }}
+                >
+                  {pastaExtra ? "Mudar pasta…" : "Escolher pasta…"}
+                </button>
+                {pastaExtra && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={removerPastaBackup}
+                    style={{ height: 44 }}
+                  >
+                    Desativar
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
 
           {temDemo && (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
