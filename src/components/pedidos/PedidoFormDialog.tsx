@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { entregarPedido } from "@/lib/producao";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
@@ -150,9 +151,21 @@ export function PedidoFormDialog({
       if (isEdit && pedido) {
         await db.pedidos.update(pedido.id, payload);
         toast.success("Pedido atualizado");
+        if (estado === "entregue" && pedido.estado !== "entregue") {
+          const avisos = await entregarPedido({ ...pedido, ...payload }, { produzirFaltas: false });
+          avisos.forEach((a) => toast.warning(a));
+        }
       } else {
-        await db.pedidos.add({ ...payload, createdAt: new Date() } as Pedido);
+        const novo = { ...payload, createdAt: new Date() } as Pedido;
+        const id = await db.pedidos.add(novo);
         toast.success("Pedido criado");
+        if (estado === "entregue") {
+          const avisos = await entregarPedido(
+            { ...novo, id: id as number },
+            { produzirFaltas: false },
+          );
+          avisos.forEach((a) => toast.warning(a));
+        }
       }
       onOpenChange(false);
     } catch (err) {

@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Printer, BookOpen, Plus } from "lucide-react";
+import { Pencil, Printer, BookOpen, Plus, CookingPot } from "lucide-react";
 import { db, type Receita, type Ingrediente } from "@/lib/db";
 import {
   AlertDialog,
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
+import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
 import { custoTotalReceita, custoPorDose, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
@@ -92,6 +93,7 @@ function ReceitasPage() {
     filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null;
 
   const [formOpen, setFormOpen] = useState(false);
+  const [producaoOpen, setProducaoOpen] = useState(false);
   const [editing, setEditing] = useState<Receita | null>(null);
   const [toDelete, setToDelete] = useState<Receita | null>(null);
 
@@ -189,11 +191,21 @@ function ReceitasPage() {
             onEdit={() =>
               openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
             }
+            onProduzir={() => setProducaoOpen(true)}
           />
         ) : (
           <div className="detalhe-empty">Selecciona uma receita.</div>
         )}
       </aside>
+
+      {selecionado && (
+        <ProducaoDialog
+          open={producaoOpen}
+          onOpenChange={setProducaoOpen}
+          receita={selecionado.receita}
+          ingMap={ingMap}
+        />
+      )}
 
       <ReceitaFormDialog
         open={formOpen}
@@ -226,21 +238,29 @@ function ReceitaDetalhe({
   calc,
   ingMap,
   onEdit,
+  onProduzir,
 }: {
   calc: ReceitaCalc;
   ingMap: Map<number, Ingrediente>;
   onEdit: () => void;
+  onProduzir: () => void;
 }) {
   const { receita, custoTotal, custoDose, margem } = calc;
+  const prontas = receita.dosesProntas ?? 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
         <span className="card-kicker">Ficha técnica</span>
         <h3 style={{ fontSize: 25, margin: "2px 0 4px" }}>{receita.nome}</h3>
-        <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-          Rende {receita.rendimento} {receita.unidadeRendimento}
-        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+            Rende {receita.rendimento} {receita.unidadeRendimento}
+          </span>
+          <span className={prontas > 0 ? "tag tag-accent-2" : "tag tag-outline"}>
+            {prontas} {receita.unidadeRendimento} prontas
+          </span>
+        </div>
       </div>
 
       <div className="detalhe-card" style={{ padding: "14px 18px" }}>
@@ -390,9 +410,17 @@ function ReceitaDetalhe({
       )}
 
       <div className="detalhe-actions">
-        <button type="button" className="btn btn-primary btn-block" onClick={onEdit}>
+        <button type="button" className="btn btn-primary btn-block" onClick={onProduzir}>
+          <CookingPot size={16} strokeWidth={2.75} />
+          Registar produção
+        </button>
+        <button
+          type="button"
+          className="btn btn-secondary btn-icon"
+          onClick={onEdit}
+          aria-label="Editar ficha"
+        >
           <Pencil size={16} strokeWidth={2.75} />
-          Editar ficha
         </button>
         <button
           type="button"
