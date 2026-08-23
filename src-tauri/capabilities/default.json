@@ -21,7 +21,7 @@
     },
     {
       "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$APPDATA/backups" }, { "path": "$APPDATA/backups/**" }]
+      "allow": [{ "path": "**" }]
     },
     {
       "identifier": "fs:allow-mkdir",
@@ -29,11 +29,11 @@
     },
     {
       "identifier": "fs:allow-read-dir",
-      "allow": [{ "path": "$APPDATA/backups" }]
+      "allow": [{ "path": "**" }]
     },
     {
       "identifier": "fs:allow-remove",
-      "allow": [{ "path": "$APPDATA/backups/**" }]
+      "allow": [{ "path": "**/chefgestao-backup-*.json" }, { "path": "$APPDATA/backups/**" }]
     }
   ]
 }
