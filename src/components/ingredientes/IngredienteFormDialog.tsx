@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ScanLine } from "lucide-react";
 import { z } from "zod";
 import { BarcodeScannerDialog } from "@/components/ingredientes/BarcodeScannerDialog";
@@ -25,26 +26,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { db, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
-
-const schema = z.object({
-  nome: z.string().trim().min(1, "Indica o nome").max(80, "Máximo 80 caracteres"),
-  unidade: z.enum(["g", "kg", "ml", "l", "un"]),
-  quantidadeEmbalagem: z.coerce
-    .number({ invalid_type_error: "Número inválido" })
-    .positive("Deve ser maior que 0"),
-  precoEmbalagem: z.coerce
-    .number({ invalid_type_error: "Número inválido" })
-    .nonnegative("Não pode ser negativo"),
-});
-
-const addSchema = z.object({
-  quantidade: z.coerce
-    .number({ invalid_type_error: "Número inválido" })
-    .positive("Deve ser maior que 0"),
-  preco: z.coerce
-    .number({ invalid_type_error: "Número inválido" })
-    .nonnegative("Não pode ser negativo"),
-});
 
 type FormValues = {
   nome: string;
@@ -87,7 +68,27 @@ export function IngredienteFormDialog({
   prefill?: IngredientePrefill | null;
   initialTab?: "dados" | "compra";
 }) {
+  const { t } = useTranslation();
   const isEdit = !!ingrediente;
+  const { schema, addSchema } = useMemo(() => {
+    const numero = { invalid_type_error: t("ingredienteForm.errNumero") };
+    return {
+      schema: z.object({
+        nome: z
+          .string()
+          .trim()
+          .min(1, t("ingredienteForm.errNome"))
+          .max(80, t("ingredienteForm.errMax")),
+        unidade: z.enum(["g", "kg", "ml", "l", "un"]),
+        quantidadeEmbalagem: z.coerce.number(numero).positive(t("ingredienteForm.errPositivo")),
+        precoEmbalagem: z.coerce.number(numero).nonnegative(t("ingredienteForm.errNaoNegativo")),
+      }),
+      addSchema: z.object({
+        quantidade: z.coerce.number(numero).positive(t("ingredienteForm.errPositivo")),
+        preco: z.coerce.number(numero).nonnegative(t("ingredienteForm.errNaoNegativo")),
+      }),
+    };
+  }, [t]);
   const [tab, setTab] = useState<"dados" | "compra">("dados");
   const [values, setValues] = useState<FormValues>(empty);
   const [addValues, setAddValues] = useState<AddValues>(emptyAdd);
@@ -108,7 +109,7 @@ export function IngredienteFormDialog({
     try {
       const produto = await fetchProdutoOFF(code);
       if (!produto || !produto.nome) {
-        toast.error("Produto não encontrado no Open Food Facts");
+        toast.error(t("ingredienteForm.offNaoEncontrado"));
         return;
       }
       setValues((v) => ({
@@ -126,7 +127,7 @@ export function IngredienteFormDialog({
       }, 50);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao consultar Open Food Facts");
+      toast.error(t("ingredienteForm.offErro"));
     } finally {
       setScanning(false);
     }
@@ -183,7 +184,7 @@ export function IngredienteFormDialog({
           precoEmbalagem: parsed.data.precoEmbalagem,
           ...(codigoBarras ? { codigoBarras } : {}),
         });
-        toast.success("Ingrediente atualizado");
+        toast.success(t("ingredienteForm.atualizado"));
       } else {
         await db.ingredientes.add({
           nome: parsed.data.nome,
@@ -193,12 +194,12 @@ export function IngredienteFormDialog({
           ...(codigoBarras ? { codigoBarras } : {}),
           createdAt: new Date(),
         } as Ingrediente);
-        toast.success("Ingrediente adicionado");
+        toast.success(t("ingredienteForm.adicionado"));
       }
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gravar");
+      toast.error(t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -239,11 +240,11 @@ export function IngredienteFormDialog({
         valor: parsed.data.preco,
         createdAt: new Date(),
       } as Compra);
-      toast.success("Compra adicionada ao stock");
+      toast.success(t("ingredienteForm.compraAdicionada"));
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gravar");
+      toast.error(t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -263,22 +264,20 @@ export function IngredienteFormDialog({
         className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
-          <span className="card-kicker">Ingrediente</span>
+          <span className="card-kicker">{t("ingredienteForm.kicker")}</span>
           <SheetTitle className="font-heading text-2xl font-normal">
-            {isEdit ? "Editar ingrediente" : "Novo ingrediente"}
+            {isEdit ? t("ingredienteForm.editarTitulo") : t("ingredienteForm.novoTitulo")}
           </SheetTitle>
           <SheetDescription>
-            {isEdit
-              ? "Corrige os dados ou adiciona uma nova compra ao stock."
-              : "Regista a compra: quanto trouxeste e quanto pagaste."}
+            {isEdit ? t("ingredienteForm.descEditar") : t("ingredienteForm.descNovo")}
           </SheetDescription>
         </SheetHeader>
 
         {isEdit ? (
           <Tabs value={tab} onValueChange={(v) => setTab(v as "dados" | "compra")}>
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="dados">Editar dados</TabsTrigger>
-              <TabsTrigger value="compra">Adicionar compra</TabsTrigger>
+              <TabsTrigger value="dados">{t("ingredienteForm.tabDados")}</TabsTrigger>
+              <TabsTrigger value="compra">{t("ingredienteForm.tabCompra")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="dados" className="mt-4">
@@ -289,14 +288,14 @@ export function IngredienteFormDialog({
                 onSubmit={handleSubmit}
                 submitting={submitting}
                 onCancel={() => onOpenChange(false)}
-                submitLabel="Guardar"
+                submitLabel={t("comum.guardar")}
               />
             </TabsContent>
 
             <TabsContent value="compra" className="mt-4">
               <form onSubmit={handleAddPurchase} className="space-y-4">
                 <div className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-                  Stock atual:{" "}
+                  {t("ingredienteForm.stockAtual")}{" "}
                   <span className="font-medium text-foreground">
                     {ingrediente?.quantidadeEmbalagem} {ingrediente?.unidade}
                   </span>{" "}
@@ -308,7 +307,7 @@ export function IngredienteFormDialog({
 
                 <div className="space-y-2">
                   <Label htmlFor="add-quantidade">
-                    Quantidade comprada ({ingrediente?.unidade})
+                    {t("ingredienteForm.qtdComprada", { unidade: ingrediente?.unidade ?? "" })}
                   </Label>
                   <Input
                     id="add-quantidade"
@@ -325,7 +324,7 @@ export function IngredienteFormDialog({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="add-preco">Preço pago (€)</Label>
+                  <Label htmlFor="add-preco">{t("ingredienteForm.precoPago")}</Label>
                   <Input
                     id="add-preco"
                     inputMode="decimal"
@@ -340,7 +339,7 @@ export function IngredienteFormDialog({
                 {addQtd > 0 && (
                   <div className="space-y-1 rounded-lg border border-border bg-card px-3 py-2 text-xs">
                     <div className="flex justify-between text-muted-foreground">
-                      <span>Novo stock</span>
+                      <span>{t("ingredienteForm.novoStock")}</span>
                       <span className="font-medium text-foreground">
                         {previewQtd} {ingrediente?.unidade} ·{" "}
                         {formatEuro(previewPreco, { compact: true })}
@@ -348,8 +347,11 @@ export function IngredienteFormDialog({
                     </div>
                     <div className="flex justify-between text-muted-foreground">
                       <span>
-                        Novo custo por{" "}
-                        {ingrediente ? unidadeMinimaLabel(ingrediente.unidade) : "unidade"}
+                        {t("ingredienteForm.novoCustoPor", {
+                          unidade: ingrediente
+                            ? unidadeMinimaLabel(ingrediente.unidade)
+                            : t("ingredienteForm.unidadeFallback"),
+                        })}
                       </span>
                       <span className="font-semibold tabular-nums text-foreground">
                         {formatEuro(previewUnitario)}
@@ -365,10 +367,10 @@ export function IngredienteFormDialog({
                     onClick={() => onOpenChange(false)}
                     className="h-11 flex-1 rounded-full"
                   >
-                    Cancelar
+                    {t("comum.cancelar")}
                   </Button>
                   <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
-                    {submitting ? "A gravar…" : "Adicionar ao stock"}
+                    {submitting ? t("comum.aGravar") : t("ingredienteForm.adicionarStock")}
                   </Button>
                 </SheetFooter>
               </form>
@@ -384,7 +386,7 @@ export function IngredienteFormDialog({
               className="h-12 w-full"
             >
               <ScanLine className="mr-2 h-5 w-5" />
-              {scanning ? "A consultar produto…" : "Ler código de barras"}
+              {scanning ? t("ingredienteForm.aConsultar") : t("ingredienteForm.lerCodigo")}
             </Button>
             <EditFields
               values={values}
@@ -393,7 +395,7 @@ export function IngredienteFormDialog({
               onSubmit={handleSubmit}
               submitting={submitting}
               onCancel={() => onOpenChange(false)}
-              submitLabel="Adicionar"
+              submitLabel={t("ingredienteForm.adicionar")}
             />
           </div>
         )}
@@ -424,13 +426,14 @@ function EditFields({
   onCancel: () => void;
   submitLabel: string;
 }) {
+  const { t } = useTranslation();
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="nome">Nome do ingrediente</Label>
+        <Label htmlFor="nome">{t("ingredienteForm.nome")}</Label>
         <Input
           id="nome"
-          placeholder="Ex: Farinha T65"
+          placeholder={t("ingredienteForm.nomePlaceholder")}
           value={values.nome}
           onChange={(e) => setValues((v) => ({ ...v, nome: e.target.value }))}
           maxLength={80}
@@ -442,7 +445,7 @@ function EditFields({
 
       <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
         <div className="space-y-2 min-w-0">
-          <Label htmlFor="quantidade">Quantidade total</Label>
+          <Label htmlFor="quantidade">{t("ingredienteForm.quantidadeTotal")}</Label>
           <Input
             id="quantidade"
             inputMode="decimal"
@@ -456,7 +459,7 @@ function EditFields({
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="unidade">Unidade</Label>
+          <Label htmlFor="unidade">{t("ingredienteForm.unidade")}</Label>
           <Select
             value={values.unidade}
             onValueChange={(u) => setValues((v) => ({ ...v, unidade: u as UnidadeMedida }))}
@@ -476,7 +479,7 @@ function EditFields({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="preco">Preço total pago (€)</Label>
+        <Label htmlFor="preco">{t("ingredienteForm.precoTotalPago")}</Label>
         <Input
           id="preco"
           inputMode="decimal"
@@ -497,10 +500,10 @@ function EditFields({
           onClick={onCancel}
           className="h-11 flex-1 rounded-full"
         >
-          Cancelar
+          {t("comum.cancelar")}
         </Button>
         <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
-          {submitting ? "A gravar…" : submitLabel}
+          {submitting ? t("comum.aGravar") : submitLabel}
         </Button>
       </SheetFooter>
     </form>
