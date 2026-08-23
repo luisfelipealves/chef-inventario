@@ -202,6 +202,167 @@
   --shadow-lg: 0 12px 32px color-mix(in srgb, #2e2b25 22%, transparent);
 }
 
+/*
+ * Tema "Meia-noite" — escuro e quente. Mantém a terracota e a sálvia da
+ * marca, mas inverte a direção das rampas: -100 é o tom de fundo escuro,
+ * -800/-900 são os tons claros de texto (a semântica de uso mantém-se:
+ * `accent-100` continua a ser "fundo tingido", `accent-800` "texto forte").
+ */
+:root[data-theme="meia-noite"] {
+  color-scheme: dark;
+
+  --background: #1d1917;
+  --foreground: #efe7dc;
+  --card: #2c2724;
+  --card-foreground: #efe7dc;
+  --popover: #2c2724;
+  --popover-foreground: #efe7dc;
+  --primary: #d98a52;
+  --primary-foreground: #241307;
+  --secondary: #342e2a;
+  --secondary-foreground: #efe7dc;
+  --muted: #342e2a;
+  --muted-foreground: #b5a795;
+  --accent: #462c1a;
+  --accent-foreground: #f7c791;
+  --destructive: oklch(0.637 0.237 25.331);
+  --destructive-foreground: #1d1917;
+  --border: color-mix(in srgb, #efe7dc 16%, transparent);
+  --input: color-mix(in srgb, #efe7dc 16%, transparent);
+  --ring: #d98a52;
+  --chart-1: #d98a52;
+  --chart-2: #97a878;
+  --chart-3: #eeb076;
+  --chart-4: #a9ba89;
+  --chart-5: #e39a63;
+  --sidebar: #221e1c;
+  --sidebar-foreground: #efe7dc;
+  --sidebar-primary: #d98a52;
+  --sidebar-primary-foreground: #241307;
+  --sidebar-accent: color-mix(in srgb, #efe7dc 8%, transparent);
+  --sidebar-accent-foreground: #efe7dc;
+  --sidebar-border: color-mix(in srgb, #efe7dc 14%, transparent);
+  --sidebar-ring: #d98a52;
+
+  --color-bg: #1d1917;
+  --color-surface: #272220;
+  --color-text: #efe7dc;
+  --color-accent: #d98a52;
+  --color-accent-2: #97a878;
+  --color-divider: color-mix(in srgb, #efe7dc 15%, transparent);
+
+  --color-neutral-100: #2c2724;
+  --color-neutral-200: #342e2a;
+  --color-neutral-300: #423a35;
+  --color-neutral-400: #554b44;
+  --color-neutral-500: #6c6055;
+  --color-neutral-600: #998b7c;
+  --color-neutral-700: #b5a795;
+  --color-neutral-800: #d3c6b4;
+  --color-neutral-900: #ece2d3;
+
+  --color-accent-100: #382517;
+  --color-accent-200: #462c1a;
+  --color-accent-300: #5c3a20;
+  --color-accent-400: #7d4e2a;
+  --color-accent-500: #d98a52;
+  --color-accent-600: #e39a63;
+  --color-accent-700: #eeb076;
+  --color-accent-800: #f7c791;
+  --color-accent-900: #ffdcb0;
+
+  --color-accent-2-100: #232a19;
+  --color-accent-2-200: #2b3420;
+  --color-accent-2-300: #3a462b;
+  --color-accent-2-400: #55643f;
+  --color-accent-2-500: #97a878;
+  --color-accent-2-600: #a9ba89;
+  --color-accent-2-700: #bccb9d;
+  --color-accent-2-800: #d3dfb8;
+  --color-accent-2-900: #e7efd2;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #000 35%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #000 40%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #000 50%, transparent);
+}
+
+/* Tema "Morango" — rosa pastelaria e hortelã, claro. */
+:root[data-theme="morango"] {
+  --background: #f9ecee;
+  --foreground: #241c1f;
+  --card: #fbf4f3;
+  --card-foreground: #241c1f;
+  --popover: #fbf4f3;
+  --popover-foreground: #241c1f;
+  --primary: #c14e6b;
+  --primary-foreground: #f9ecee;
+  --secondary: #f2dde1;
+  --secondary-foreground: #241c1f;
+  --muted: #f1e8e6;
+  --muted-foreground: #675755;
+  --accent: #fadbe3;
+  --accent-foreground: #8a3550;
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: #f9ecee;
+  --border: color-mix(in srgb, #241c1f 16%, transparent);
+  --input: color-mix(in srgb, #241c1f 16%, transparent);
+  --ring: #c14e6b;
+  --chart-1: #c14e6b;
+  --chart-2: #578a6b;
+  --chart-3: #d16d86;
+  --chart-4: #8fc0a0;
+  --chart-5: #ad4a63;
+  --sidebar: #f2dde1;
+  --sidebar-foreground: #241c1f;
+  --sidebar-primary: #c14e6b;
+  --sidebar-primary-foreground: #f9ecee;
+  --sidebar-accent: color-mix(in srgb, #241c1f 7%, transparent);
+  --sidebar-accent-foreground: #241c1f;
+  --sidebar-border: color-mix(in srgb, #241c1f 16%, transparent);
+  --sidebar-ring: #c14e6b;
+
+  --color-bg: #f9ecee;
+  --color-surface: #f2dde1;
+  --color-text: #241c1f;
+  --color-accent: #c14e6b;
+  --color-accent-2: #5e8a72;
+  --color-divider: color-mix(in srgb, #241c1f 16%, transparent);
+
+  --color-neutral-100: #fbf4f3;
+  --color-neutral-200: #f1e8e6;
+  --color-neutral-300: #e0d3d1;
+  --color-neutral-400: #c5b3b1;
+  --color-neutral-500: #a6928f;
+  --color-neutral-600: #877371;
+  --color-neutral-700: #675755;
+  --color-neutral-800: #4a3d3c;
+  --color-neutral-900: #302726;
+
+  --color-accent-100: #fdeef2;
+  --color-accent-200: #fadbe3;
+  --color-accent-300: #f5bcc9;
+  --color-accent-400: #e793a7;
+  --color-accent-500: #d16d86;
+  --color-accent-600: #ad4a63;
+  --color-accent-700: #8a3550;
+  --color-accent-800: #64243a;
+  --color-accent-900: #401625;
+
+  --color-accent-2-100: #e7f6ec;
+  --color-accent-2-200: #d2ecd9;
+  --color-accent-2-300: #b3d9bf;
+  --color-accent-2-400: #8fc0a0;
+  --color-accent-2-500: #6fa584;
+  --color-accent-2-600: #578a6b;
+  --color-accent-2-700: #406b52;
+  --color-accent-2-800: #2d4d3a;
+  --color-accent-2-900: #1d3226;
+
+  --shadow-sm: 0 1px 2px color-mix(in srgb, #302726 14%, transparent);
+  --shadow-md: 0 3px 10px color-mix(in srgb, #302726 16%, transparent);
+  --shadow-lg: 0 12px 32px color-mix(in srgb, #302726 22%, transparent);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
