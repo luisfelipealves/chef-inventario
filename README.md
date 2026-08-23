@@ -1,76 +1,53 @@
-# Chef Master
+# ChefGestão
 
-1. Visão Geral e Arquitetura
+Aplicação de gestão para cozinheiras e confeiteiras artesanais: stock de
+ingredientes, fichas técnicas de receitas com custo de produção, clientes,
+pedidos e um painel financeiro — tudo num só sítio.
 
-O ChefGestão é uma aplicação web mobile-friendly desenhada especificamente para cozinheiras e
+## Filosofia: os dados são teus
 
-confeiteiras artesanais gerirem o seu stock de ingredientes e calcularem automaticamente o custo de
+O ChefGestão é **local-first, sem nuvem e sem contas**. 100% dos dados vivem
+no dispositivo do utilizador (IndexedDB via Dexie). Não há servidores nossos,
+subscrições nem dependências online: compra-se uma vez e a app é de quem a
+comprou.
 
-produção das suas receitas (Ficha Técnica).
+- **Backup automático** diário no arranque (retenção de 60 dias) e backup
+  manual por ficheiro JSON (exportar/importar, também para migrar de máquina).
+- **Backup na nuvem, à moda antiga**: aponta-se uma pasta sincronizada
+  (iCloud Drive, Google Drive, Dropbox…) e o cliente de sincronização trata
+  do resto. A app só escreve ficheiros.
+- **Leitura de faturas por IA (opcional)**: usa a API do Google Gemini com a
+  chave do próprio utilizador (gratuita), guardada só no dispositivo. Sem
+  chave, a app funciona a 100% — o registo manual de compras está sempre lá.
 
-A aplicação adota uma filosofia Local-First (Offline-First). O utilizador comum armazena 100% dos dados no
+## Funcionalidades
 
-próprio dispositivo de forma gratuita e imediata. O modelo de negócio assenta num formato Freemium, onde
+- Ingredientes com stock, preço por unidade, código de barras (leitor pela
+  câmara) e alerta de stock baixo
+- Receitas com rendimento, custo por dose e margem
+- Pedidos com estados (pendente/confirmado/entregue/cancelado), mudança de
+  estado em um clique e exportação de orçamento/resumo em PDF
+- Clientes com contactos e NIF
+- Financeiro por período: receita, gastos (histórico de compras), lucro,
+  gráficos e exportação CSV para o contabilista
+- Onboarding com dados de exemplo removíveis
 
-funcionalidades de nuvem e automatização avançada pertencem ao plano Premium.
+## Stack
 
-2. Divisão do Projeto por Fases (Sprints para IA)
+React + TypeScript + Vite · TanStack Router · Dexie (IndexedDB) ·
+Tailwind/shadcn + tema próprio "Organic" · Recharts · jsPDF ·
+[Tauri](https://tauri.app) para a app desktop (macOS).
 
-Para garantir a máxima eficácia no desenvolvimento guiado por IA (Vibe Coding), o projeto foi fracionado em
+## Desenvolvimento
 
-5 fases sequenciais. Cada fase deve ser validada e testada de forma isolada antes de se avançar para a
-
-seguinte.
-
-Fase 1: Fundação do Projeto & Banco Local (Offline-First)
-
-Objetivo: Montar a infraestrutura e a base de dados interna do telemóvel que guardará os registos sem
-
-custos de alojamento.
-
-•
-
-Configuração inicial do Next.js (App Router), Tailwind CSS e componentes do Shadcn/ui.
-
-•
-
-Instalação e setup da biblioteca dexie.js para gerir o IndexedDB nativo do navegador.
-
-•
-
-Definição do esquema inicial das tabelas: ingredientes e receitas.
-
-PROMPT PARA A IA (FASE 1)
-
-"Configura a estrutura inicial do projeto utilizando Next.js (App Router), Tailwind CSS e os componentes
-
-base do Shadcn/ui. De seguida, instala a biblioteca dexie.js e configura a base de dados IndexedDB
-
-local com duas tabelas iniciais: 'ingredientes' e 'receitas'. Cria apenas a estrutura de dados e as
-
-ligações base do banco local, sem interfaces complexas por enquanto. Confirma quando terminar a
-
-infraestrutura."
-
-This project was built with [Lovable](https://lovable.dev).
-
-**Live app**: https://chef-inventario.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/607eec83-fe87-4249-9772-ea39891c1a16).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Requisitos: Node.js + npm; para a app desktop, a toolchain do Tauri (Rust).
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
 npm i
-npm run dev
+npm run dev        # web, em modo desenvolvimento
+npm run tauri dev  # app desktop
+npm run build      # build de produção (web)
+npm run tauri build# app desktop empacotada
 ```
+
+`npm run lint` corre o ESLint; `npx tsc --noEmit` verifica os tipos.
