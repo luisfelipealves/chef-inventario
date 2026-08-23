@@ -26,7 +26,7 @@ import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 export const Route = createFileRoute("/clientes")({
   head: () => ({
     meta: [
-      { title: "Clientes — ChefGestão" },
+      { title: "Clientes — Caderninho de Receitas" },
       {
         name: "description",
         content:

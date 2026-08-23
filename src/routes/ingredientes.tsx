@@ -25,7 +25,7 @@ import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 export const Route = createFileRoute("/ingredientes")({
   head: () => ({
     meta: [
-      { title: "Ingredientes — ChefGestão" },
+      { title: "Ingredientes — Caderninho de Receitas" },
       {
         name: "description",
         content: "Gere o teu stock de ingredientes e vê o custo por unidade mínima em tempo real.",

@@ -58,9 +58,9 @@ export function Sidebar({
         {!collapsed && (
           <span>
             <span className="sidebar-brand-name" style={{ display: "block" }}>
-              ChefGestão
+              Caderninho
             </span>
-            <span className="sidebar-brand-tag">Local-first</span>
+            <span className="sidebar-brand-tag">de Receitas</span>
           </span>
         )}
       </div>

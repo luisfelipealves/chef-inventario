@@ -60,7 +60,7 @@ export function PrimeiroArranqueDialog() {
         {etapa === "nome" ? (
           <>
             <DialogHeader>
-              <DialogTitle>Bem-vindo ao ChefGestão!</DialogTitle>
+              <DialogTitle>Bem-vindo ao Caderninho de Receitas!</DialogTitle>
               <DialogDescription>
                 Como te chamas? Usamos o teu nome para te dar as boas-vindas.
               </DialogDescription>

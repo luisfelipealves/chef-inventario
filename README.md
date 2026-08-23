@@ -1,4 +1,4 @@
-# ChefGestão
+# Caderninho de Receitas
 
 Aplicação de gestão para cozinheiras e confeiteiras artesanais: stock de
 ingredientes, fichas técnicas de receitas com custo de produção, clientes,
@@ -6,7 +6,7 @@ pedidos e um painel financeiro — tudo num só sítio.
 
 ## Filosofia: os dados são teus
 
-O ChefGestão é **local-first, sem nuvem e sem contas**. 100% dos dados vivem
+O Caderninho de Receitas é **local-first, sem nuvem e sem contas**. 100% dos dados vivem
 no dispositivo do utilizador (IndexedDB via Dexie). Não há servidores nossos,
 subscrições nem dependências online: compra-se uma vez e a app é de quem a
 comprou.

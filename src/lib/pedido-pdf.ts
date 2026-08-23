@@ -73,7 +73,7 @@ export async function exportarPedidoPdf({
     doc.setFontSize(8);
     doc.setTextColor(150);
     doc.text(
-      txt(`Documento sem valor fiscal · Gerado com ChefGestão a ${emitido}`),
+      txt(`Documento sem valor fiscal · Gerado com o Caderninho de Receitas a ${emitido}`),
       LARGURA / 2,
       290,
       { align: "center" },
@@ -89,7 +89,7 @@ export async function exportarPedidoPdf({
   }
 
   // Cabeçalho: logótipo (se houver) + quem emite + tipo de documento
-  const emissor = nomeNegocioGuardado() || nomeGuardado() || "ChefGestão";
+  const emissor = nomeNegocioGuardado() || nomeGuardado() || "Caderninho de Receitas";
   const logo = logoNegocioGuardado();
   let xEmissor = MARGEM;
   if (logo) {
