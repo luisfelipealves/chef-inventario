@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { TEMAS, definirTema, useTema, type Tema } from "@/lib/tema";
 
 /** Amostras de cor de cada tema (fundo + destaque), para o seletor. */
@@ -7,22 +8,29 @@ const AMOSTRA: Record<Tema, [string, string]> = {
   morango: ["#f9ecee", "#c14e6b"],
 };
 
+const CHAVES: Record<Tema, { nome: string; desc: string }> = {
+  organic: { nome: "tema.organic", desc: "tema.organicDesc" },
+  "meia-noite": { nome: "tema.meiaNoite", desc: "tema.meiaNoiteDesc" },
+  morango: { nome: "tema.morango", desc: "tema.morangoDesc" },
+};
+
 export function SeletorTema() {
+  const { t } = useTranslation();
   const tema = useTema();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span className="card-kicker">Aparência</span>
+      <span className="card-kicker">{t("tema.aparencia")}</span>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
-        {TEMAS.map((t) => {
-          const ativo = t.id === tema;
-          const [fundo, destaque] = AMOSTRA[t.id];
+        {TEMAS.map((opcao) => {
+          const ativo = opcao.id === tema;
+          const [fundo, destaque] = AMOSTRA[opcao.id];
           return (
             <button
-              key={t.id}
+              key={opcao.id}
               type="button"
-              onClick={() => definirTema(t.id)}
-              title={t.descricao}
+              onClick={() => definirTema(opcao.id)}
+              title={t(CHAVES[opcao.id].desc)}
               aria-pressed={ativo}
               style={{
                 display: "flex",
@@ -46,7 +54,9 @@ export function SeletorTema() {
                   border: "1px solid var(--color-divider)",
                 }}
               />
-              <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500 }}>{t.nome}</span>
+              <span style={{ fontSize: 12, fontWeight: ativo ? 700 : 500 }}>
+                {t(CHAVES[opcao.id].nome)}
+              </span>
             </button>
           );
         })}
