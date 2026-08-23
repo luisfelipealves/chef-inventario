@@ -280,7 +280,13 @@ export function FaturaSheet({
                   autoPlay
                   playsInline
                   muted
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    // Espelha só a pré-visualização; a foto capturada (canvas) não é espelhada
+                    transform: "scaleX(-1)",
+                  }}
                 />
               </div>
               <button

@@ -8,10 +8,21 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-type Html5QrcodeCtor = new (elementId: string) => {
+type Html5QrcodeCtor = new (
+  elementId: string,
+  config?: {
+    formatsToSupport?: number[];
+    useBarCodeDetectorIfSupported?: boolean;
+    verbose?: boolean;
+  },
+) => {
   start: (
     cameraIdOrConfig: unknown,
-    config: { fps: number; qrbox?: { width: number; height: number } },
+    config: {
+      fps: number;
+      qrbox?: { width: number; height: number };
+      videoConstraints?: MediaTrackConstraints;
+    },
     onSuccess: (decodedText: string) => void,
     onError?: (err: string) => void,
   ) => Promise<void>;
@@ -43,12 +54,26 @@ export function BarcodeScannerDialog({
       try {
         const mod = await import("html5-qrcode");
         const Html5Qrcode = mod.Html5Qrcode as unknown as Html5QrcodeCtor;
+        const F = mod.Html5QrcodeSupportedFormats;
         if (cancelled) return;
-        const scanner = new Html5Qrcode(containerId);
+        const scanner = new Html5Qrcode(containerId, {
+          // Só códigos de barras de produto — evita gastar tempo com QR e afins
+          formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128],
+          useBarCodeDetectorIfSupported: true,
+          verbose: false,
+        });
         scannerRef.current = scanner;
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 260, height: 160 } },
+          {
+            fps: 10,
+            // Sem qrbox: analisa o frame inteiro, não só uma zona central
+            videoConstraints: {
+              facingMode: "environment",
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            },
+          },
           (decodedText) => {
             onDetected(decodedText);
           },
@@ -90,7 +115,11 @@ export function BarcodeScannerDialog({
         </DialogHeader>
 
         <div className="overflow-hidden rounded-lg border border-border bg-black">
-          <div id={containerId} className="min-h-[240px] w-full" />
+          {/* Espelha só a pré-visualização; o vídeo original (não espelhado) é o que o leitor descodifica */}
+          <div
+            id={containerId}
+            className="min-h-[240px] w-full [&_video]:-scale-x-100"
+          />
         </div>
 
         {starting && (
