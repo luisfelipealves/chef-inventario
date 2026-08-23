@@ -2,6 +2,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useLocation } from "@tanstack/react-router";
 import { db } from "@/lib/db";
+import { backupAutomatico } from "@/lib/backup-auto";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { calcularAlertasStock } from "@/lib/stock-alerta";
 import { useShell, type ModuloLista } from "@/lib/shell";
@@ -16,6 +17,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   // Pesquisa global limpa ao navegar.
   useEffect(() => setQuery(""), [pathname, setQuery]);
+
+  // Backup automático diário no arranque (só na app Tauri).
+  useEffect(() => {
+    if (hydrated) void backupAutomatico();
+  }, [hydrated]);
 
   const ingredientes = useLiveQuery(
     () => (hydrated ? db.ingredientes.orderBy("nome").toArray() : []),

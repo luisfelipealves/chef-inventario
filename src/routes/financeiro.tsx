@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useMemo, useState, type CSSProperties } from "react";
+import { FileDown } from "lucide-react";
+import { toast } from "sonner";
 import {
   Bar,
   BarChart,
@@ -19,7 +21,8 @@ import { totaisPedido, estadoLabel } from "@/lib/pedido-calc";
 import { parseData } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
-import type { EstadoPedido, Ingrediente, Receita } from "@/lib/db";
+import { exportarFinanceiroCsv, type MovimentoCsv } from "@/lib/financeiro-csv";
+import type { Cliente, EstadoPedido, Ingrediente, Receita } from "@/lib/db";
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({
@@ -171,7 +174,12 @@ function FinanceiroPage() {
     [hydrated],
     [],
   );
+  const clientes = useLiveQuery(() => (hydrated ? db.clientes.toArray() : []), [hydrated], []);
 
+  const clienteMap = useMemo(
+    () => new Map<number, Cliente>(clientes.map((c) => [c.id, c])),
+    [clientes],
+  );
   const receitaMap = useMemo(
     () => new Map<number, Receita>(receitas.map((r) => [r.id, r])),
     [receitas],
@@ -235,8 +243,42 @@ function FinanceiroPage() {
       ultimasCompras: [...comprasPeriodo]
         .sort((a, b) => b.data.getTime() - a.data.getTime())
         .slice(0, 8),
+      movimentos: [
+        ...ativos.map((p): MovimentoCsv => ({
+          data: p.data,
+          tipo: "Receita",
+          descricao: `Pedido nº ${p.pedido.id} — ${p.pedido.itens
+            .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "?"}`)
+            .join(", ")}`,
+          contraparte: clienteMap.get(p.pedido.clienteId)?.nome ?? "",
+          estado: estadoLabel[p.pedido.estado],
+          valor: p.venda,
+        })),
+        ...comprasPeriodo.map((c): MovimentoCsv => ({
+          data: c.data,
+          tipo: "Despesa",
+          descricao: `${c.nome} (${c.quantidade} ${c.unidade})`,
+          contraparte: "",
+          estado: "",
+          valor: c.valor,
+        })),
+      ],
     };
-  }, [pedidos, compras, receitaMap, ingMap, inicio, fim]);
+  }, [pedidos, compras, receitaMap, ingMap, clienteMap, inicio, fim]);
+
+  async function exportarCsv() {
+    if (dados.movimentos.length === 0) {
+      toast.info("Sem movimentos no período para exportar.");
+      return;
+    }
+    try {
+      const nome = await exportarFinanceiroCsv(dados.movimentos, inicio, fim);
+      if (nome) toast.success(`CSV exportado: ${nome}`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao exportar o CSV.");
+    }
+  }
 
   return (
     <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
@@ -246,23 +288,34 @@ function FinanceiroPage() {
         onChange={setPreset}
         contagem={`${dados.nPedidos} pedidos · ${dados.nCompras} compras`}
         acao={
-          preset === "perso" ? (
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <input
-                type="date"
-                value={de}
-                onChange={(e) => setDe(e.target.value)}
-                style={ESTILO_INPUT_DATA}
-              />
-              <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>a</span>
-              <input
-                type="date"
-                value={ate}
-                onChange={(e) => setAte(e.target.value)}
-                style={ESTILO_INPUT_DATA}
-              />
-            </span>
-          ) : null
+          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {preset === "perso" && (
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="date"
+                  value={de}
+                  onChange={(e) => setDe(e.target.value)}
+                  style={ESTILO_INPUT_DATA}
+                />
+                <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>a</span>
+                <input
+                  type="date"
+                  value={ate}
+                  onChange={(e) => setAte(e.target.value)}
+                  style={ESTILO_INPUT_DATA}
+                />
+              </span>
+            )}
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => void exportarCsv()}
+              style={{ height: 34, fontSize: 13 }}
+            >
+              <FileDown size={15} strokeWidth={2.75} />
+              Exportar CSV
+            </button>
+          </span>
         }
       />
 

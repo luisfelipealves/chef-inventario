@@ -251,9 +251,11 @@ export function FaturaSheet({
               >
                 <KeyRound size={18} strokeWidth={2.75} style={{ flex: "none", marginTop: 2 }} />
                 <p style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>
-                  Esta função usa a API gratuita do Google Gemini. Cola aqui a tua chave (é guardada
-                  só neste dispositivo). Obténs uma grátis em{" "}
-                  <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span>.
+                  Função opcional — usa a API gratuita do Google Gemini com uma chave tua, guardada
+                  só neste dispositivo. 1. Abre{" "}
+                  <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span> no browser
+                  (conta Google, grátis) · 2. "Create API key" · 3. Cola a chave aqui. Também podes
+                  fazê-lo mais tarde nas Definições; sem chave, registas as compras manualmente.
                 </p>
               </div>
               <input

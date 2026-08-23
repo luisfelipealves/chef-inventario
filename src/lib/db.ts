@@ -2,7 +2,7 @@ import Dexie, { type EntityTable } from "dexie";
 
 /**
  * ChefGestão — Local-First database (IndexedDB via Dexie).
- * All data lives on the user's device. No cloud sync in the free tier.
+ * Os dados vivem todos no dispositivo do utilizador — sem nuvem, sem contas.
  */
 
 export type UnidadeMedida = "g" | "kg" | "ml" | "l" | "un";
