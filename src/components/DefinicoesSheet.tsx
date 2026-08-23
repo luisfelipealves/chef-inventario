@@ -39,7 +39,15 @@ import {
 } from "@/lib/backup-auto";
 import { getGeminiKey, setGeminiKey } from "@/lib/fatura-ocr";
 import { Input } from "@/components/ui/input";
-import { gravarNome, useNomeUtilizador } from "@/lib/perfil";
+import {
+  gravarNome,
+  useNomeUtilizador,
+  useNomeNegocio,
+  gravarNomeNegocio,
+  useLogoNegocio,
+  gravarLogoNegocio,
+  carregarLogoDeFicheiro,
+} from "@/lib/perfil";
 
 export function DefinicoesSheet({
   open,
@@ -76,6 +84,38 @@ export function DefinicoesSheet({
     toast.success(
       nomeInput.trim() ? `Nome atualizado para ${nomeInput.trim()}.` : "Nome removido.",
     );
+  }
+
+  const negocioAtual = useNomeNegocio();
+  const [negocioInput, setNegocioInput] = useState(negocioAtual);
+  useEffect(() => {
+    if (open) setNegocioInput(negocioAtual);
+  }, [open, negocioAtual]);
+  const logo = useLogoNegocio();
+  const logoRef = useRef<HTMLInputElement>(null);
+
+  function guardarNegocio() {
+    gravarNomeNegocio(negocioInput);
+    toast.success(negocioInput.trim() ? "Nome do negócio guardado." : "Nome do negócio removido.");
+  }
+
+  async function escolherLogo(e: React.ChangeEvent<HTMLInputElement>) {
+    const ficheiro = e.target.files?.[0];
+    e.target.value = "";
+    if (!ficheiro) return;
+    try {
+      const dataUrl = await carregarLogoDeFicheiro(ficheiro);
+      if (gravarLogoNegocio(dataUrl)) toast.success("Logótipo guardado.");
+      else toast.error("Imagem demasiado grande para guardar. Tenta uma mais pequena.");
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível ler a imagem.");
+    }
+  }
+
+  function removerLogo() {
+    gravarLogoNegocio("");
+    toast.success("Logótipo removido.");
   }
 
   const fileRef = useRef<HTMLInputElement>(null);
@@ -261,6 +301,75 @@ export function DefinicoesSheet({
                 Guardar
               </button>
             </form>
+
+            <p style={{ fontSize: 12, color: "var(--color-neutral-700)", marginTop: 6 }}>
+              O nome do negócio e o logótipo aparecem no cabeçalho dos PDFs de orçamento e resumo do
+              pedido.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                guardarNegocio();
+              }}
+              style={{ display: "flex", gap: 8 }}
+            >
+              <Input
+                value={negocioInput}
+                onChange={(e) => setNegocioInput(e.target.value)}
+                placeholder="Nome do negócio (ex.: Doces da Maria)"
+                maxLength={60}
+                className="h-11"
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={negocioInput.trim() === negocioAtual}
+                style={{ height: 44 }}
+              >
+                Guardar
+              </button>
+            </form>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              {logo && (
+                <img
+                  src={logo}
+                  alt="Logótipo do negócio"
+                  style={{
+                    height: 44,
+                    width: 44,
+                    objectFit: "contain",
+                    borderRadius: 10,
+                    border: "1px solid var(--color-divider)",
+                    background: "#fff",
+                  }}
+                />
+              )}
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => logoRef.current?.click()}
+                style={{ height: 38, flex: 1 }}
+              >
+                {logo ? "Mudar logótipo…" : "Escolher logótipo…"}
+              </button>
+              {logo && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={removerLogo}
+                  style={{ height: 38 }}
+                >
+                  Remover
+                </button>
+              )}
+              <input
+                ref={logoRef}
+                type="file"
+                accept="image/*"
+                onChange={(e) => void escolherLogo(e)}
+                style={{ display: "none" }}
+              />
+            </div>
           </div>
 
           {contagem && (
