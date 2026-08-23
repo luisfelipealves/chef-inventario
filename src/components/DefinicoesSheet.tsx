@@ -31,6 +31,7 @@ import {
   type ContagemBackup,
 } from "@/lib/backup";
 import { apagarDadosExemplo, useTemDadosExemplo } from "@/lib/demo-data";
+import { ultimoBackupAuto } from "@/lib/backup-auto";
 import { Input } from "@/components/ui/input";
 import { gravarNome, useNomeUtilizador } from "@/lib/perfil";
 
@@ -225,6 +226,13 @@ export function DefinicoesSheet({
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="card-kicker">Exportar</span>
+            {emTauri() && (
+              <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                A app guarda sozinha um backup por dia no arranque (últimos 60 dias, na pasta da
+                aplicação).{" "}
+                {ultimoBackupAuto() ? `Último: ${ultimoBackupAuto()}.` : "Ainda nenhum."}
+              </p>
+            )}
             <button
               type="button"
               className="btn btn-primary btn-block"
