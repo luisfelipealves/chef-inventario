@@ -2,7 +2,7 @@ import type { Cliente, Pedido, Receita } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { dataEntregaLonga } from "@/lib/data-format";
 import { emTauri } from "@/lib/backup";
-import { nomeGuardado } from "@/lib/perfil";
+import { logoNegocioGuardado, nomeGuardado, nomeNegocioGuardado } from "@/lib/perfil";
 
 /**
  * Documento PDF de um pedido, virado para o cliente final: orçamento
@@ -40,6 +40,15 @@ function slug(s: string): string {
 const MARGEM = 18;
 const LARGURA = 210;
 const LIMITE_Y = 265;
+
+function carregarImagem(dataUrl: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Logo ilegível"));
+    img.src = dataUrl;
+  });
+}
 
 export async function exportarPedidoPdf({
   tipo,
@@ -79,11 +88,26 @@ export async function exportarPedidoPdf({
     y = MARGEM + 4;
   }
 
-  // Cabeçalho: quem emite + tipo de documento
-  const emissor = nomeGuardado() || "ChefGestão";
+  // Cabeçalho: logótipo (se houver) + quem emite + tipo de documento
+  const emissor = nomeNegocioGuardado() || nomeGuardado() || "ChefGestão";
+  const logo = logoNegocioGuardado();
+  let xEmissor = MARGEM;
+  if (logo) {
+    try {
+      const img = await carregarImagem(logo);
+      const altura = 14;
+      const largura = Math.min(45, (img.naturalWidth / img.naturalHeight) * altura);
+      // Topo do logo alinhado com o topo visual do cabeçalho; o divisor
+      // do cabeçalho passa aos ~36 mm, bem abaixo do fundo do logo.
+      doc.addImage(logo, "PNG", MARGEM, y - 9, largura, altura);
+      xEmissor = MARGEM + largura + 6;
+    } catch {
+      /* logo ilegível — segue sem ele */
+    }
+  }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text(txt(emissor), MARGEM, y);
+  doc.text(txt(emissor), xEmissor, y);
   doc.setFontSize(20);
   doc.text(TITULO[tipo], direita, y, { align: "right" });
   y += 6;
