@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Package, Plus, ShoppingBasket, TriangleAlert, ScanLine } from "lucide-react";
@@ -35,13 +36,14 @@ export const Route = createFileRoute("/ingredientes")({
   component: IngredientesPage,
 });
 
-const FILTROS: FiltroOpcao[] = [
-  { key: "todos", label: "Todos" },
-  { key: "stock-baixo", label: "Stock baixo" },
-  { key: "sem-codigo", label: "Sem código" },
+const FILTROS_KEYS = [
+  { key: "todos", labelKey: "ingredientes.filtroTodos" },
+  { key: "stock-baixo", labelKey: "ingredientes.filtroStockBaixo" },
+  { key: "sem-codigo", labelKey: "ingredientes.filtroSemCodigo" },
 ];
 
 function IngredientesPage() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const navigate = useNavigate();
   const ingredientes = useLiveQuery(
@@ -101,10 +103,10 @@ function IngredientesPage() {
     if (!toDelete) return;
     try {
       await db.ingredientes.delete(toDelete.id);
-      toast.success("Ingrediente removido");
+      toast.success(t("ingredientes.removido"));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao remover");
+      toast.error(t("ingredientes.erroRemover"));
     } finally {
       setToDelete(null);
     }
@@ -114,10 +116,10 @@ function IngredientesPage() {
     <div className="lista-view">
       <div className="lista-panel">
         <FiltroBar
-          opcoes={FILTROS}
+          opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
           valor={filtroAtual}
           onChange={(k) => setFiltro("ingredientes", k)}
-          contagem={`${filtrados.length} de ${lista.length} ingredientes`}
+          contagem={t("ingredientes.contagem", { n: filtrados.length, total: lista.length })}
           acao={
             <button
               type="button"
@@ -134,7 +136,7 @@ function IngredientesPage() {
               onClick={() => setFaturaOpen(true)}
             >
               <ScanLine size={16} strokeWidth={2.75} />
-              Ler fatura
+              {t("ingredientes.lerFatura")}
             </button>
           }
         />
@@ -148,10 +150,10 @@ function IngredientesPage() {
             <table className="lista-table">
               <thead>
                 <tr>
-                  <th>Ingrediente</th>
-                  <th className="num">Stock</th>
-                  <th className="num">Preço embalagem</th>
-                  <th className="num">Custo unitário</th>
+                  <th>{t("ingredientes.thIngrediente")}</th>
+                  <th className="num">{t("ingredientes.thStock")}</th>
+                  <th className="num">{t("ingredientes.thPrecoEmbalagem")}</th>
+                  <th className="num">{t("ingredientes.thCustoUnitario")}</th>
                   <th></th>
                 </tr>
               </thead>
@@ -174,7 +176,7 @@ function IngredientesPage() {
                       </td>
                       <td>
                         {alertaMap.has(ing.id) && (
-                          <span className="tag tag-accent">Stock baixo</span>
+                          <span className="tag tag-accent">{t("ingredientes.tagStockBaixo")}</span>
                         )}
                       </td>
                     </tr>
@@ -202,7 +204,7 @@ function IngredientesPage() {
             }}
           />
         ) : (
-          <div className="detalhe-empty">Selecciona um ingrediente.</div>
+          <div className="detalhe-empty">{t("ingredientes.seleciona")}</div>
         )}
       </aside>
 
@@ -218,15 +220,18 @@ function IngredientesPage() {
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover ingrediente?</AlertDialogTitle>
+            <AlertDialogTitle>{t("ingredientes.removerTitulo")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vais eliminar <strong>{toDelete?.nome}</strong>. Esta ação não pode ser desfeita.
+              {t("ingredientes.removerDesc", { nome: toDelete?.nome ?? "" })}{" "}
+              {t("comum.acaoIrreversivel")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
-              Remover
+              {t("comum.remover")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -250,6 +255,7 @@ function IngredienteDetalhe({
   onEdit: () => void;
   onAbrirReceita: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const unit = custoPorUnidade(ingrediente.precoEmbalagem, ingrediente.quantidadeEmbalagem);
 
   const usadoEm = useMemo(
@@ -268,7 +274,7 @@ function IngredienteDetalhe({
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <span className="card-kicker">Ingrediente</span>
+        <span className="card-kicker">{t("ingredientes.kicker")}</span>
         <h3 style={{ fontSize: 25, margin: "2px 0" }}>{ingrediente.nome}</h3>
       </div>
 
@@ -282,7 +288,7 @@ function IngredienteDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            Stock
+            {t("ingredientes.stock")}
           </span>
           <span
             style={{
@@ -304,7 +310,7 @@ function IngredienteDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            Por {unidadeMinimaLabel(ingrediente.unidade)}
+            {t("ingredientes.porUnidade", { unidade: unidadeMinimaLabel(ingrediente.unidade) })}
           </span>
           <span
             style={{
@@ -322,13 +328,13 @@ function IngredienteDetalhe({
 
       <div className="detalhe-card">
         <div className="kv">
-          <span className="kv-label">Preço da embalagem</span>
+          <span className="kv-label">{t("ingredientes.precoEmbalagem")}</span>
           <span style={{ fontVariantNumeric: "tabular-nums" }}>
             {formatEuro(ingrediente.precoEmbalagem, { compact: true })}
           </span>
         </div>
         <div className="kv">
-          <span className="kv-label">Código de barras</span>
+          <span className="kv-label">{t("ingredientes.codigoBarras")}</span>
           <span>{ingrediente.codigoBarras || "—"}</span>
         </div>
       </div>
@@ -347,15 +353,14 @@ function IngredienteDetalhe({
         >
           <TriangleAlert size={16} strokeWidth={2.75} style={{ flex: "none", marginTop: 1 }} />
           <span style={{ fontSize: 12 }}>
-            Faltam {Math.round(alerta.falta)} {ingrediente.unidade} para cobrir os pedidos
-            confirmados desta semana.
+            {t("ingredientes.falta", { n: Math.round(alerta.falta), unidade: ingrediente.unidade })}
           </span>
         </div>
       )}
 
       {usadoEm.length > 0 && (
         <div>
-          <span className="card-kicker">Usado em</span>
+          <span className="card-kicker">{t("ingredientes.usadoEm")}</span>
           <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 6 }}>
             {usadoEm.map(({ receita, qtd }) => (
               <button
@@ -388,13 +393,13 @@ function IngredienteDetalhe({
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onCompra}>
           <ShoppingBasket size={16} strokeWidth={2.75} />
-          Adicionar compra
+          {t("ingredientes.adicionarCompra")}
         </button>
         <button
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={onEdit}
-          aria-label="Editar ingrediente"
+          aria-label={t("ingredientes.editar")}
         >
           <Pencil size={16} strokeWidth={2.75} />
         </button>
@@ -416,18 +421,19 @@ function SkeletonTabela() {
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="lista-empty">
       <div className="lista-empty-icon">
         <Package size={28} strokeWidth={2.75} />
       </div>
-      <h2 style={{ fontSize: 20 }}>Ainda sem ingredientes</h2>
+      <h2 style={{ fontSize: 20 }}>{t("ingredientes.vazioTitulo")}</h2>
       <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
-        Adiciona a tua primeira compra para veres o custo por grama, ml ou unidade automaticamente.
+        {t("ingredientes.vazioDesc")}
       </p>
       <button type="button" className="btn btn-primary" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.75} />
-        Novo ingrediente
+        {t("topbar.novoIngrediente")}
       </button>
     </div>
   );

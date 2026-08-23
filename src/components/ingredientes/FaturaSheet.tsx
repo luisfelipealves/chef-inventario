@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Camera, Upload, X, KeyRound } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -42,6 +43,7 @@ export function FaturaSheet({
   onOpenChange: (open: boolean) => void;
   ingredientes: Ingrediente[];
 }) {
+  const { t } = useTranslation();
   const [etapa, setEtapa] = useState<Etapa>("captura");
   const [chaveInput, setChaveInput] = useState("");
   const [erro, setErro] = useState<string | null>(null);
@@ -107,7 +109,7 @@ export function FaturaSheet({
     try {
       const itens = await lerFatura(base64, getGeminiKey());
       if (itens.length === 0) {
-        setErro("Nenhum produto reconhecido. Tenta uma foto mais nítida.");
+        setErro(t("fatura.nenhumProduto"));
         setEtapa("captura");
         return;
       }
@@ -122,7 +124,7 @@ export function FaturaSheet({
       );
       setEtapa("rever");
     } catch (e) {
-      setErro(e instanceof Error ? e.message : "Erro ao ler a fatura.");
+      setErro(e instanceof Error ? e.message : t("fatura.erroLer"));
       setEtapa("captura");
     }
   }
@@ -130,7 +132,7 @@ export function FaturaSheet({
   function tirarFoto() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) {
-      setErro("Câmara ainda não pronta. Aguarda um instante.");
+      setErro(t("fatura.camaraNaoPronta"));
       return;
     }
     const canvas = document.createElement("canvas");
@@ -216,11 +218,11 @@ export function FaturaSheet({
           atualizados++;
         }
       }
-      toast.success(`Stock atualizado: ${atualizados} compra(s), ${criados} novo(s).`);
+      toast.success(t("fatura.stockAtualizado", { atualizados, criados }));
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao atualizar o stock.");
+      toast.error(t("fatura.erroAtualizar"));
     } finally {
       setAGravar(false);
     }
@@ -233,11 +235,11 @@ export function FaturaSheet({
         className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
-          <span className="card-kicker">Ingredientes</span>
-          <SheetTitle className="font-heading text-2xl font-normal">Ler fatura</SheetTitle>
-          <SheetDescription>
-            Fotografa o talão de compras e atualiza o stock automaticamente.
-          </SheetDescription>
+          <span className="card-kicker">{t("fatura.kicker")}</span>
+          <SheetTitle className="font-heading text-2xl font-normal">
+            {t("fatura.titulo")}
+          </SheetTitle>
+          <SheetDescription>{t("fatura.desc")}</SheetDescription>
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1">
@@ -251,18 +253,16 @@ export function FaturaSheet({
               >
                 <KeyRound size={18} strokeWidth={2.75} style={{ flex: "none", marginTop: 2 }} />
                 <p style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>
-                  Função opcional — usa a API gratuita do Google Gemini com uma chave tua, guardada
-                  só neste dispositivo. 1. Abre{" "}
-                  <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span> no browser
-                  (conta Google, grátis) · 2. "Create API key" · 3. Cola a chave aqui. Também podes
-                  fazê-lo mais tarde nas Definições; sem chave, registas as compras manualmente.
+                  {t("fatura.chaveA")}{" "}
+                  <span style={{ fontWeight: 600 }}>aistudio.google.com/apikey</span>{" "}
+                  {t("fatura.chaveB")}
                 </p>
               </div>
               <input
                 type="password"
                 value={chaveInput}
                 onChange={(e) => setChaveInput(e.target.value)}
-                placeholder="Chave da API do Gemini"
+                placeholder={t("fatura.chavePlaceholder")}
                 style={{
                   height: 42,
                   borderRadius: 999,
@@ -278,7 +278,7 @@ export function FaturaSheet({
                 onClick={guardarChave}
                 style={{ height: 44 }}
               >
-                Guardar chave
+                {t("fatura.guardarChave")}
               </button>
             </div>
           )}
@@ -314,7 +314,7 @@ export function FaturaSheet({
                 style={{ height: 44 }}
               >
                 <Camera size={16} strokeWidth={2.75} />
-                Tirar foto
+                {t("fatura.tirarFoto")}
               </button>
               <button
                 type="button"
@@ -323,7 +323,7 @@ export function FaturaSheet({
                 style={{ height: 44 }}
               >
                 <Upload size={16} strokeWidth={2.75} />
-                Escolher imagem
+                {t("fatura.escolherImagem")}
               </button>
               <input
                 ref={fileRef}
@@ -344,7 +344,7 @@ export function FaturaSheet({
                 textAlign: "center",
               }}
             >
-              A ler a fatura…
+              {t("fatura.aLer")}
             </p>
           )}
 
@@ -369,7 +369,7 @@ export function FaturaSheet({
                       />
                       <button
                         type="button"
-                        aria-label="Remover linha"
+                        aria-label={t("fatura.removerLinha")}
                         onClick={() => setLinhas((ls) => ls.filter((_, i) => i !== idx))}
                         style={{
                           border: 0,
@@ -391,7 +391,7 @@ export function FaturaSheet({
                       }
                       style={campo}
                     >
-                      <option value="novo">➕ Criar novo ingrediente</option>
+                      <option value="novo">{t("fatura.criarNovo")}</option>
                       {ingredientes.map((i) => (
                         <option key={i.id} value={i.id}>
                           {i.nome}
@@ -404,7 +404,7 @@ export function FaturaSheet({
                         inputMode="decimal"
                         value={l.quantidade}
                         onChange={(e) => setLinha(idx, { quantidade: e.target.value })}
-                        placeholder="Qtd"
+                        placeholder={t("fatura.qtdPlaceholder")}
                         style={campo}
                       />
                       <select
@@ -424,7 +424,7 @@ export function FaturaSheet({
                         inputMode="decimal"
                         value={l.precoTotal}
                         onChange={(e) => setLinha(idx, { precoTotal: e.target.value })}
-                        placeholder="€ total"
+                        placeholder={t("fatura.precoPlaceholder")}
                         style={campo}
                       />
                     </div>
@@ -449,7 +449,7 @@ export function FaturaSheet({
               onClick={() => setEtapa("captura")}
               style={{ flex: 1, height: 44 }}
             >
-              Nova foto
+              {t("fatura.novaFoto")}
             </button>
             <button
               type="button"
@@ -458,7 +458,7 @@ export function FaturaSheet({
               disabled={aGravar}
               style={{ flex: 1, height: 44 }}
             >
-              {aGravar ? "A gravar…" : "Atualizar stock"}
+              {aGravar ? t("comum.aGravar") : t("fatura.atualizarStock")}
             </button>
           </div>
         )}

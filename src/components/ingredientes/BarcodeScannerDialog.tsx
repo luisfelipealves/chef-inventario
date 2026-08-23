@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -39,6 +40,7 @@ export function BarcodeScannerDialog({
   onOpenChange: (open: boolean) => void;
   onDetected: (code: string) => void;
 }) {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const scannerRef = useRef<InstanceType<Html5QrcodeCtor> | null>(null);
@@ -84,9 +86,7 @@ export function BarcodeScannerDialog({
         }
       } catch (err) {
         console.error(err);
-        setError(
-          "Não foi possível aceder à câmara. Autoriza o acesso nas definições de privacidade do sistema (Câmara) e volta a tentar.",
-        );
+        setError(t("scanner.erro"));
       } finally {
         if (!cancelled) setStarting(false);
       }
@@ -102,39 +102,28 @@ export function BarcodeScannerDialog({
           .catch(() => {});
       }
     };
-  }, [open, onDetected]);
+  }, [open, onDetected, t]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Bipar produto</DialogTitle>
-          <DialogDescription>
-            Aponta a câmara ao código de barras EAN-13 da embalagem.
-          </DialogDescription>
+          <DialogTitle>{t("scanner.titulo")}</DialogTitle>
+          <DialogDescription>{t("scanner.desc")}</DialogDescription>
         </DialogHeader>
 
         <div className="overflow-hidden rounded-lg border border-border bg-black">
           {/* Espelha só a pré-visualização; o vídeo original (não espelhado) é o que o leitor descodifica */}
-          <div
-            id={containerId}
-            className="min-h-[240px] w-full [&_video]:-scale-x-100"
-          />
+          <div id={containerId} className="min-h-[240px] w-full [&_video]:-scale-x-100" />
         </div>
 
         {starting && (
-          <p className="text-center text-xs text-muted-foreground">
-            A iniciar câmara…
-          </p>
+          <p className="text-center text-xs text-muted-foreground">{t("scanner.aIniciar")}</p>
         )}
         {error && <p className="text-center text-xs text-destructive">{error}</p>}
 
-        <Button
-          variant="outline"
-          onClick={() => onOpenChange(false)}
-          className="h-12 w-full"
-        >
-          Cancelar
+        <Button variant="outline" onClick={() => onOpenChange(false)} className="h-12 w-full">
+          {t("comum.cancelar")}
         </Button>
       </DialogContent>
     </Dialog>
