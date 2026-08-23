@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
@@ -29,21 +30,6 @@ import {
 } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
-
-const schema = z.object({
-  nome: z.string().trim().min(1, "Indica o nome").max(80),
-  rendimento: z.coerce
-    .number({ invalid_type_error: "Número inválido" })
-    .positive("Deve ser maior que 0"),
-  unidadeRendimento: z.enum(["g", "kg", "ml", "l", "un"]),
-  precoVenda: z.preprocess(
-    (v) => (v === "" ? undefined : v),
-    z.coerce
-      .number({ invalid_type_error: "Número inválido" })
-      .nonnegative("Deve ser ≥ 0")
-      .optional(),
-  ),
-});
 
 type FormValues = {
   nome: string;
@@ -79,7 +65,26 @@ export function ReceitaFormDialog({
   receita?: Receita | null;
   ingredientes: Ingrediente[];
 }) {
+  const { t } = useTranslation();
   const isEdit = !!receita;
+  const schema = useMemo(
+    () =>
+      z.object({
+        nome: z.string().trim().min(1, t("receitaForm.errNome")).max(80),
+        rendimento: z.coerce
+          .number({ invalid_type_error: t("receitaForm.errNumero") })
+          .positive(t("receitaForm.errPositivo")),
+        unidadeRendimento: z.enum(["g", "kg", "ml", "l", "un"]),
+        precoVenda: z.preprocess(
+          (v) => (v === "" ? undefined : v),
+          z.coerce
+            .number({ invalid_type_error: t("receitaForm.errNumero") })
+            .nonnegative(t("receitaForm.errNaoNegativo"))
+            .optional(),
+        ),
+      }),
+    [t],
+  );
   const [values, setValues] = useState<FormValues>(empty);
   const [linhas, setLinhas] = useState<LinhaDraft[]>([newLinha()]);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
@@ -143,7 +148,7 @@ export function ReceitaFormDialog({
       return;
     }
     if (linhasValidas.length === 0) {
-      toast.error("Adiciona pelo menos um ingrediente");
+      toast.error(t("receitaForm.adicionaIngrediente"));
       return;
     }
     setSubmitting(true);
@@ -157,18 +162,18 @@ export function ReceitaFormDialog({
       };
       if (isEdit && receita) {
         await db.receitas.update(receita.id, payload);
-        toast.success("Receita atualizada");
+        toast.success(t("receitaForm.receitaAtualizada"));
       } else {
         await db.receitas.add({
           ...payload,
           createdAt: new Date(),
         } as Receita);
-        toast.success("Receita criada");
+        toast.success(t("receitaForm.receitaCriada"));
       }
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao gravar");
+      toast.error(t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -181,13 +186,11 @@ export function ReceitaFormDialog({
         className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
-          <span className="card-kicker">Receita</span>
+          <span className="card-kicker">{t("receitaForm.kicker")}</span>
           <SheetTitle className="font-heading text-2xl font-normal">
-            {isEdit ? "Editar receita" : "Nova receita"}
+            {isEdit ? t("receitaForm.editarTitulo") : t("receitaForm.novaTitulo")}
           </SheetTitle>
-          <SheetDescription>
-            Escolhe os ingredientes e as quantidades para calcular o custo.
-          </SheetDescription>
+          <SheetDescription>{t("receitaForm.desc")}</SheetDescription>
         </SheetHeader>
 
         <form
@@ -195,10 +198,10 @@ export function ReceitaFormDialog({
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
         >
           <div className="space-y-2">
-            <Label htmlFor="nome">Nome da receita</Label>
+            <Label htmlFor="nome">{t("receitaForm.nome")}</Label>
             <Input
               id="nome"
-              placeholder="Ex: Bolo de Brigadeiro"
+              placeholder={t("receitaForm.nomePlaceholder")}
               value={values.nome}
               onChange={(e) => setValues((v) => ({ ...v, nome: e.target.value }))}
               maxLength={80}
@@ -210,7 +213,7 @@ export function ReceitaFormDialog({
 
           <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
             <div className="space-y-2 min-w-0">
-              <Label htmlFor="rendimento">Rendimento</Label>
+              <Label htmlFor="rendimento">{t("receitaForm.rendimento")}</Label>
               <Input
                 id="rendimento"
                 inputMode="decimal"
@@ -222,7 +225,7 @@ export function ReceitaFormDialog({
               {errors.rendimento && <p className="text-xs text-destructive">{errors.rendimento}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="unidadeRendimento">Unidade</Label>
+              <Label htmlFor="unidadeRendimento">{t("receitaForm.unidade")}</Label>
               <Select
                 value={values.unidadeRendimento}
                 onValueChange={(u) =>
@@ -233,7 +236,7 @@ export function ReceitaFormDialog({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="un">un (fatias/doses)</SelectItem>
+                  <SelectItem value="un">{t("receitaForm.unDoses")}</SelectItem>
                   <SelectItem value="g">g</SelectItem>
                   <SelectItem value="kg">kg</SelectItem>
                   <SelectItem value="ml">ml</SelectItem>
@@ -245,7 +248,7 @@ export function ReceitaFormDialog({
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Ingredientes</Label>
+              <Label>{t("receitaForm.ingredientes")}</Label>
               <Button
                 type="button"
                 variant="ghost"
@@ -254,7 +257,7 @@ export function ReceitaFormDialog({
                 className="h-9"
               >
                 <Plus className="mr-1 h-4 w-4" />
-                Adicionar
+                {t("receitaForm.adicionar")}
               </Button>
             </div>
 
@@ -281,7 +284,7 @@ export function ReceitaFormDialog({
                           }
                         >
                           <SelectTrigger className="h-11 text-base">
-                            <SelectValue placeholder="Escolher ingrediente" />
+                            <SelectValue placeholder={t("receitaForm.escolherIngrediente")} />
                           </SelectTrigger>
                           <SelectContent>
                             {ingredientes.map((i) => (
@@ -301,7 +304,7 @@ export function ReceitaFormDialog({
                               ls.length === 1 ? [newLinha()] : ls.filter((_, i) => i !== idx),
                             )
                           }
-                          aria-label="Remover linha"
+                          aria-label={t("receitaForm.removerLinha")}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -310,7 +313,7 @@ export function ReceitaFormDialog({
                         <div className="relative">
                           <Input
                             inputMode="decimal"
-                            placeholder="Quantidade"
+                            placeholder={t("receitaForm.quantidadePlaceholder")}
                             value={linha.quantidade}
                             onChange={(e) =>
                               setLinhas((ls) =>
@@ -345,11 +348,11 @@ export function ReceitaFormDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="precoVenda">Preço de venda (receita completa)</Label>
+            <Label htmlFor="precoVenda">{t("receitaForm.precoVenda")}</Label>
             <Input
               id="precoVenda"
               inputMode="decimal"
-              placeholder="Ex: 45.00"
+              placeholder={t("receitaForm.precoVendaPlaceholder")}
               value={values.precoVenda}
               onChange={(e) => setValues((v) => ({ ...v, precoVenda: e.target.value }))}
               className="h-12 text-base"
@@ -359,14 +362,19 @@ export function ReceitaFormDialog({
 
           <div className="space-y-1 rounded-lg border border-border bg-muted/40 p-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Custo total</span>
+              <span className="text-muted-foreground">{t("receitaForm.custoTotal")}</span>
               <span className="font-semibold tabular-nums">
                 {formatEuro(custoTotal, { compact: true })}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                Custo por {values.unidadeRendimento === "un" ? "dose" : values.unidadeRendimento}
+                {t("receitaForm.custoPor", {
+                  unidade:
+                    values.unidadeRendimento === "un"
+                      ? t("receitaForm.dose")
+                      : values.unidadeRendimento,
+                })}
               </span>
               <span className="font-semibold tabular-nums">{formatEuro(custoDose)}</span>
             </div>
@@ -374,13 +382,13 @@ export function ReceitaFormDialog({
               <>
                 <div className="my-1 border-t border-border" />
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Preço de venda</span>
+                  <span className="text-muted-foreground">{t("receitaForm.precoVendaResumo")}</span>
                   <span className="font-semibold tabular-nums">
                     {formatEuro(precoVendaNum, { compact: true })}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Margem</span>
+                  <span className="text-muted-foreground">{t("receitaForm.margem")}</span>
                   <span
                     className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}
                   >
@@ -404,10 +412,14 @@ export function ReceitaFormDialog({
               onClick={() => onOpenChange(false)}
               className="h-11 flex-1 rounded-full"
             >
-              Cancelar
+              {t("comum.cancelar")}
             </Button>
             <Button type="submit" disabled={submitting} className="h-11 flex-1 rounded-full">
-              {submitting ? "A gravar…" : isEdit ? "Guardar" : "Criar receita"}
+              {submitting
+                ? t("comum.aGravar")
+                : isEdit
+                  ? t("comum.guardar")
+                  : t("receitaForm.criarReceita")}
             </Button>
           </SheetFooter>
         </form>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CookingPot } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -28,6 +29,7 @@ export function ProducaoDialog({
   receita: Receita;
   ingMap: Map<number, Ingrediente>;
 }) {
+  const { t } = useTranslation();
   const [lotesInput, setLotesInput] = useState("1");
   const [aGravar, setAGravar] = useState(false);
   useEffect(() => {
@@ -43,18 +45,20 @@ export function ProducaoDialog({
     try {
       const faltas = await registarProducao(receita, lotes);
       if (faltas.length === 0) {
-        toast.success(`Produção registada: ${doses} ${receita.unidadeRendimento} prontas.`);
+        toast.success(t("producaoDialog.ok", { doses, unidade: receita.unidadeRendimento }));
       } else {
         toast.warning(
-          `Produção registada, mas a despensa ficou curta: ${faltas
-            .map((f) => `${f.nome} (−${Math.round(f.falta * 100) / 100} ${f.unidade})`)
-            .join(", ")}. Confirma o stock real.`,
+          t("producaoDialog.curta", {
+            lista: faltas
+              .map((f) => `${f.nome} (−${Math.round(f.falta * 100) / 100} ${f.unidade})`)
+              .join(", "),
+          }),
         );
       }
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao registar a produção.");
+      toast.error(t("producaoDialog.erro"));
     } finally {
       setAGravar(false);
     }
@@ -64,10 +68,13 @@ export function ProducaoDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Registar produção</DialogTitle>
+          <DialogTitle>{t("producaoDialog.titulo")}</DialogTitle>
           <DialogDescription>
-            {receita.nome} — cada lote rende {receita.rendimento} {receita.unidadeRendimento}. Os
-            ingredientes baixam na despensa.
+            {t("producaoDialog.desc", {
+              nome: receita.nome,
+              rendimento: receita.rendimento,
+              unidade: receita.unidadeRendimento,
+            })}
           </DialogDescription>
         </DialogHeader>
 
@@ -82,7 +89,8 @@ export function ProducaoDialog({
             autoFocus
           />
           <span style={{ fontSize: 13, color: "var(--color-neutral-700)" }}>
-            {lotes === 1 ? "lote" : "lotes"} → {doses} {receita.unidadeRendimento} prontas
+            {t("producaoDialog.lote", { count: lotes })}{" "}
+            {t("producaoDialog.resultado", { doses, unidade: receita.unidadeRendimento })}
           </span>
         </div>
 
@@ -105,7 +113,11 @@ export function ProducaoDialog({
                     }}
                   >
                     −{Math.round(necessario * 100) / 100} {ing.unidade}
-                    {curto ? ` (só tens ${Math.round(ing.quantidadeEmbalagem * 100) / 100})` : ""}
+                    {curto
+                      ? t("producaoDialog.soTens", {
+                          n: Math.round(ing.quantidadeEmbalagem * 100) / 100,
+                        })
+                      : ""}
                   </span>
                 </div>
               );
@@ -120,7 +132,7 @@ export function ProducaoDialog({
             className="h-11 flex-1"
             disabled={aGravar}
           >
-            Cancelar
+            {t("comum.cancelar")}
           </Button>
           <Button
             onClick={() => void confirmar()}
@@ -128,7 +140,7 @@ export function ProducaoDialog({
             className="h-11 flex-1"
           >
             <CookingPot size={16} strokeWidth={2.75} />
-            {aGravar ? "A registar…" : "Registar"}
+            {aGravar ? t("producaoDialog.aRegistar") : t("producaoDialog.registar")}
           </Button>
         </div>
       </DialogContent>

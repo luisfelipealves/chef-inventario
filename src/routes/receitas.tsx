@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Printer, BookOpen, Plus, CookingPot } from "lucide-react";
@@ -35,10 +36,10 @@ export const Route = createFileRoute("/receitas")({
   component: ReceitasPage,
 });
 
-const FILTROS: FiltroOpcao[] = [
-  { key: "todas", label: "Todas" },
-  { key: "rentaveis", label: "Mais rentáveis" },
-  { key: "falhas", label: "Com falhas" },
+const FILTROS_KEYS = [
+  { key: "todas", labelKey: "receitas.filtroTodas" },
+  { key: "rentaveis", labelKey: "receitas.filtroRentaveis" },
+  { key: "falhas", labelKey: "receitas.filtroFalhas" },
 ];
 
 interface ReceitaCalc {
@@ -50,6 +51,7 @@ interface ReceitaCalc {
 }
 
 function ReceitasPage() {
+  const { t } = useTranslation();
   const hydrated = useHydrated();
   const receitas = useLiveQuery(
     () => (hydrated ? db.receitas.orderBy("nome").toArray() : []),
@@ -113,10 +115,10 @@ function ReceitasPage() {
     if (!toDelete) return;
     try {
       await db.receitas.delete(toDelete.id);
-      toast.success("Receita removida");
+      toast.success(t("receitas.removida"));
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao remover");
+      toast.error(t("receitas.erroRemover"));
     } finally {
       setToDelete(null);
     }
@@ -126,10 +128,10 @@ function ReceitasPage() {
     <div className="lista-view">
       <div className="lista-panel">
         <FiltroBar
-          opcoes={FILTROS}
+          opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
           valor={filtroAtual}
           onChange={(k) => setFiltro("receitas", k)}
-          contagem={`${filtrados.length} de ${lista.length} fichas técnicas`}
+          contagem={t("receitas.contagem", { n: filtrados.length, total: lista.length })}
         />
 
         {receitas === undefined ? (
@@ -141,13 +143,13 @@ function ReceitasPage() {
             <table className="lista-table">
               <thead>
                 <tr>
-                  <th>Receita</th>
-                  <th className="num">Ingredientes</th>
-                  <th>Rende</th>
-                  <th className="num">Custo total</th>
-                  <th className="num">Por dose</th>
-                  <th className="num">Venda</th>
-                  <th className="num">Margem</th>
+                  <th>{t("receitas.thReceita")}</th>
+                  <th className="num">{t("receitas.thIngredientes")}</th>
+                  <th>{t("receitas.thRende")}</th>
+                  <th className="num">{t("receitas.thCustoTotal")}</th>
+                  <th className="num">{t("receitas.thPorDose")}</th>
+                  <th className="num">{t("receitas.thVenda")}</th>
+                  <th className="num">{t("receitas.thMargem")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,7 +196,7 @@ function ReceitasPage() {
             onProduzir={() => setProducaoOpen(true)}
           />
         ) : (
-          <div className="detalhe-empty">Selecciona uma receita.</div>
+          <div className="detalhe-empty">{t("receitas.seleciona")}</div>
         )}
       </aside>
 
@@ -217,15 +219,18 @@ function ReceitasPage() {
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remover receita?</AlertDialogTitle>
+            <AlertDialogTitle>{t("receitas.removerTitulo")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Vais eliminar <strong>{toDelete?.nome}</strong>. Esta ação não pode ser desfeita.
+              {t("receitas.removerDesc", { nome: toDelete?.nome ?? "" })}{" "}
+              {t("comum.acaoIrreversivel")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogCancel className="h-11 rounded-full">
+              {t("comum.cancelar")}
+            </AlertDialogCancel>
             <AlertDialogAction onClick={confirmDelete} className="h-11 rounded-full">
-              Remover
+              {t("comum.remover")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -245,20 +250,21 @@ function ReceitaDetalhe({
   onEdit: () => void;
   onProduzir: () => void;
 }) {
+  const { t } = useTranslation();
   const { receita, custoTotal, custoDose, margem } = calc;
   const prontas = receita.dosesProntas ?? 0;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div>
-        <span className="card-kicker">Ficha técnica</span>
+        <span className="card-kicker">{t("receitas.kickerFicha")}</span>
         <h3 style={{ fontSize: 25, margin: "2px 0 4px" }}>{receita.nome}</h3>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
-            Rende {receita.rendimento} {receita.unidadeRendimento}
+            {t("receitas.rende", { n: receita.rendimento, unidade: receita.unidadeRendimento })}
           </span>
           <span className={prontas > 0 ? "tag tag-accent-2" : "tag tag-outline"}>
-            {prontas} {receita.unidadeRendimento} prontas
+            {t("receitas.prontas", { n: prontas, unidade: receita.unidadeRendimento })}
           </span>
         </div>
       </div>
@@ -288,7 +294,7 @@ function ReceitaDetalhe({
                   color: ing ? undefined : "var(--color-accent-700)",
                 }}
               >
-                {ing?.nome ?? "Ingrediente em falta"}
+                {ing?.nome ?? t("receitas.ingredienteFalta")}
               </span>
               <span style={{ fontSize: 12, color: "var(--color-neutral-600)" }}>
                 {l.quantidade} {ing?.unidade ?? ""}
@@ -309,7 +315,9 @@ function ReceitaDetalhe({
             borderTop: "1px solid var(--color-divider)",
           }}
         >
-          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>Custo total</span>
+          <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
+            {t("receitas.custoTotal")}
+          </span>
           <span
             style={{
               fontFamily: "var(--font-heading)",
@@ -332,7 +340,7 @@ function ReceitaDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            Custo por dose
+            {t("receitas.custoPorDose")}
           </span>
           <span
             style={{
@@ -354,7 +362,7 @@ function ReceitaDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            Preço de venda
+            {t("receitas.precoVenda")}
           </span>
           <span
             style={{
@@ -405,20 +413,20 @@ function ReceitaDetalhe({
               }}
             />
           </div>
-          <span style={{ fontSize: 12, opacity: 0.85 }}>acima do custo</span>
+          <span style={{ fontSize: 12, opacity: 0.85 }}>{t("receitas.acimaCusto")}</span>
         </div>
       )}
 
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onProduzir}>
           <CookingPot size={16} strokeWidth={2.75} />
-          Registar produção
+          {t("receitas.registarProducao")}
         </button>
         <button
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={onEdit}
-          aria-label="Editar ficha"
+          aria-label={t("receitas.editarFicha")}
         >
           <Pencil size={16} strokeWidth={2.75} />
         </button>
@@ -426,7 +434,7 @@ function ReceitaDetalhe({
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={() => window.print()}
-          aria-label="Imprimir ficha"
+          aria-label={t("receitas.imprimirFicha")}
         >
           <Printer size={16} strokeWidth={2.75} />
         </button>
@@ -448,18 +456,19 @@ function SkeletonTabela() {
 }
 
 function EmptyState({ onAdd }: { onAdd: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className="lista-empty">
       <div className="lista-empty-icon">
         <BookOpen size={28} strokeWidth={2.75} />
       </div>
-      <h2 style={{ fontSize: 20 }}>Ainda sem receitas</h2>
+      <h2 style={{ fontSize: 20 }}>{t("receitas.vazioTitulo")}</h2>
       <p style={{ fontSize: 14, color: "var(--color-neutral-600)", maxWidth: 320 }}>
-        Cria a tua primeira ficha técnica para veres o custo total e por dose.
+        {t("receitas.vazioDesc")}
       </p>
       <button type="button" className="btn btn-primary" onClick={onAdd}>
         <Plus size={16} strokeWidth={2.75} />
-        Nova receita
+        {t("topbar.novaReceita")}
       </button>
     </div>
   );
