@@ -42,6 +42,23 @@ export interface Cliente {
   createdAt: Date;
 }
 
+/**
+ * Registo histórico de uma compra de ingrediente (para o Financeiro).
+ * Criado ao "Adicionar compra" e ao importar faturas; nunca é editado.
+ */
+export interface Compra {
+  id: number;
+  /** Pode apontar para um ingrediente entretanto removido. */
+  ingredienteId?: number;
+  /** Nome do ingrediente no momento da compra. */
+  nome: string;
+  quantidade: number;
+  unidade: UnidadeMedida;
+  /** Valor pago (€). */
+  valor: number;
+  createdAt: Date;
+}
+
 export type EstadoPedido = "pendente" | "confirmado" | "entregue" | "cancelado";
 
 export interface ItemPedido {
@@ -67,6 +84,7 @@ export const db = new Dexie("ChefGestaoDB") as Dexie & {
   receitas: EntityTable<Receita, "id">;
   clientes: EntityTable<Cliente, "id">;
   pedidos: EntityTable<Pedido, "id">;
+  compras: EntityTable<Compra, "id">;
 };
 
 db.version(1).stores({
@@ -92,4 +110,12 @@ db.version(4).stores({
   receitas: "++id, nome, createdAt",
   clientes: "++id, nome, telefone, nif, createdAt",
   pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+});
+
+db.version(5).stores({
+  ingredientes: "++id, nome, codigoBarras, createdAt",
+  receitas: "++id, nome, createdAt",
+  clientes: "++id, nome, telefone, nif, createdAt",
+  pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+  compras: "++id, ingredienteId, createdAt",
 });
