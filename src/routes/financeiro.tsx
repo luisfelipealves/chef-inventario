@@ -249,17 +249,20 @@ function FinanceiroPage() {
       movimentos: [
         ...ativos.map((p): MovimentoCsv => ({
           data: p.data,
-          tipo: "Receita",
-          descricao: `Pedido nº ${p.pedido.id} — ${p.pedido.itens
-            .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "?"}`)
-            .join(", ")}`,
+          tipo: "receita",
+          descricao: t("financeiro.movPedido", {
+            id: p.pedido.id,
+            itens: p.pedido.itens
+              .map((i) => `${i.quantidade}× ${receitaMap.get(i.receitaId)?.nome ?? "?"}`)
+              .join(", "),
+          }),
           contraparte: clienteMap.get(p.pedido.clienteId)?.nome ?? "",
           estado: t(`estado.${p.pedido.estado}`),
           valor: p.venda,
         })),
         ...comprasPeriodo.map((c): MovimentoCsv => ({
           data: c.data,
-          tipo: "Despesa",
+          tipo: "despesa",
           descricao: `${c.nome} (${c.quantidade} ${c.unidade})`,
           contraparte: "",
           estado: "",

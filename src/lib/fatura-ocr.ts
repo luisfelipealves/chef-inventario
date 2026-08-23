@@ -1,4 +1,5 @@
 import type { UnidadeMedida } from "@/lib/db";
+import i18n, { idiomaAtual } from "@/lib/i18n";
 
 /**
  * Leitura de faturas de compras por visão (OCR + extração estruturada).
@@ -26,8 +27,7 @@ const MODELO = "gemini-2.5-flash";
  * chaves. Se não existir, cai na chave colada pelo utilizador (localStorage).
  */
 export function getGeminiKey(): string {
-  const embutida = (import.meta.env as Record<string, string | undefined>)
-    .VITE_GEMINI_KEY;
+  const embutida = (import.meta.env as Record<string, string | undefined>).VITE_GEMINI_KEY;
   if (typeof embutida === "string" && embutida.trim()) return embutida.trim();
   if (typeof localStorage === "undefined") return "";
   return localStorage.getItem(KEY_STORAGE) ?? "";
@@ -49,6 +49,18 @@ function coerceUnidade(u: unknown): UnidadeMedida {
     .trim();
   return (UNIDADES as string[]).includes(s) ? (s as UnidadeMedida) : "un";
 }
+
+const PROMPT_EN = `You are an assistant that reads supermarket receipts/invoices in any language.
+Extract each PRODUCT line purchased. For each product return:
+- nome: the product name, clean and readable
+- quantidade: the total quantity bought (number)
+- unidade: one of "g", "kg", "ml", "l", "un"
+- precoTotal: the total price paid for that line (number, dot decimal)
+
+Rules:
+- Ignore totals, subtotals, VAT/tax, global discounts, tax IDs and headers.
+- If the line shows a weight (e.g. 0.450 kg) use that quantity and unit; otherwise use "un" and the unit count.
+- Reply only with the requested JSON, no extra text.`;
 
 const PROMPT = `És um assistente que lê faturas/talões de compras de supermercado em português.
 Extrai cada linha de PRODUTO comprado. Para cada produto devolve:
@@ -92,7 +104,10 @@ export async function lerFatura(imagemBase64: string, apiKey: string): Promise<I
   const body = {
     contents: [
       {
-        parts: [{ inline_data: { mime_type: "image/jpeg", data: imagemBase64 } }, { text: PROMPT }],
+        parts: [
+          { inline_data: { mime_type: "image/jpeg", data: imagemBase64 } },
+          { text: idiomaAtual() === "en" ? PROMPT_EN : PROMPT },
+        ],
       },
     ],
     generationConfig: {
@@ -109,28 +124,28 @@ export async function lerFatura(imagemBase64: string, apiKey: string): Promise<I
       body: JSON.stringify(body),
     });
   } catch {
-    throw new Error("Sem ligação à internet. A leitura de faturas precisa de rede.");
+    throw new Error(i18n.t("ocr.semRede"));
   }
 
   if (res.status === 400 || res.status === 403) {
-    throw new Error("Chave da API inválida ou sem acesso. Verifica a chave do Gemini.");
+    throw new Error(i18n.t("ocr.chaveInvalida"));
   }
   if (res.status === 429) {
-    throw new Error("Limite gratuito atingido por agora. Tenta novamente mais tarde.");
+    throw new Error(i18n.t("ocr.limite"));
   }
   if (!res.ok) {
-    throw new Error(`Erro do Gemini (${res.status}). Tenta novamente.`);
+    throw new Error(i18n.t("ocr.erroGemini", { status: res.status }));
   }
 
   const data = await res.json();
   const texto: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!texto) throw new Error("Não foi possível ler a fatura. Tenta outra foto.");
+  if (!texto) throw new Error(i18n.t("ocr.naoLeu"));
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(texto);
   } catch {
-    throw new Error("Resposta inesperada do Gemini. Tenta outra foto.");
+    throw new Error(i18n.t("ocr.respostaInesperada"));
   }
 
   const itens = (parsed as { itens?: unknown[] })?.itens;

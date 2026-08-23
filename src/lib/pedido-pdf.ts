@@ -3,6 +3,7 @@ import { formatEuro } from "@/lib/format";
 import { dataEntregaLonga } from "@/lib/data-format";
 import { emTauri } from "@/lib/backup";
 import { logoNegocioGuardado, nomeGuardado, nomeNegocioGuardado } from "@/lib/perfil";
+import i18n, { localeAtual } from "@/lib/i18n";
 
 /**
  * Documento PDF de um pedido, virado para o cliente final: orçamento
@@ -12,10 +13,9 @@ import { logoNegocioGuardado, nomeGuardado, nomeNegocioGuardado } from "@/lib/pe
 
 export type TipoDocumento = "orcamento" | "pedido";
 
-const TITULO: Record<TipoDocumento, string> = {
-  orcamento: "Orçamento",
-  pedido: "Resumo do pedido",
-};
+function titulo(tipo: TipoDocumento): string {
+  return tipo === "orcamento" ? i18n.t("pdf.orcamento") : i18n.t("pdf.resumo");
+}
 
 /** As fontes standard do PDF são WinAnsi: troca espaços especiais do Intl. */
 function txt(s: string): string {
@@ -33,7 +33,7 @@ function slug(s: string): string {
       .normalize("NFD")
       .replace(/[\u0300-\u036F]/g, "")
       .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") || "cliente"
+      .replace(/^-|-$/g, "") || i18n.t("pdf.fichClienteFallback")
   );
 }
 
@@ -65,19 +65,14 @@ export async function exportarPedidoPdf({
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const direita = LARGURA - MARGEM;
   const hoje = new Date();
-  const emitido = `${hoje.getDate()}/${hoje.getMonth() + 1}/${hoje.getFullYear()}`;
+  const emitido = new Intl.DateTimeFormat(localeAtual()).format(hoje);
   let y = MARGEM + 4;
 
   function rodape() {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(150);
-    doc.text(
-      txt(`Documento sem valor fiscal · Gerado com o Caderninho de Receitas a ${emitido}`),
-      LARGURA / 2,
-      290,
-      { align: "center" },
-    );
+    doc.text(txt(i18n.t("pdf.rodape", { data: emitido })), LARGURA / 2, 290, { align: "center" });
     doc.setTextColor(0);
   }
 
@@ -109,12 +104,14 @@ export async function exportarPedidoPdf({
   doc.setFontSize(16);
   doc.text(txt(emissor), xEmissor, y);
   doc.setFontSize(20);
-  doc.text(TITULO[tipo], direita, y, { align: "right" });
+  doc.text(titulo(tipo), direita, y, { align: "right" });
   y += 6;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text(txt(`Nº ${pedido.id} · emitido a ${emitido}`), direita, y, { align: "right" });
+  doc.text(txt(i18n.t("pdf.numEmitido", { id: pedido.id, data: emitido })), direita, y, {
+    align: "right",
+  });
   doc.setTextColor(0);
   y += 8;
   doc.setDrawColor(210);
@@ -124,19 +121,23 @@ export async function exportarPedidoPdf({
   // Cliente e entrega
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text("PARA", MARGEM, y);
-  doc.text("ENTREGA", direita - 60, y);
+  doc.text(txt(i18n.t("pdf.para")), MARGEM, y);
+  doc.text(txt(i18n.t("pdf.entrega")), direita - 60, y);
   doc.setTextColor(0);
   y += 5;
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(txt(cliente?.nome ?? "Cliente"), MARGEM, y);
+  doc.text(txt(cliente?.nome ?? i18n.t("pdf.clienteFallback")), MARGEM, y);
   doc.setFont("helvetica", "normal");
   doc.text(txt(dataEntregaLonga(pedido.dataEntrega)), direita - 60, y);
   y += 5;
   doc.setFontSize(9);
   doc.setTextColor(90);
-  const linhasCliente = [cliente?.telefone, cliente?.endereco, cliente?.nif && `NIF ${cliente.nif}`]
+  const linhasCliente = [
+    cliente?.telefone,
+    cliente?.endereco,
+    cliente?.nif && i18n.t("pdf.nif", { nif: cliente.nif }),
+  ]
     .filter((v): v is string => Boolean(v))
     .map(txt);
   for (const l of linhasCliente) {
@@ -155,10 +156,10 @@ export async function exportarPedidoPdf({
 
   doc.setFontSize(9);
   doc.setTextColor(120);
-  doc.text("QTD", COL_QTD, y);
-  doc.text("RECEITA", COL_NOME, y);
-  doc.text("PREÇO", COL_UNIT, y, { align: "right" });
-  doc.text("TOTAL", COL_TOTAL, y, { align: "right" });
+  doc.text(txt(i18n.t("pdf.qtd")), COL_QTD, y);
+  doc.text(txt(i18n.t("pdf.receita")), COL_NOME, y);
+  doc.text(txt(i18n.t("pdf.preco")), COL_UNIT, y, { align: "right" });
+  doc.text(txt(i18n.t("pdf.total")), COL_TOTAL, y, { align: "right" });
   doc.setTextColor(0);
   y += 2.5;
   doc.setDrawColor(210);
@@ -168,7 +169,7 @@ export async function exportarPedidoPdf({
   let total = 0;
   doc.setFontSize(10.5);
   for (const item of pedido.itens) {
-    const nome = txt(receitaMap.get(item.receitaId)?.nome ?? "Receita removida");
+    const nome = txt(receitaMap.get(item.receitaId)?.nome ?? i18n.t("pdf.receitaRemovida"));
     const linhas = doc.splitTextToSize(nome, LARGURA_NOME) as string[];
     const altura = Math.max(1, linhas.length) * 5 + 3;
     novaPaginaSePreciso(altura);
@@ -189,7 +190,11 @@ export async function exportarPedidoPdf({
   y += 4;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text(tipo === "orcamento" ? "Total estimado" : "Total", COL_UNIT - 30, y);
+  doc.text(
+    txt(tipo === "orcamento" ? i18n.t("pdf.totalEstimado") : i18n.t("pdf.totalLabel")),
+    COL_UNIT - 30,
+    y,
+  );
   doc.text(euro(total), COL_TOTAL, y, { align: "right" });
   doc.setFont("helvetica", "normal");
   y += 12;
@@ -200,7 +205,7 @@ export async function exportarPedidoPdf({
     novaPaginaSePreciso(linhas.length * 4.5 + 10);
     doc.setFontSize(9);
     doc.setTextColor(120);
-    doc.text("NOTAS", MARGEM, y);
+    doc.text(txt(i18n.t("pdf.notas")), MARGEM, y);
     doc.setTextColor(90);
     y += 5;
     doc.text(linhas, MARGEM, y);
@@ -209,9 +214,8 @@ export async function exportarPedidoPdf({
 
   rodape();
 
-  const nomeFicheiro = `${tipo === "orcamento" ? "orcamento" : "pedido"}-${slug(
-    cliente?.nome ?? "",
-  )}-${pedido.id}.pdf`;
+  const prefixo = tipo === "orcamento" ? i18n.t("pdf.fichOrcamento") : i18n.t("pdf.fichPedido");
+  const nomeFicheiro = `${prefixo}-${slug(cliente?.nome ?? "")}-${pedido.id}.pdf`;
   const bytes = new Uint8Array(doc.output("arraybuffer"));
 
   if (emTauri()) {

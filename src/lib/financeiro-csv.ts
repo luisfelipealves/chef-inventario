@@ -1,4 +1,5 @@
 import { emTauri } from "@/lib/backup";
+import i18n, { idiomaAtual } from "@/lib/i18n";
 
 /**
  * Exportação CSV dos movimentos do período (para o contabilista).
@@ -8,7 +9,7 @@ import { emTauri } from "@/lib/backup";
 
 export interface MovimentoCsv {
   data: Date;
-  tipo: "Receita" | "Despesa";
+  tipo: "receita" | "despesa";
   descricao: string;
   contraparte: string;
   estado: string;
@@ -21,28 +22,34 @@ function dataISO(d: Date): string {
   return `${d.getFullYear()}-${m}-${dia}`;
 }
 
-function campo(s: string): string {
-  return /[;"\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+function campo(s: string, sep: string): string {
+  return new RegExp(`[${sep}"\n\r]`).test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
-function valorPt(v: number): string {
-  return v.toFixed(2).replace(".", ",");
+/** Formato regional: pt usa ";" e vírgula decimal; en usa "," e ponto. */
+function formatoRegional() {
+  const en = idiomaAtual() === "en";
+  return {
+    sep: en ? "," : ";",
+    valor: (v: number) => (en ? v.toFixed(2) : v.toFixed(2).replace(".", ",")),
+  };
 }
 
 export function gerarCsv(movimentos: MovimentoCsv[]): string {
+  const { sep, valor } = formatoRegional();
   const linhas = [
-    "Data;Tipo;Descrição;Cliente/Fornecedor;Estado;Valor (EUR)",
+    i18n.t("csv.cabecalho"),
     ...[...movimentos]
       .sort((a, b) => a.data.getTime() - b.data.getTime())
       .map((m) =>
         [
           dataISO(m.data),
-          m.tipo,
-          campo(m.descricao),
-          campo(m.contraparte),
+          i18n.t(`csv.${m.tipo}`),
+          campo(m.descricao, sep),
+          campo(m.contraparte, sep),
           m.estado,
-          valorPt(m.valor),
-        ].join(";"),
+          valor(m.valor),
+        ].join(sep),
       ),
   ];
   // BOM para o Excel reconhecer UTF-8; CRLF por compatibilidade.
