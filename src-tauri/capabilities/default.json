@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Permissões da janela principal: núcleo, diálogos de ficheiro e leitura/escrita de ficheiros de texto (cópia de segurança).",
+  "description": "Permissões da janela principal: núcleo, diálogos de ficheiro, leitura/escrita de ficheiros de texto (cópia de segurança) e escrita binária (PDF).",
   "windows": ["main"],
   "permissions": [
     "core:default",
@@ -13,6 +13,10 @@
     },
     {
       "identifier": "fs:allow-read-text-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-write-file",
       "allow": [{ "path": "**" }]
     }
   ]

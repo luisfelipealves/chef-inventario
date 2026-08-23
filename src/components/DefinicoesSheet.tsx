@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { Download, Upload, Database } from "lucide-react";
+import { Download, Upload, Database, Trash2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -30,6 +30,7 @@ import {
   type BackupData,
   type ContagemBackup,
 } from "@/lib/backup";
+import { apagarDadosExemplo, useTemDadosExemplo } from "@/lib/demo-data";
 
 export function DefinicoesSheet({
   open,
@@ -49,6 +50,10 @@ export function DefinicoesSheet({
     ]);
     return { ingredientes, receitas, clientes, pedidos };
   }, [hydrated]);
+
+  const temDemo = useTemDadosExemplo();
+  const [confirmarDemo, setConfirmarDemo] = useState(false);
+  const [aApagarDemo, setAApagarDemo] = useState(false);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [aExportar, setAExportar] = useState(false);
@@ -101,6 +106,20 @@ export function DefinicoesSheet({
     const reader = new FileReader();
     reader.onload = () => prepararImport(String(reader.result));
     reader.readAsText(file);
+  }
+
+  async function confirmarApagarDemo() {
+    setAApagarDemo(true);
+    try {
+      await apagarDadosExemplo();
+      toast.success("Dados de exemplo apagados.");
+      setConfirmarDemo(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao apagar os dados de exemplo.");
+    } finally {
+      setAApagarDemo(false);
+    }
   }
 
   async function confirmarImport() {
@@ -195,8 +214,49 @@ export function DefinicoesSheet({
               style={{ display: "none" }}
             />
           </div>
+
+          {temDemo && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span className="card-kicker">Dados de exemplo</span>
+              <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+                A app tem dados de exemplo do onboarding. Apaga-os quando quiseres começar a usar os
+                teus dados reais — os registos criados por ti ficam intactos.
+              </p>
+              <button
+                type="button"
+                className="btn btn-secondary btn-block"
+                onClick={() => setConfirmarDemo(true)}
+                style={{ height: 44 }}
+              >
+                <Trash2 size={16} strokeWidth={2.75} />
+                Apagar dados de exemplo
+              </button>
+            </div>
+          )}
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={confirmarDemo} onOpenChange={(o) => !o && setConfirmarDemo(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apagar os dados de exemplo?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Remove os ingredientes, receitas, clientes, pedidos e compras criados no onboarding.
+              Os dados que criaste manualmente não são afetados. Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="h-11 rounded-full">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmarApagarDemo}
+              disabled={aApagarDemo}
+              className="h-11 rounded-full"
+            >
+              {aApagarDemo ? "A apagar…" : "Apagar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!pendente} onOpenChange={(o) => !o && setPendente(null)}>
         <AlertDialogContent>

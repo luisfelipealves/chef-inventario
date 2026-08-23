@@ -7,6 +7,7 @@ import { calcularAlertasStock } from "@/lib/stock-alerta";
 import { useShell, type ModuloLista } from "@/lib/shell";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { PrimeiroArranqueDialog } from "./PrimeiroArranqueDialog";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const hydrated = useHydrated();
@@ -70,6 +71,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Topbar datasets={datasets} />
         <div className="shell-content">{children}</div>
       </div>
+      <PrimeiroArranqueDialog />
     </div>
   );
 }

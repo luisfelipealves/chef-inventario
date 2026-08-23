@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { db, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { db, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
 
 const schema = z.object({
@@ -231,6 +231,14 @@ export function IngredienteFormDialog({
         precoEmbalagem: novoPreco,
         ...(codigoBarras ? { codigoBarras } : {}),
       });
+      await db.compras.add({
+        ingredienteId: ingrediente.id,
+        nome: ingrediente.nome,
+        quantidade: parsed.data.quantidade,
+        unidade: ingrediente.unidade,
+        valor: parsed.data.preco,
+        createdAt: new Date(),
+      } as Compra);
       toast.success("Compra adicionada ao stock");
       onOpenChange(false);
     } catch (err) {

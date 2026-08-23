@@ -6,6 +6,7 @@ import {
   BookOpen,
   Package,
   Users,
+  Wallet,
   PanelLeftClose,
   PanelLeftOpen,
   TriangleAlert,
@@ -30,6 +31,7 @@ const NAV: NavDef[] = [
   { to: "/receitas", label: "Receitas", icon: BookOpen, module: "receitas" },
   { to: "/ingredientes", label: "Ingredientes", icon: Package, module: "ingredientes" },
   { to: "/clientes", label: "Clientes", icon: Users, module: "clientes" },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet },
 ];
 
 export function Sidebar({

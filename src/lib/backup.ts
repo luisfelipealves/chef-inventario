@@ -1,4 +1,11 @@
-import { db, type Cliente, type Ingrediente, type Pedido, type Receita } from "@/lib/db";
+import {
+  db,
+  type Cliente,
+  type Compra,
+  type Ingrediente,
+  type Pedido,
+  type Receita,
+} from "@/lib/db";
 
 /**
  * Cópia de segurança / migração de dados.
@@ -17,6 +24,8 @@ export interface BackupData {
   receitas: Receita[];
   clientes: Cliente[];
   pedidos: Pedido[];
+  /** Ausente em backups anteriores à v0.6 — importa como vazio. */
+  compras?: Compra[];
 }
 
 export interface ContagemBackup {
@@ -27,11 +36,12 @@ export interface ContagemBackup {
 }
 
 export async function recolherDados(): Promise<BackupData> {
-  const [ingredientes, receitas, clientes, pedidos] = await Promise.all([
+  const [ingredientes, receitas, clientes, pedidos, compras] = await Promise.all([
     db.ingredientes.toArray(),
     db.receitas.toArray(),
     db.clientes.toArray(),
     db.pedidos.toArray(),
+    db.compras.toArray(),
   ]);
   return {
     app: "chefgestao",
@@ -41,6 +51,7 @@ export async function recolherDados(): Promise<BackupData> {
     receitas,
     clientes,
     pedidos,
+    compras,
   };
 }
 
@@ -139,18 +150,24 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
  * confirmar com o utilizador antes de chamar.
  */
 export async function importarBackup(dados: BackupData): Promise<ContagemBackup> {
-  await db.transaction("rw", db.ingredientes, db.receitas, db.clientes, db.pedidos, async () => {
-    await Promise.all([
-      db.ingredientes.clear(),
-      db.receitas.clear(),
-      db.clientes.clear(),
-      db.pedidos.clear(),
-    ]);
-    await db.ingredientes.bulkAdd(reviverDatas(dados.ingredientes));
-    await db.receitas.bulkAdd(reviverDatas(dados.receitas));
-    await db.clientes.bulkAdd(reviverDatas(dados.clientes));
-    await db.pedidos.bulkAdd(reviverDatas(dados.pedidos));
-  });
+  await db.transaction(
+    "rw",
+    [db.ingredientes, db.receitas, db.clientes, db.pedidos, db.compras],
+    async () => {
+      await Promise.all([
+        db.ingredientes.clear(),
+        db.receitas.clear(),
+        db.clientes.clear(),
+        db.pedidos.clear(),
+        db.compras.clear(),
+      ]);
+      await db.ingredientes.bulkAdd(reviverDatas(dados.ingredientes));
+      await db.receitas.bulkAdd(reviverDatas(dados.receitas));
+      await db.clientes.bulkAdd(reviverDatas(dados.clientes));
+      await db.pedidos.bulkAdd(reviverDatas(dados.pedidos));
+      await db.compras.bulkAdd(reviverDatas(dados.compras ?? []));
+    },
+  );
   return {
     ingredientes: dados.ingredientes.length,
     receitas: dados.receitas.length,
