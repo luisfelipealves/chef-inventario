@@ -13,25 +13,26 @@ import {
   Settings,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useShell, type ModuloLista } from "@/lib/shell";
 import type { AlertaStock } from "@/lib/stock-alerta";
 import { DefinicoesSheet } from "@/components/DefinicoesSheet";
 
 interface NavDef {
   to: string;
-  label: string;
+  labelKey: string;
   icon: LucideIcon;
   module?: ModuloLista;
   exact?: boolean;
 }
 
 const NAV: NavDef[] = [
-  { to: "/", label: "Painel", icon: LayoutDashboard, exact: true },
-  { to: "/pedidos", label: "Pedidos", icon: ClipboardList, module: "pedidos" },
-  { to: "/receitas", label: "Receitas", icon: BookOpen, module: "receitas" },
-  { to: "/ingredientes", label: "Ingredientes", icon: Package, module: "ingredientes" },
-  { to: "/clientes", label: "Clientes", icon: Users, module: "clientes" },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/", labelKey: "nav.painel", icon: LayoutDashboard, exact: true },
+  { to: "/pedidos", labelKey: "nav.pedidos", icon: ClipboardList, module: "pedidos" },
+  { to: "/receitas", labelKey: "nav.receitas", icon: BookOpen, module: "receitas" },
+  { to: "/ingredientes", labelKey: "nav.ingredientes", icon: Package, module: "ingredientes" },
+  { to: "/clientes", labelKey: "nav.clientes", icon: Users, module: "clientes" },
+  { to: "/financeiro", labelKey: "nav.financeiro", icon: Wallet },
 ];
 
 export function Sidebar({
@@ -41,6 +42,7 @@ export function Sidebar({
   counts: Record<ModuloLista, number>;
   alertas: AlertaStock[];
 }) {
+  const { t } = useTranslation();
   const { sidebarOpen, toggleSidebar, setFiltro } = useShell();
   const navigate = useNavigate();
   const collapsed = !sidebarOpen;
@@ -74,14 +76,14 @@ export function Sidebar({
               key={item.to}
               to={item.to}
               className="nav-item"
-              title={collapsed ? item.label : undefined}
+              title={collapsed ? t(item.labelKey) : undefined}
               activeOptions={{ exact: item.exact ?? false }}
               activeProps={{ "data-active": "true" } as Record<string, string>}
             >
               <Icon size={19} strokeWidth={2.75} />
               {!collapsed && (
                 <>
-                  <span className="nav-item-label">{item.label}</span>
+                  <span className="nav-item-label">{t(item.labelKey)}</span>
                   {count !== undefined && <span className="nav-item-count">{count}</span>}
                 </>
               )}
@@ -102,7 +104,7 @@ export function Sidebar({
                   lineHeight: 1.1,
                 }}
               >
-                {alertas.length} em stock baixo
+                {t("nav.stockBaixo", { n: alertas.length })}
               </span>
             </span>
             <span
@@ -124,11 +126,11 @@ export function Sidebar({
         <button
           type="button"
           className="nav-item"
-          title={collapsed ? "Definições" : undefined}
+          title={collapsed ? t("nav.definicoes") : undefined}
           onClick={() => setDefinicoesOpen(true)}
         >
           <Settings size={19} strokeWidth={2.75} />
-          {!collapsed && <span className="nav-item-label">Definições</span>}
+          {!collapsed && <span className="nav-item-label">{t("nav.definicoes")}</span>}
         </button>
 
         <button type="button" className="nav-item" onClick={toggleSidebar}>
@@ -137,7 +139,7 @@ export function Sidebar({
           ) : (
             <PanelLeftClose size={19} strokeWidth={2.75} />
           )}
-          {!collapsed && <span className="nav-item-label">Recolher</span>}
+          {!collapsed && <span className="nav-item-label">{t("nav.recolher")}</span>}
         </button>
       </div>
 

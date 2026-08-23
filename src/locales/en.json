@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "painel": "Dashboard",
+    "pedidos": "Orders",
+    "receitas": "Recipes",
+    "ingredientes": "Ingredients",
+    "clientes": "Customers",
+    "financeiro": "Finances",
+    "definicoes": "Settings",
+    "recolher": "Collapse",
+    "stockBaixo": "{{n}} low on stock"
+  },
+  "topbar": {
+    "bomDia": "Good morning",
+    "boaTarde": "Good afternoon",
+    "boaNoite": "Good evening",
+    "novoPedido": "New order",
+    "novaReceita": "New recipe",
+    "novoIngrediente": "New ingredient",
+    "novoCliente": "New customer",
+    "pesquisar": "Search everything…",
+    "pesquisaGlobal": "Global search"
+  },
+  "painel": {
+    "pedidosAbertos": "Open orders",
+    "aReceber": "{{valor}} to collect",
+    "entregarSemana": "Due this week",
+    "lucroPrevisto": "Expected profit",
+    "sobrePedidosAbertos": "across open orders",
+    "ingredientesStock": "Ingredients in stock",
+    "abaixoNecessario": "{{n}} below what's needed",
+    "proximasEntregas": "Upcoming deliveries",
+    "verPedidos": "View orders",
+    "semPedidosAbertos": "No open orders.",
+    "clienteRemovido": "Deleted customer",
+    "stockBaixo": "Low stock",
+    "stockBaixoDesc": "Below what this week's confirmed orders require.",
+    "falta": "short",
+    "receitasRentaveis": "Most profitable recipes",
+    "definePrecoVenda": "Set a selling price to see your margins.",
+    "semEntregas": "No deliveries",
+    "umDia": "{{mes}} {{dia}}",
+    "intervaloMesmoMes": "{{mes}} {{de}}–{{ate}}",
+    "intervaloDoisMeses": "{{mesDe}} {{de}} – {{mesAte}} {{ate}}"
+  },
+  "pesquisa": {
+    "nadaEncontrado": "No results.",
+    "tipoIngrediente": "Ingredient",
+    "tipoReceita": "Recipe",
+    "tipoCliente": "Customer",
+    "tipoPedido": "Order",
+    "metaReceita": "cost {{custo}} · yields {{rendimento}} {{unidade}}",
+    "metaPedido": "delivery {{data}} · {{valor}}"
+  },
+  "idioma": {
+    "titulo": "Language",
+    "descricao": "The app and its documents follow the chosen language."
+  }
+}

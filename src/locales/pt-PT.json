@@ -1,0 +1,59 @@
+{
+  "nav": {
+    "painel": "Painel",
+    "pedidos": "Pedidos",
+    "receitas": "Receitas",
+    "ingredientes": "Ingredientes",
+    "clientes": "Clientes",
+    "financeiro": "Financeiro",
+    "definicoes": "Definições",
+    "recolher": "Recolher",
+    "stockBaixo": "{{n}} em stock baixo"
+  },
+  "topbar": {
+    "bomDia": "Bom dia",
+    "boaTarde": "Boa tarde",
+    "boaNoite": "Boa noite",
+    "novoPedido": "Novo pedido",
+    "novaReceita": "Nova receita",
+    "novoIngrediente": "Novo ingrediente",
+    "novoCliente": "Novo cliente",
+    "pesquisar": "Pesquisar em tudo…",
+    "pesquisaGlobal": "Pesquisa global"
+  },
+  "painel": {
+    "pedidosAbertos": "Pedidos abertos",
+    "aReceber": "{{valor}} a receber",
+    "entregarSemana": "A entregar esta semana",
+    "lucroPrevisto": "Lucro previsto",
+    "sobrePedidosAbertos": "sobre pedidos abertos",
+    "ingredientesStock": "Ingredientes em stock",
+    "abaixoNecessario": "{{n}} abaixo do necessário",
+    "proximasEntregas": "Próximas entregas",
+    "verPedidos": "Ver pedidos",
+    "semPedidosAbertos": "Sem pedidos abertos.",
+    "clienteRemovido": "Cliente removido",
+    "stockBaixo": "Stock baixo",
+    "stockBaixoDesc": "Abaixo do necessário para os pedidos confirmados desta semana.",
+    "falta": "falta",
+    "receitasRentaveis": "Receitas mais rentáveis",
+    "definePrecoVenda": "Define um preço de venda para veres as margens.",
+    "semEntregas": "Sem entregas",
+    "umDia": "{{dia}} de {{mes}}",
+    "intervaloMesmoMes": "{{de}} a {{ate}} de {{mes}}",
+    "intervaloDoisMeses": "{{de}} {{mesDe}} a {{ate}} {{mesAte}}"
+  },
+  "pesquisa": {
+    "nadaEncontrado": "Nada encontrado.",
+    "tipoIngrediente": "Ingrediente",
+    "tipoReceita": "Receita",
+    "tipoCliente": "Cliente",
+    "tipoPedido": "Pedido",
+    "metaReceita": "custo {{custo}} · rende {{rendimento}} {{unidade}}",
+    "metaPedido": "entrega {{data}} · {{valor}}"
+  },
+  "idioma": {
+    "titulo": "Idioma",
+    "descricao": "A app e os documentos seguem o idioma escolhido."
+  }
+}

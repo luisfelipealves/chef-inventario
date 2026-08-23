@@ -1,4 +1,5 @@
 import { forwardRef, useMemo } from "react";
+import { useTranslation, type UseTranslationResponse } from "react-i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { Package, BookOpen, Users, ClipboardList, Search } from "lucide-react";
 import type { Cliente, Ingrediente, Pedido, Receita } from "@/lib/db";
@@ -28,7 +29,9 @@ interface Resultado {
 
 const LIMITE = 8;
 
-function construirResultados(q: string, d: Datasets): Resultado[] {
+type T = UseTranslationResponse<"translation", undefined>["t"];
+
+function construirResultados(q: string, d: Datasets, t: T): Resultado[] {
   const termo = q.trim().toLowerCase();
   if (!termo) return [];
   const inclui = (v: string | undefined) => (v ?? "").toLowerCase().includes(termo);
@@ -41,7 +44,7 @@ function construirResultados(q: string, d: Datasets): Resultado[] {
     out.push({
       module: "ingredientes",
       id: ing.id,
-      tipo: "Ingrediente",
+      tipo: t("pesquisa.tipoIngrediente"),
       nome: ing.nome,
       meta: `${ing.quantidadeEmbalagem} ${ing.unidade} · ${formatEuro(ing.precoEmbalagem, { compact: true })}`,
       icon: Package,
@@ -54,9 +57,9 @@ function construirResultados(q: string, d: Datasets): Resultado[] {
     out.push({
       module: "receitas",
       id: r.id,
-      tipo: "Receita",
+      tipo: t("pesquisa.tipoReceita"),
       nome: r.nome,
-      meta: `custo ${formatEuro(custo, { compact: true })} · rende ${r.rendimento} ${r.unidadeRendimento}`,
+      meta: t("pesquisa.metaReceita", { custo: formatEuro(custo, { compact: true }), rendimento: r.rendimento, unidade: r.unidadeRendimento }),
       icon: BookOpen,
     });
   }
@@ -66,7 +69,7 @@ function construirResultados(q: string, d: Datasets): Resultado[] {
     out.push({
       module: "clientes",
       id: c.id,
-      tipo: "Cliente",
+      tipo: t("pesquisa.tipoCliente"),
       nome: c.nome,
       meta: c.telefone || "—",
       icon: Users,
@@ -80,9 +83,9 @@ function construirResultados(q: string, d: Datasets): Resultado[] {
     out.push({
       module: "pedidos",
       id: p.id,
-      tipo: "Pedido",
-      nome: cliente?.nome ?? "Cliente removido",
-      meta: `entrega ${p.dataEntrega} · ${formatEuro(totais.venda, { compact: true })}`,
+      tipo: t("pesquisa.tipoPedido"),
+      nome: cliente?.nome ?? t("painel.clienteRemovido"),
+      meta: t("pesquisa.metaPedido", { data: p.dataEntrega, valor: formatEuro(totais.venda, { compact: true }) }),
       icon: ClipboardList,
     });
   }
@@ -98,10 +101,11 @@ const ROTA: Record<ModuloLista, string> = {
 
 export const GlobalSearch = forwardRef<HTMLInputElement, { datasets: Datasets }>(
   function GlobalSearch({ datasets }, ref) {
+    const { t } = useTranslation();
     const { query, setQuery, setSelection } = useShell();
     const navigate = useNavigate();
 
-    const resultados = useMemo(() => construirResultados(query, datasets), [query, datasets]);
+    const resultados = useMemo(() => construirResultados(query, datasets, t), [query, datasets, t]);
 
     function abrir(r: Resultado) {
       setSelection(r.module, r.id);
@@ -117,13 +121,13 @@ export const GlobalSearch = forwardRef<HTMLInputElement, { datasets: Datasets }>
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Pesquisar em tudo…"
-          aria-label="Pesquisa global"
+          placeholder={t("topbar.pesquisar")}
+          aria-label={t("topbar.pesquisaGlobal")}
         />
         {query.trim() && (
           <div className="search-dropdown" role="listbox">
             {resultados.length === 0 ? (
-              <p className="search-empty">Nada encontrado.</p>
+              <p className="search-empty">{t("pesquisa.nadaEncontrado")}</p>
             ) : (
               resultados.map((r) => {
                 const Icon = r.icon;

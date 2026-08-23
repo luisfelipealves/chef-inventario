@@ -39,6 +39,7 @@ import {
 } from "@/lib/backup-auto";
 import { getGeminiKey, setGeminiKey } from "@/lib/fatura-ocr";
 import { SeletorTema } from "@/components/SeletorTema";
+import { SeletorIdioma } from "@/components/SeletorIdioma";
 import { Input } from "@/components/ui/input";
 import {
   gravarNome,
@@ -482,6 +483,8 @@ export function DefinicoesSheet({
           )}
 
           <SeletorTema />
+
+          <SeletorIdioma />
 
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             <span className="card-kicker">Leitura de faturas (IA)</span>
