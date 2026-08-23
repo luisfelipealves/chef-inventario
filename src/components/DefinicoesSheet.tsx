@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Download, Upload, Database, Trash2 } from "lucide-react";
 import {
@@ -31,6 +31,8 @@ import {
   type ContagemBackup,
 } from "@/lib/backup";
 import { apagarDadosExemplo, useTemDadosExemplo } from "@/lib/demo-data";
+import { Input } from "@/components/ui/input";
+import { gravarNome, useNomeUtilizador } from "@/lib/perfil";
 
 export function DefinicoesSheet({
   open,
@@ -54,6 +56,19 @@ export function DefinicoesSheet({
   const temDemo = useTemDadosExemplo();
   const [confirmarDemo, setConfirmarDemo] = useState(false);
   const [aApagarDemo, setAApagarDemo] = useState(false);
+
+  const nomeAtual = useNomeUtilizador() ?? "";
+  const [nomeInput, setNomeInput] = useState(nomeAtual);
+  useEffect(() => {
+    if (open) setNomeInput(nomeAtual);
+  }, [open, nomeAtual]);
+
+  function guardarNomePerfil() {
+    gravarNome(nomeInput);
+    toast.success(
+      nomeInput.trim() ? `Nome atualizado para ${nomeInput.trim()}.` : "Nome removido.",
+    );
+  }
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [aExportar, setAExportar] = useState(false);
@@ -148,13 +163,43 @@ export function DefinicoesSheet({
           <SheetHeader>
             <span className="card-kicker">Definições</span>
             <SheetTitle className="font-heading text-2xl font-normal">
-              Cópia de segurança
+              Perfil e cópia de segurança
             </SheetTitle>
             <SheetDescription>
               Os dados vivem só neste dispositivo. Exporta um ficheiro para guardar ou migrar para
               um computador novo.
             </SheetDescription>
           </SheetHeader>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <span className="card-kicker">Perfil</span>
+            <p style={{ fontSize: 12, color: "var(--color-neutral-700)" }}>
+              O nome usado na saudação do painel.
+            </p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                guardarNomePerfil();
+              }}
+              style={{ display: "flex", gap: 8 }}
+            >
+              <Input
+                value={nomeInput}
+                onChange={(e) => setNomeInput(e.target.value)}
+                placeholder="O teu nome"
+                maxLength={40}
+                className="h-11"
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={nomeInput.trim() === nomeAtual}
+                style={{ height: 44 }}
+              >
+                Guardar
+              </button>
+            </form>
+          </div>
 
           {contagem && (
             <div className="detalhe-card">
