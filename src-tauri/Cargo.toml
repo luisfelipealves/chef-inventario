@@ -1,6 +1,6 @@
 [package]
 name = "chef-gestao"
-version = "1.1.1"
+version = "1.1.2"
 description = "ChefGestão — Gestão de stock e fichas técnicas"
 authors = []
 edition = "2021"
