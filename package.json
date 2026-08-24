@@ -1,6 +1,6 @@
 {
   "name": "chef-gestao",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "format": "prettier --write .",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:windows:build": "tauri-windows-bundle build"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -93,6 +94,7 @@
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "@choochmeque/tauri-windows-bundle": "^0.1.28"
   }
 }

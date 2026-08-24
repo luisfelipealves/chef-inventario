@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- fundo terracota -->
+  <rect x="0" y="0" width="1024" height="1024" rx="180" fill="#c67139"/>
+  <!-- caderninho -->
+  <rect x="262" y="232" width="500" height="600" rx="44" fill="#f9f4ed"/>
+  <!-- argolas da espiral -->
+  <g fill="none" stroke="#201e1d" stroke-width="16" stroke-linecap="round">
+    <path d="M 342 232 v -50"/>
+    <path d="M 427 232 v -50"/>
+    <path d="M 512 232 v -50"/>
+    <path d="M 597 232 v -50"/>
+    <path d="M 682 232 v -50"/>
+  </g>
+  <!-- chapéu de chef na capa -->
+  <g fill="#c67139">
+    <circle cx="512" cy="392" r="72"/>
+    <circle cx="442" cy="428" r="50"/>
+    <circle cx="582" cy="428" r="50"/>
+    <rect x="442" y="428" width="140" height="72" />
+  </g>
+  <rect x="442" y="514" width="140" height="34" rx="14" fill="#c67139"/>
+  <!-- linhas de receita -->
+  <g stroke="#d9c3a6" stroke-width="22" stroke-linecap="round">
+    <path d="M 352 632 H 672"/>
+    <path d="M 352 700 H 672"/>
+    <path d="M 352 768 H 560"/>
+  </g>
+  <!-- mancha de cozinha: salpico de molho no canto -->
+  <g fill="#c67139" opacity="0.45">
+    <path d="M 648 700
+             c 34 -18 74 -8 88 22
+             c 12 26 -2 54 -26 68
+             c 10 12 8 30 -6 38
+             c -14 8 -30 2 -36 -12
+             c -26 10 -56 0 -68 -24
+             c -14 -28 4 -62 32 -72
+             c 2 -8 8 -16 16 -20 z"/>
+    <circle cx="760" cy="688" r="13"/>
+    <circle cx="742" cy="826" r="10"/>
+    <circle cx="628" cy="846" r="8"/>
+    <circle cx="778" cy="762" r="7"/>
+  </g>
+</svg>

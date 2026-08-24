@@ -27,7 +27,8 @@ dist-ssr
 
 # Tauri / Rust
 src-tauri/target/
-src-tauri/gen/
+src-tauri/gen/*
+!src-tauri/gen/windows/
 
 # Editor directories and files
 .vscode/*
