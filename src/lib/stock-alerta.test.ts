@@ -9,6 +9,21 @@ function ing(id: number, stock: number): Ingrediente {
     id,
     nome: `Ingrediente ${id}`,
     unidade: "g",
+    // Embalagem de referência deliberadamente diferente do stock: o alerta
+    // olha para a despensa, não para o tamanho da embalagem.
+    quantidadeEmbalagem: 250,
+    precoEmbalagem: 1,
+    stock,
+    createdAt: HOJE,
+  };
+}
+
+/** Registo anterior à v7: sem `stock`, o valor vivia em `quantidadeEmbalagem`. */
+function ingLegado(id: number, stock: number): Ingrediente {
+  return {
+    id,
+    nome: `Ingrediente ${id}`,
+    unidade: "g",
     quantidadeEmbalagem: stock,
     precoEmbalagem: 1,
     createdAt: HOJE,
@@ -101,5 +116,17 @@ describe("calcularAlertasStock", () => {
       HOJE,
     );
     expect(alertas.map((a) => a.ingrediente.id)).toEqual([2, 1]);
+  });
+
+  it("lê registos anteriores à v7, sem campo stock", () => {
+    const alertas = calcularAlertasStock(
+      [ingLegado(1, 800)],
+      [receita],
+      [pedido("confirmado", "2026-08-25", 20)],
+      HOJE,
+    );
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].stock).toBe(800);
+    expect(alertas[0].falta).toBeCloseTo(200);
   });
 });

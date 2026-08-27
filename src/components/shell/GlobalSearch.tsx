@@ -59,7 +59,11 @@ function construirResultados(q: string, d: Datasets, t: T): Resultado[] {
       id: r.id,
       tipo: t("pesquisa.tipoReceita"),
       nome: r.nome,
-      meta: t("pesquisa.metaReceita", { custo: formatEuro(custo, { compact: true }), rendimento: r.rendimento, unidade: r.unidadeRendimento }),
+      meta: t("pesquisa.metaReceita", {
+        custo: formatEuro(custo, { compact: true }),
+        rendimento: r.rendimento,
+        unidade: r.unidadeRendimento,
+      }),
       icon: BookOpen,
     });
   }
@@ -85,7 +89,10 @@ function construirResultados(q: string, d: Datasets, t: T): Resultado[] {
       id: p.id,
       tipo: t("pesquisa.tipoPedido"),
       nome: cliente?.nome ?? t("painel.clienteRemovido"),
-      meta: t("pesquisa.metaPedido", { data: p.dataEntrega, valor: formatEuro(totais.venda, { compact: true }) }),
+      meta: t("pesquisa.metaPedido", {
+        data: p.dataEntrega,
+        valor: formatEuro(totais.venda, { compact: true }),
+      }),
       icon: ClipboardList,
     });
   }

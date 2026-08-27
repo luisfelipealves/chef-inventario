@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Package, Plus, ShoppingBasket, TriangleAlert, ScanLine } from "lucide-react";
-import { db, type Ingrediente, type Receita } from "@/lib/db";
+import { db, stockDe, type Ingrediente, type Receita } from "@/lib/db";
 import { FaturaSheet } from "@/components/ingredientes/FaturaSheet";
 import {
   AlertDialog,
@@ -168,7 +168,7 @@ function IngredientesPage() {
                     >
                       <td className="primeira">{ing.nome}</td>
                       <td className="num">
-                        {ing.quantidadeEmbalagem} {ing.unidade}
+                        {stockDe(ing)} {ing.unidade}
                       </td>
                       <td className="num">{formatEuro(ing.precoEmbalagem, { compact: true })}</td>
                       <td className="num" style={{ color: "var(--color-accent-700)" }}>
@@ -298,7 +298,7 @@ function IngredienteDetalhe({
               marginTop: 4,
             }}
           >
-            {ingrediente.quantidadeEmbalagem} {ingrediente.unidade}
+            {stockDe(ingrediente)} {ingrediente.unidade}
           </span>
         </div>
         <div className="detalhe-card" style={{ padding: "14px 16px" }}>

@@ -1,4 +1,4 @@
-import { db, type Pedido, type Producao, type Receita } from "@/lib/db";
+import { db, stockDe, type Pedido, type Producao, type Receita } from "@/lib/db";
 import i18n from "@/lib/i18n";
 
 /**
@@ -31,12 +31,15 @@ export async function registarProducao(
       const ing = await db.ingredientes.get(linha.ingredienteId);
       if (!ing) continue;
       const necessario = linha.quantidade * lotes;
-      const restante = ing.quantidadeEmbalagem - necessario;
+      const restante = stockDe(ing) - necessario;
       if (restante < 0) {
         faltas.push({ nome: ing.nome, falta: -restante, unidade: ing.unidade });
       }
+      // Só o stock desce. `quantidadeEmbalagem`/`precoEmbalagem` são a base do
+      // custo unitário e têm de ficar intactos — mexer neles reescrevia o custo
+      // das receitas (e o histórico do Financeiro) a cada produção.
       await db.ingredientes.update(ing.id, {
-        quantidadeEmbalagem: Math.max(0, restante),
+        stock: Math.max(0, restante),
       });
     }
     const doses = lotes * receita.rendimento;

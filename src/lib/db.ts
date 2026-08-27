@@ -11,11 +11,30 @@ export interface Ingrediente {
   id: number;
   nome: string;
   unidade: UnidadeMedida;
+  /**
+   * Tamanho da embalagem de referência. Junto com `precoEmbalagem` forma a
+   * base do custo unitário — nunca é alterado por produções ou entregas.
+   */
   quantidadeEmbalagem: number;
+  /** Preço pago pela embalagem de referência. */
   precoEmbalagem: number;
+  /**
+   * Quantidade em despensa, na unidade do ingrediente. Sobe com as compras e
+   * desce com as produções. Ausente em dados anteriores à v7 — ler sempre
+   * através de `stockDe()`, que cai para `quantidadeEmbalagem`.
+   */
+  stock?: number;
   /** EAN-13 lido pela câmara (opcional) */
   codigoBarras?: string;
   createdAt: Date;
+}
+
+/**
+ * Stock em despensa, tolerante a registos anteriores à v7 (e a backups
+ * antigos, que a migração do Dexie não toca).
+ */
+export function stockDe(ing: Pick<Ingrediente, "stock" | "quantidadeEmbalagem">): number {
+  return ing.stock ?? ing.quantidadeEmbalagem;
 }
 
 export interface IngredienteReceita {
@@ -148,3 +167,30 @@ db.version(6).stores({
   compras: "++id, ingredienteId, createdAt",
   producoes: "++id, receitaId, createdAt",
 });
+
+/**
+ * v7 — separa o stock da despensa dos dados da embalagem.
+ *
+ * Até à v6 `quantidadeEmbalagem` acumulava os dois papéis: divisor do custo
+ * unitário e stock disponível. Como as produções abatiam nesse campo sem
+ * mexer em `precoEmbalagem`, o custo por unidade subia a cada produção e caía
+ * a zero quando a despensa esvaziava. O stock passa a viver em `stock`; os
+ * dados existentes herdam o valor que lá estava, que era de facto o stock.
+ */
+db.version(7)
+  .stores({
+    ingredientes: "++id, nome, codigoBarras, createdAt",
+    receitas: "++id, nome, createdAt",
+    clientes: "++id, nome, telefone, nif, createdAt",
+    pedidos: "++id, clienteId, dataEntrega, estado, createdAt",
+    compras: "++id, ingredienteId, createdAt",
+    producoes: "++id, receitaId, createdAt",
+  })
+  .upgrade((tx) =>
+    tx
+      .table<Ingrediente>("ingredientes")
+      .toCollection()
+      .modify((ing) => {
+        ing.stock ??= ing.quantidadeEmbalagem;
+      }),
+  );

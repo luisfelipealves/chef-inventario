@@ -28,7 +28,7 @@ import {
   type Receita,
   type UnidadeMedida,
 } from "@/lib/db";
-import { formatEuro } from "@/lib/format";
+import { custoPorUnidade, formatEuro } from "@/lib/format";
 import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
 
 type FormValues = {
@@ -333,7 +333,7 @@ export function ReceitaFormDialog({
                         <span className="min-w-16 text-right text-sm font-medium tabular-nums text-foreground">
                           {formatEuro(
                             ing && Number(linha.quantidade) > 0
-                              ? (ing.precoEmbalagem / ing.quantidadeEmbalagem) *
+                              ? custoPorUnidade(ing.precoEmbalagem, ing.quantidadeEmbalagem) *
                                   Number(linha.quantidade)
                               : 0,
                             { compact: true },
