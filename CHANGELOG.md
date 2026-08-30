@@ -4,6 +4,21 @@ As notas de cada versão são publicadas automaticamente na release do GitHub
 (ver `scripts/release-notes.mjs`). O título de cada secção tem de ser `## vX.Y.Z`,
 igual à tag, senão a release sai com as notas por omissão.
 
+## v1.1.6
+
+### Corrigido
+
+- **Leitor de código de barras nunca detetava nada no desktop (Windows), sem
+  mostrar erro nenhum.** O leitor preferia a `BarcodeDetector` nativa do
+  navegador quando disponível; no Chrome/Edge em desktop essa API por vezes
+  existe mas não tem suporte real a formatos 1D (EAN/UPC), e ficava a correr
+  para sempre sem detetar nada — sem lançar exceção, porque "nada detetado
+  neste frame" não é um erro. Passa a usar sempre o descodificador em JS da
+  própria lib (`html5-qrcode`), que funciona de forma consistente em
+  qualquer sistema operativo.
+- Mostra um aviso ao fim de 8 segundos sem deteção, para dar feedback em vez
+  de silêncio total enquanto o leitor continua a tentar.
+
 ## v1.1.5
 
 ### Corrigido
