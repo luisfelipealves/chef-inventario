@@ -2,13 +2,19 @@ import { describe, expect, it } from "vitest";
 import type { Ingrediente, Receita } from "@/lib/db";
 import { custoLinha, custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
 
-function ing(id: number, quantidadeEmbalagem: number, precoEmbalagem: number): Ingrediente {
+function ing(
+  id: number,
+  quantidadeEmbalagem: number,
+  precoEmbalagem: number,
+  stock?: number,
+): Ingrediente {
   return {
     id,
     nome: `Ingrediente ${id}`,
     unidade: "g",
     quantidadeEmbalagem,
     precoEmbalagem,
+    ...(stock != null ? { stock } : {}),
     createdAt: new Date(2026, 0, 1),
   };
 }
@@ -42,6 +48,28 @@ describe("custoTotalReceita", () => {
       ],
     };
     expect(custoTotalReceita(receita, mapa)).toBeCloseTo(1.5);
+  });
+});
+
+describe("custo é independente do stock em despensa", () => {
+  // Regressão: até à v6 as produções abatiam em `quantidadeEmbalagem`, o
+  // divisor do custo unitário. O custo da receita subia a cada produção e
+  // caía a 0 quando a despensa esvaziava.
+  const linha = { ingredienteId: 1, quantidade: 500 };
+
+  it("gasta metade do stock e o custo não se mexe", () => {
+    const cheio = custoLinha(linha, ing(1, 1000, 2, 1000));
+    const meio = custoLinha(linha, ing(1, 1000, 2, 500));
+    expect(cheio).toBeCloseTo(1);
+    expect(meio).toBeCloseTo(cheio);
+  });
+
+  it("despensa a zero não zera o custo da receita", () => {
+    expect(custoLinha(linha, ing(1, 1000, 2, 0))).toBeCloseTo(1);
+  });
+
+  it("registos anteriores à v7 (sem stock) mantêm o custo", () => {
+    expect(custoLinha(linha, ing(1, 1000, 2))).toBeCloseTo(1);
   });
 });
 

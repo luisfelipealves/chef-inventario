@@ -10,10 +10,7 @@ export function custoLinha(
   ingrediente: Ingrediente | undefined,
 ): number {
   if (!ingrediente) return 0;
-  const unit = custoPorUnidade(
-    ingrediente.precoEmbalagem,
-    ingrediente.quantidadeEmbalagem,
-  );
+  const unit = custoPorUnidade(ingrediente.precoEmbalagem, ingrediente.quantidadeEmbalagem);
   return unit * linha.quantidade;
 }
 

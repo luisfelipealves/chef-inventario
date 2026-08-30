@@ -316,6 +316,7 @@
     "titulo": "Scan product",
     "desc": "Point the camera at the EAN-13 barcode on the package.",
     "aIniciar": "Starting camera…",
+    "demorado": "Still trying to read it… aim steadily at the barcode with good lighting.",
     "erro": "Could not access the camera. Allow access in the system privacy settings (Camera) and try again."
   },
   "clientes": {

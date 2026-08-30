@@ -46,11 +46,7 @@ export async function fetchProdutoOFF(barcode: string): Promise<OffResult | null
   };
   if (data.status !== 1 || !data.product) return null;
   const p = data.product;
-  const nome =
-    p.product_name_pt ||
-    p.generic_name_pt ||
-    p.product_name ||
-    null;
+  const nome = p.product_name_pt || p.generic_name_pt || p.product_name || null;
   const { quantidade, unidade } = parseQuantidade(p.quantity);
   return { nome, quantidade, unidade };
 }

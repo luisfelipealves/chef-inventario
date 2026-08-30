@@ -43,6 +43,7 @@ export function BarcodeScannerDialog({
   const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [demorado, setDemorado] = useState(false);
   const scannerRef = useRef<InstanceType<Html5QrcodeCtor> | null>(null);
   const containerId = "barcode-scanner-region";
 
@@ -51,6 +52,9 @@ export function BarcodeScannerDialog({
     let cancelled = false;
     setError(null);
     setStarting(true);
+    setDemorado(false);
+
+    const demoradoTimer = setTimeout(() => setDemorado(true), 8000);
 
     (async () => {
       try {
@@ -61,7 +65,10 @@ export function BarcodeScannerDialog({
         const scanner = new Html5Qrcode(containerId, {
           // Só códigos de barras de produto — evita gastar tempo com QR e afins
           formatsToSupport: [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E, F.CODE_128],
-          useBarCodeDetectorIfSupported: true,
+          // A BarcodeDetector nativa do browser (quando existe) muitas vezes
+          // não suporta formatos 1D em desktop e nunca deteta nada, sem erro
+          // nenhum. Forçamos sempre o descodificador em JS da própria lib.
+          useBarCodeDetectorIfSupported: false,
           verbose: false,
         });
         scannerRef.current = scanner;
@@ -94,6 +101,7 @@ export function BarcodeScannerDialog({
 
     return () => {
       cancelled = true;
+      clearTimeout(demoradoTimer);
       const s = scannerRef.current;
       scannerRef.current = null;
       if (s) {
@@ -119,6 +127,9 @@ export function BarcodeScannerDialog({
 
         {starting && (
           <p className="text-center text-xs text-muted-foreground">{t("scanner.aIniciar")}</p>
+        )}
+        {!starting && !error && demorado && (
+          <p className="text-center text-xs text-muted-foreground">{t("scanner.demorado")}</p>
         )}
         {error && <p className="text-center text-xs text-destructive">{error}</p>}
 

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { db, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { db, stockDe, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
 
 type FormValues = {
@@ -32,6 +32,8 @@ type FormValues = {
   unidade: UnidadeMedida;
   quantidadeEmbalagem: string;
   precoEmbalagem: string;
+  /** Só editável em modo edição; ao criar nasce da quantidade comprada. */
+  stock: string;
 };
 
 type AddValues = {
@@ -44,6 +46,7 @@ const empty: FormValues = {
   unidade: "g",
   quantidadeEmbalagem: "",
   precoEmbalagem: "",
+  stock: "",
 };
 
 const emptyAdd: AddValues = { quantidade: "", preco: "" };
@@ -70,7 +73,7 @@ export function IngredienteFormDialog({
 }) {
   const { t } = useTranslation();
   const isEdit = !!ingrediente;
-  const { schema, addSchema } = useMemo(() => {
+  const { schema, addSchema, stockSchema } = useMemo(() => {
     const numero = { invalid_type_error: t("ingredienteForm.errNumero") };
     return {
       schema: z.object({
@@ -83,6 +86,7 @@ export function IngredienteFormDialog({
         quantidadeEmbalagem: z.coerce.number(numero).positive(t("ingredienteForm.errPositivo")),
         precoEmbalagem: z.coerce.number(numero).nonnegative(t("ingredienteForm.errNaoNegativo")),
       }),
+      stockSchema: z.coerce.number(numero).nonnegative(t("ingredienteForm.errNaoNegativo")),
       addSchema: z.object({
         quantidade: z.coerce.number(numero).positive(t("ingredienteForm.errPositivo")),
         preco: z.coerce.number(numero).nonnegative(t("ingredienteForm.errNaoNegativo")),
@@ -148,6 +152,7 @@ export function IngredienteFormDialog({
               unidade: ingrediente.unidade,
               quantidadeEmbalagem: String(ingrediente.quantidadeEmbalagem),
               precoEmbalagem: String(ingrediente.precoEmbalagem),
+              stock: String(stockDe(ingrediente)),
             }
           : prefill
             ? {
@@ -156,6 +161,7 @@ export function IngredienteFormDialog({
                 quantidadeEmbalagem:
                   prefill.quantidadeEmbalagem != null ? String(prefill.quantidadeEmbalagem) : "",
                 precoEmbalagem: "",
+                stock: "",
               }
             : empty,
       );
@@ -174,6 +180,13 @@ export function IngredienteFormDialog({
       setErrors(errs);
       return;
     }
+    // O stock só é editável em modo edição — ao criar, o que se comprou é o
+    // que entra na despensa.
+    const parsedStock = isEdit ? stockSchema.safeParse(values.stock) : null;
+    if (parsedStock && !parsedStock.success) {
+      setErrors({ stock: parsedStock.error.issues[0]?.message });
+      return;
+    }
     setSubmitting(true);
     try {
       if (isEdit && ingrediente) {
@@ -182,6 +195,7 @@ export function IngredienteFormDialog({
           unidade: parsed.data.unidade,
           quantidadeEmbalagem: parsed.data.quantidadeEmbalagem,
           precoEmbalagem: parsed.data.precoEmbalagem,
+          stock: parsedStock?.data ?? stockDe(ingrediente),
           ...(codigoBarras ? { codigoBarras } : {}),
         });
         toast.success(t("ingredienteForm.atualizado"));
@@ -191,6 +205,7 @@ export function IngredienteFormDialog({
           unidade: parsed.data.unidade,
           quantidadeEmbalagem: parsed.data.quantidadeEmbalagem,
           precoEmbalagem: parsed.data.precoEmbalagem,
+          stock: parsed.data.quantidadeEmbalagem,
           ...(codigoBarras ? { codigoBarras } : {}),
           createdAt: new Date(),
         } as Ingrediente);
@@ -220,16 +235,12 @@ export function IngredienteFormDialog({
     }
     setSubmitting(true);
     try {
-      const novaQuantidade = ingrediente.quantidadeEmbalagem + parsed.data.quantidade;
-      // Custo unitário refere-se a esta compra (preço / quantidade comprada),
-      // não à média ponderada com o stock antigo. Guardamos o preço equivalente
-      // para o stock total mantendo esse custo unitário.
-      const custoUnitarioCompra =
-        parsed.data.quantidade > 0 ? parsed.data.preco / parsed.data.quantidade : 0;
-      const novoPreco = custoUnitarioCompra * novaQuantidade;
+      // O custo unitário passa a ser o desta compra (não a média ponderada com
+      // o stock antigo): a embalagem de referência é a que acabou de entrar.
       await db.ingredientes.update(ingrediente.id, {
-        quantidadeEmbalagem: novaQuantidade,
-        precoEmbalagem: novoPreco,
+        stock: stockDe(ingrediente) + parsed.data.quantidade,
+        quantidadeEmbalagem: parsed.data.quantidade,
+        precoEmbalagem: parsed.data.preco,
         ...(codigoBarras ? { codigoBarras } : {}),
       });
       await db.compras.add({
@@ -253,9 +264,8 @@ export function IngredienteFormDialog({
   // Preview: custo unitário baseado apenas na nova compra
   const addQtd = Number(addValues.quantidade) || 0;
   const addPreco = Number(addValues.preco) || 0;
-  const previewQtd = (ingrediente?.quantidadeEmbalagem ?? 0) + addQtd;
+  const previewQtd = (ingrediente ? stockDe(ingrediente) : 0) + addQtd;
   const previewUnitario = addQtd > 0 ? addPreco / addQtd : 0;
-  const previewPreco = previewUnitario * previewQtd;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -285,6 +295,7 @@ export function IngredienteFormDialog({
                 values={values}
                 setValues={setValues}
                 errors={errors}
+                comStock
                 onSubmit={handleSubmit}
                 submitting={submitting}
                 onCancel={() => onOpenChange(false)}
@@ -297,11 +308,17 @@ export function IngredienteFormDialog({
                 <div className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
                   {t("ingredienteForm.stockAtual")}{" "}
                   <span className="font-medium text-foreground">
-                    {ingrediente?.quantidadeEmbalagem} {ingrediente?.unidade}
+                    {ingrediente ? stockDe(ingrediente) : 0} {ingrediente?.unidade}
                   </span>{" "}
                   ·{" "}
                   <span className="font-medium text-foreground">
-                    {formatEuro(ingrediente?.precoEmbalagem ?? 0, { compact: true })}
+                    {formatEuro(
+                      custoPorUnidade(
+                        ingrediente?.precoEmbalagem ?? 0,
+                        ingrediente?.quantidadeEmbalagem ?? 0,
+                      ),
+                    )}{" "}
+                    / {ingrediente ? unidadeMinimaLabel(ingrediente.unidade) : ""}
                   </span>
                 </div>
 
@@ -341,8 +358,7 @@ export function IngredienteFormDialog({
                     <div className="flex justify-between text-muted-foreground">
                       <span>{t("ingredienteForm.novoStock")}</span>
                       <span className="font-medium text-foreground">
-                        {previewQtd} {ingrediente?.unidade} ·{" "}
-                        {formatEuro(previewPreco, { compact: true })}
+                        {previewQtd} {ingrediente?.unidade}
                       </span>
                     </div>
                     <div className="flex justify-between text-muted-foreground">
@@ -413,6 +429,7 @@ function EditFields({
   values,
   setValues,
   errors,
+  comStock = false,
   onSubmit,
   submitting,
   onCancel,
@@ -421,6 +438,8 @@ function EditFields({
   values: FormValues;
   setValues: React.Dispatch<React.SetStateAction<FormValues>>;
   errors: Partial<Record<keyof FormValues, string>>;
+  /** Mostra o stock em despensa (só na edição — ao criar vem da compra). */
+  comStock?: boolean;
   onSubmit: (e: React.FormEvent) => void;
   submitting: boolean;
   onCancel: () => void;
@@ -492,6 +511,23 @@ function EditFields({
           <p className="text-xs text-destructive">{errors.precoEmbalagem}</p>
         )}
       </div>
+
+      {comStock && (
+        <div className="space-y-2">
+          <Label htmlFor="stock">
+            {t("ingredientes.stock")} ({values.unidade})
+          </Label>
+          <Input
+            id="stock"
+            inputMode="decimal"
+            placeholder="1000"
+            value={values.stock}
+            onChange={(e) => setValues((v) => ({ ...v, stock: e.target.value }))}
+            className="h-12 text-base"
+          />
+          {errors.stock && <p className="text-xs text-destructive">{errors.stock}</p>}
+        </div>
+      )}
 
       <SheetFooter className="gap-2 sm:gap-2">
         <Button

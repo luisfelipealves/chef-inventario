@@ -84,6 +84,7 @@ export async function criarDadosExemplo(): Promise<void> {
       unidade,
       quantidadeEmbalagem: qtd,
       precoEmbalagem: preco,
+      stock: qtd,
       createdAt: diasAtras(ha),
     })),
     { allKeys: true },
