@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Ingrediente, Receita } from "@/lib/db";
+import { stockDe, type Ingrediente, type Receita } from "@/lib/db";
 import { registarProducao } from "@/lib/producao";
 
 /**
@@ -100,7 +100,8 @@ export function ProducaoDialog({
               const ing = ingMap.get(l.ingredienteId);
               if (!ing) return null;
               const necessario = l.quantidade * lotes;
-              const curto = necessario > ing.quantidadeEmbalagem;
+              const stock = stockDe(ing);
+              const curto = necessario > stock;
               return (
                 <div key={i} className="kv" style={{ alignItems: "baseline" }}>
                   <span style={{ flex: 1, minWidth: 0 }}>{ing.nome}</span>
@@ -115,7 +116,7 @@ export function ProducaoDialog({
                     −{Math.round(necessario * 100) / 100} {ing.unidade}
                     {curto
                       ? t("producaoDialog.soTens", {
-                          n: Math.round(ing.quantidadeEmbalagem * 100) / 100,
+                          n: Math.round(stock * 100) / 100,
                         })
                       : ""}
                   </span>

@@ -1,4 +1,4 @@
-import type { Ingrediente, Pedido, Receita } from "@/lib/db";
+import { stockDe, type Ingrediente, type Pedido, type Receita } from "@/lib/db";
 
 /**
  * Alerta de stock baixo (única funcionalidade nova do layout desktop).
@@ -6,16 +6,16 @@ import type { Ingrediente, Pedido, Receita } from "@/lib/db";
  * Para cada ingrediente, soma a quantidade exigida pelos pedidos com estado
  * `pendente` ou `confirmado` cuja `dataEntrega` cai nos próximos 7 dias
  * (quantidade da receita × doses encomendadas, escalada pelo rendimento) e
- * compara com `quantidadeEmbalagem` (o stock disponível). Se a necessidade
- * exceder o stock, o ingrediente está em falta.
+ * compara com o stock em despensa. Se a necessidade exceder o stock, o
+ * ingrediente está em falta.
  *
- * Não requer alteração de esquema. Um limiar manual por ingrediente
- * (`stockMinimo`) poderia ser acrescentado numa futura `db.version(5)`.
+ * Um limiar manual por ingrediente (`stockMinimo`) poderia ser acrescentado
+ * numa futura versão do esquema.
  */
 
 export interface AlertaStock {
   ingrediente: Ingrediente;
-  /** Stock disponível (quantidadeEmbalagem), na unidade do ingrediente. */
+  /** Stock disponível em despensa, na unidade do ingrediente. */
   stock: number;
   /** Quantidade total exigida pelos pedidos confirmados/pendentes a 7 dias. */
   necessidade: number;
@@ -69,12 +69,13 @@ export function calcularAlertasStock(
   const alertas: AlertaStock[] = [];
   for (const ing of ingredientes) {
     const necessidade = necessidadePorIng.get(ing.id) ?? 0;
-    if (necessidade > ing.quantidadeEmbalagem) {
+    const stock = stockDe(ing);
+    if (necessidade > stock) {
       alertas.push({
         ingrediente: ing,
-        stock: ing.quantidadeEmbalagem,
+        stock,
         necessidade,
-        falta: necessidade - ing.quantidadeEmbalagem,
+        falta: necessidade - stock,
       });
     }
   }

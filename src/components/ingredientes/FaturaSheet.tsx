@@ -9,7 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { db, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { db, stockDe, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro } from "@/lib/format";
 import { getGeminiKey, setGeminiKey, lerFatura, type ItemFatura } from "@/lib/fatura-ocr";
 
@@ -187,6 +187,7 @@ export function FaturaSheet({
             unidade: l.unidade,
             quantidadeEmbalagem: quantidade,
             precoEmbalagem: preco,
+            stock: quantidade,
             createdAt: new Date(),
           } as Ingrediente);
           await db.compras.add({
@@ -201,11 +202,12 @@ export function FaturaSheet({
         } else {
           const ing = ingMap.get(l.match);
           if (!ing) continue;
-          const novaQuantidade = ing.quantidadeEmbalagem + quantidade;
-          const custoUnitario = quantidade > 0 ? preco / quantidade : 0;
+          // A embalagem de referência passa a ser a que acabou de entrar; o
+          // stock acumula.
           await db.ingredientes.update(ing.id, {
-            quantidadeEmbalagem: novaQuantidade,
-            precoEmbalagem: custoUnitario * novaQuantidade,
+            stock: stockDe(ing) + quantidade,
+            quantidadeEmbalagem: quantidade,
+            precoEmbalagem: preco,
           });
           await db.compras.add({
             ingredienteId: ing.id,
