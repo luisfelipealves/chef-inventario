@@ -316,6 +316,7 @@
     "titulo": "Bipar produto",
     "desc": "Aponta a câmara ao código de barras EAN-13 da embalagem.",
     "aIniciar": "A iniciar câmara…",
+    "demorado": "Ainda a tentar ler… aponta bem para o código, com boa luz e sem tremer.",
     "erro": "Não foi possível aceder à câmara. Autoriza o acesso nas definições de privacidade do sistema (Câmara) e volta a tentar."
   },
   "clientes": {
