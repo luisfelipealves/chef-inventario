@@ -19,7 +19,10 @@ export interface ItemFatura {
 }
 
 const KEY_STORAGE = "chefgestao:gemini-key";
-const MODELO = "gemini-2.5-flash";
+// A Google descontinua modelos antigos (o 2.5-flash passou a devolver 404 em
+// Agosto 2026); se voltar a falhar com 404, verificar o modelo recomendado na
+// mensagem de erro da API.
+const MODELO = "gemini-3.6-flash";
 
 /**
  * Chave a usar. Preferência: a chave embutida no build (`VITE_GEMINI_KEY`,
@@ -138,7 +141,9 @@ export async function lerFatura(imagemBase64: string, apiKey: string): Promise<I
   }
 
   const data = await res.json();
-  const texto: string | undefined = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  // Modelos com "thinking" podem devolver parts sem texto antes da resposta.
+  const parts: Array<{ text?: string }> = data?.candidates?.[0]?.content?.parts ?? [];
+  const texto = parts.find((p) => typeof p.text === "string" && p.text)?.text;
   if (!texto) throw new Error(i18n.t("ocr.naoLeu"));
 
   let parsed: unknown;
