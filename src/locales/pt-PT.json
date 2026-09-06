@@ -114,7 +114,7 @@
     "mudarEstado": "Alterar estado do pedido",
     "dosesInsuf": "Doses prontas insuficientes",
     "dosesInsufItem": "{{nome}}: precisas de {{n}}, tens {{p}} prontas",
-    "dosesInsufDesc": "{{lista}}. Queres registar a produção em falta (em lotes inteiros, abatendo os ingredientes da despensa) antes de entregar?",
+    "dosesInsufDesc": "{{lista}}. Queres registar a produção em falta (em lotes inteiros, abatendo os ingredientes da despensa) antes de entregar? É necessário ter stock suficiente; caso contrário, nada será registado.",
     "entregarSemProduzir": "Entregar sem produzir",
     "produzirEntregar": "Produzir e entregar",
     "aRegistar": "A registar…"
@@ -216,7 +216,7 @@
   },
   "producaoDialog": {
     "titulo": "Registar produção",
-    "desc": "{{nome}} — cada lote rende {{rendimento}} {{unidade}}. Os ingredientes baixam na despensa.",
+    "desc": "{{nome}} — cada lote rende {{rendimento}} {{unidade}}. Os ingredientes baixam na despensa. É necessário ter stock suficiente; caso contrário, nada será registado.",
     "lote_one": "lote",
     "lote_other": "lotes",
     "resultado": "→ {{doses}} {{unidade}} prontas",

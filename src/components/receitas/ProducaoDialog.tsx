@@ -36,11 +36,12 @@ export function ProducaoDialog({
     if (open) setLotesInput("1");
   }, [open]);
 
-  const lotes = Math.max(0, Math.floor(Number(lotesInput) || 0));
+  const lotes = Number(lotesInput);
+  const lotesValidos = Number.isFinite(lotes) && Number.isInteger(lotes) && lotes > 0;
   const doses = lotes * receita.rendimento;
 
   async function confirmar() {
-    if (lotes <= 0) return;
+    if (!lotesValidos) return;
     setAGravar(true);
     try {
       const faltas = await registarProducao(receita, lotes);
@@ -58,7 +59,7 @@ export function ProducaoDialog({
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(t("producaoDialog.erro"));
+      toast.error(err instanceof Error ? err.message : t("producaoDialog.erro"));
     } finally {
       setAGravar(false);
     }
@@ -137,7 +138,7 @@ export function ProducaoDialog({
           </Button>
           <Button
             onClick={() => void confirmar()}
-            disabled={lotes <= 0 || aGravar}
+            disabled={!lotesValidos || aGravar}
             className="h-11 flex-1"
           >
             <CookingPot size={16} strokeWidth={2.75} />

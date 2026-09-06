@@ -1,3 +1,4 @@
+import { registarCompras } from "@/lib/operacional";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScanLine } from "lucide-react";
@@ -24,7 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { db, stockDe, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { db, stockDe, type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
 
 type FormValues = {
@@ -214,7 +215,7 @@ export function IngredienteFormDialog({
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(t("comum.erroGravar"));
+      toast.error(err instanceof Error ? err.message : t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -235,27 +236,21 @@ export function IngredienteFormDialog({
     }
     setSubmitting(true);
     try {
-      // O custo unitário passa a ser o desta compra (não a média ponderada com
-      // o stock antigo): a embalagem de referência é a que acabou de entrar.
-      await db.ingredientes.update(ingrediente.id, {
-        stock: stockDe(ingrediente) + parsed.data.quantidade,
-        quantidadeEmbalagem: parsed.data.quantidade,
-        precoEmbalagem: parsed.data.preco,
-        ...(codigoBarras ? { codigoBarras } : {}),
-      });
-      await db.compras.add({
-        ingredienteId: ingrediente.id,
-        nome: ingrediente.nome,
-        quantidade: parsed.data.quantidade,
-        unidade: ingrediente.unidade,
-        valor: parsed.data.preco,
-        createdAt: new Date(),
-      } as Compra);
+      await registarCompras([
+        {
+          ingredienteId: ingrediente.id,
+          nome: ingrediente.nome,
+          quantidade: parsed.data.quantidade,
+          unidade: ingrediente.unidade,
+          valor: parsed.data.preco,
+          codigoBarras,
+        },
+      ]);
       toast.success(t("ingredienteForm.compraAdicionada"));
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(t("comum.erroGravar"));
+      toast.error(err instanceof Error ? err.message : t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }

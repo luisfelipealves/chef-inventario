@@ -78,6 +78,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@choochmeque/tauri-windows-bundle": "^0.1.28",
     "@eslint/js": "^9.32.0",
     "@tanstack/router-plugin": "^1.168.18",
     "@tauri-apps/cli": "^2",
@@ -90,12 +91,12 @@
     "eslint-plugin-prettier": "^5.2.6",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "fake-indexeddb": "^6.2.5",
     "globals": "^15.15.0",
     "prettier": "3.9.6",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^8.0.16",
-    "vitest": "^4.1.11",
-    "@choochmeque/tauri-windows-bundle": "^0.1.28"
+    "vitest": "^4.1.11"
   }
 }

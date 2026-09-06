@@ -114,7 +114,7 @@
     "mudarEstado": "Change order status",
     "dosesInsuf": "Not enough ready servings",
     "dosesInsufItem": "{{nome}}: you need {{n}}, you have {{p}} ready",
-    "dosesInsufDesc": "{{lista}}. Do you want to log the missing production (in whole batches, deducting ingredients from the pantry) before delivering?",
+    "dosesInsufDesc": "{{lista}}. Do you want to log the missing production (in whole batches, deducting ingredients from the pantry) before delivering? Sufficient stock is required; otherwise nothing will be recorded.",
     "entregarSemProduzir": "Deliver without producing",
     "produzirEntregar": "Produce and deliver",
     "aRegistar": "Logging…"
@@ -216,7 +216,7 @@
   },
   "producaoDialog": {
     "titulo": "Log production",
-    "desc": "{{nome}} — each batch yields {{rendimento}} {{unidade}}. Ingredients are deducted from the pantry.",
+    "desc": "{{nome}} — each batch yields {{rendimento}} {{unidade}}. Ingredients are deducted from the pantry. Sufficient stock is required; otherwise nothing will be recorded.",
     "lote_one": "batch",
     "lote_other": "batches",
     "resultado": "→ {{doses}} {{unidade}} ready",

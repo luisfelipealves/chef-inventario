@@ -18,8 +18,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { db, type EstadoPedido, type Pedido } from "@/lib/db";
-import { entregarPedido, faltasParaEntrega, type FaltaEntrega } from "@/lib/producao";
+import { type EstadoPedido, type Pedido } from "@/lib/db";
+import {
+  mudarEstadoPedido,
+  entregarPedido,
+  faltasParaEntrega,
+  type FaltaEntrega,
+} from "@/lib/producao";
 import { EstadoTag } from "@/components/EstadoTag";
 
 const ESTADOS: EstadoPedido[] = ["pendente", "confirmado", "entregue", "cancelado"];
@@ -43,7 +48,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
       setFaltas(null);
     } catch (err) {
       console.error(err);
-      toast.error(t("pedidos.erroEntregar"));
+      toast.error(err instanceof Error ? err.message : t("pedidos.erroEntregar"));
     } finally {
       setAEntregar(false);
     }
@@ -61,11 +66,11 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
         await entregar(false);
         return;
       }
-      await db.pedidos.update(pedido.id, { estado });
+      await mudarEstadoPedido(pedido.id, estado);
       toast.success(t("pedidos.marcado", { estado: t(`estado.${estado}`).toLowerCase() }));
     } catch (err) {
       console.error(err);
-      toast.error(t("pedidos.erroEstado"));
+      toast.error(err instanceof Error ? err.message : t("pedidos.erroEstado"));
     }
   }
 
@@ -126,15 +131,6 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
             <AlertDialogCancel className="h-11 rounded-full" disabled={aEntregar}>
               {t("comum.cancelar")}
             </AlertDialogCancel>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              style={{ height: 44, borderRadius: 999 }}
-              onClick={() => void entregar(false)}
-              disabled={aEntregar}
-            >
-              {t("pedidos.entregarSemProduzir")}
-            </button>
             <AlertDialogAction
               className="h-11 rounded-full"
               onClick={(e) => {

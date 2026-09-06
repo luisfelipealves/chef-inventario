@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { registarCompras } from "@/lib/operacional";
+import { useEffect, useRef, useState } from "react";
 import { Camera, Upload, X, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,7 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
-import { db, stockDe, type Compra, type Ingrediente, type UnidadeMedida } from "@/lib/db";
+import { type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro } from "@/lib/format";
 import { getGeminiKey, setGeminiKey, lerFatura, type ItemFatura } from "@/lib/fatura-ocr";
 
@@ -50,11 +51,10 @@ export function FaturaSheet({
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [aGravar, setAGravar] = useState(false);
 
+  const operacaoId = useRef(crypto.randomUUID());
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   function pararCamara() {
     streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -63,6 +63,7 @@ export function FaturaSheet({
 
   // Estado inicial ao abrir: pede chave se não houver, senão vai para captura.
   useEffect(() => {
+    if (open) operacaoId.current = crypto.randomUUID();
     if (!open) {
       pararCamara();
       return;
@@ -174,57 +175,23 @@ export function FaturaSheet({
   async function confirmar() {
     setAGravar(true);
     try {
-      let criados = 0;
-      let atualizados = 0;
-      for (const l of linhas) {
-        const quantidade = Number(l.quantidade) || 0;
-        const preco = Number(l.precoTotal) || 0;
-        if (quantidade <= 0) continue;
-
-        if (l.match === "novo") {
-          const novoId = await db.ingredientes.add({
-            nome: l.nome.trim(),
-            unidade: l.unidade,
-            quantidadeEmbalagem: quantidade,
-            precoEmbalagem: preco,
-            stock: quantidade,
-            createdAt: new Date(),
-          } as Ingrediente);
-          await db.compras.add({
-            ingredienteId: novoId as number,
-            nome: l.nome.trim(),
-            quantidade,
-            unidade: l.unidade,
-            valor: preco,
-            createdAt: new Date(),
-          } as Compra);
-          criados++;
-        } else {
-          const ing = ingMap.get(l.match);
-          if (!ing) continue;
-          // A embalagem de referência passa a ser a que acabou de entrar; o
-          // stock acumula.
-          await db.ingredientes.update(ing.id, {
-            stock: stockDe(ing) + quantidade,
-            quantidadeEmbalagem: quantidade,
-            precoEmbalagem: preco,
-          });
-          await db.compras.add({
-            ingredienteId: ing.id,
-            nome: ing.nome,
-            quantidade,
-            unidade: ing.unidade,
-            valor: preco,
-            createdAt: new Date(),
-          } as Compra);
-          atualizados++;
-        }
-      }
+      await registarCompras(
+        linhas.map((l) => ({
+          ingredienteId: l.match === "novo" ? undefined : l.match,
+          nome: l.nome,
+          quantidade: Number(l.quantidade),
+          unidade: l.unidade,
+          valor: Number(l.precoTotal),
+        })),
+        operacaoId.current,
+      );
+      const criados = linhas.filter((l) => l.match === "novo").length;
+      const atualizados = linhas.length - criados;
       toast.success(t("fatura.stockAtualizado", { atualizados, criados }));
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(t("fatura.erroAtualizar"));
+      toast.error(err instanceof Error ? err.message : t("fatura.erroAtualizar"));
     } finally {
       setAGravar(false);
     }
