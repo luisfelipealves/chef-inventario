@@ -1,134 +1,177 @@
-import { db, stockDe, type Pedido, type Producao, type Receita } from "@/lib/db";
-import i18n from "@/lib/i18n";
-
-/**
- * Produção e entrega — a ponte entre receitas e a despensa.
- *
- * Registar uma produção abate os ingredientes na despensa (nunca abaixo de
- * zero) e soma doses prontas à receita. Entregar um pedido abate as doses
- * prontas vendidas. Voltar atrás num estado não repõe nada — o histórico de
- * produções fica na tabela `producoes`.
- */
+import { db, stockDe, type Pedido, type Receita, type EstadoPedido } from "./db";
+import { positivo, naoNegativo } from "./operacional";
 
 export interface FaltaIngrediente {
   nome: string;
   falta: number;
   unidade: string;
 }
-
-/**
- * Regista `lotes` produções da receita: abate os ingredientes e soma as
- * doses prontas. Devolve os ingredientes cuja despensa não chegou (ficaram
- * a zero e ainda faltava esta quantidade).
- */
-export async function registarProducao(
-  receita: Receita,
-  lotes: number,
-): Promise<FaltaIngrediente[]> {
-  const faltas: FaltaIngrediente[] = [];
-  await db.transaction("rw", [db.ingredientes, db.receitas, db.producoes], async () => {
-    for (const linha of receita.ingredientes) {
-      const ing = await db.ingredientes.get(linha.ingredienteId);
-      if (!ing) continue;
-      const necessario = linha.quantidade * lotes;
-      const restante = stockDe(ing) - necessario;
-      if (restante < 0) {
-        faltas.push({ nome: ing.nome, falta: -restante, unidade: ing.unidade });
-      }
-      // Só o stock desce. `quantidadeEmbalagem`/`precoEmbalagem` são a base do
-      // custo unitário e têm de ficar intactos — mexer neles reescrevia o custo
-      // das receitas (e o histórico do Financeiro) a cada produção.
-      await db.ingredientes.update(ing.id, {
-        stock: Math.max(0, restante),
-      });
-    }
-    const doses = lotes * receita.rendimento;
-    await db.producoes.add({
-      receitaId: receita.id,
-      nome: receita.nome,
-      lotes,
-      doses,
-      createdAt: new Date(),
-    } as Producao);
-    const atual = await db.receitas.get(receita.id);
-    await db.receitas.update(receita.id, {
-      dosesProntas: (atual?.dosesProntas ?? 0) + doses,
-    });
-  });
-  return faltas;
-}
-
 export interface FaltaEntrega {
   receita: Receita;
   dosesNecessarias: number;
   faltam: number;
 }
+const tabelas = () => [db.ingredientes, db.receitas, db.producoes, db.pedidos, db.clientes];
 
-/** Doses vendidas por receita num pedido (agrega itens repetidos). */
-function dosesPorReceita(pedido: Pedido): Map<number, number> {
+/** Estoque insuficiente bloqueia a operação inteira, sem apagar déficits. */
+export async function registarProducao(
+  receita: Receita,
+  lotes: number,
+): Promise<FaltaIngrediente[]> {
+  return db.transaction("rw", tabelas(), async () => {
+    positivo(lotes, "Lotes");
+    if (!Number.isInteger(lotes)) throw new Error("Informe lotes inteiros.");
+    const atual = await db.receitas.get(receita.id);
+    if (!atual) throw new Error("Receita inexistente.");
+    positivo(atual.rendimento, "Rendimento");
+    if (!atual.ingredientes.length) throw new Error("A receita não tem ingredientes.");
+    for (const linha of atual.ingredientes) {
+      const ing = await db.ingredientes.get(linha.ingredienteId);
+      if (!ing) throw new Error("Ingrediente da receita inexistente.");
+      const necessario = positivo(positivo(linha.quantidade, "Quantidade") * lotes, "Consumo");
+      const stock = naoNegativo(stockDe(ing), "Estoque");
+      if (stock < necessario)
+        throw new Error(`Estoque insuficiente: ${ing.nome}. Reponha a despensa antes de produzir.`);
+      await db.ingredientes.update(ing.id, { stock: stock - necessario });
+    }
+    const doses = positivo(lotes * atual.rendimento, "Doses");
+    await db.producoes.add({
+      receitaId: atual.id,
+      nome: atual.nome,
+      lotes,
+      doses,
+      createdAt: new Date(),
+    });
+    await db.receitas.update(atual.id, {
+      dosesProntas: naoNegativo(
+        naoNegativo(atual.dosesProntas ?? 0, "Doses prontas") + doses,
+        "Doses finais",
+      ),
+    });
+    return [];
+  });
+}
+function dosesPorReceita(pedido: Pedido) {
+  if (!pedido.itens.length) throw new Error("Adicione itens ao pedido.");
   const mapa = new Map<number, number>();
   for (const item of pedido.itens) {
-    mapa.set(item.receitaId, (mapa.get(item.receitaId) ?? 0) + item.quantidade);
+    positivo(item.quantidade, "Quantidade do pedido");
+    naoNegativo(item.precoUnitario, "Preço do pedido");
+    mapa.set(item.receitaId, positivo((mapa.get(item.receitaId) ?? 0) + item.quantidade, "Doses"));
   }
   return mapa;
 }
-
-/** Receitas do pedido sem doses prontas suficientes para a entrega. */
 export async function faltasParaEntrega(pedido: Pedido): Promise<FaltaEntrega[]> {
   const faltas: FaltaEntrega[] = [];
-  for (const [receitaId, doses] of dosesPorReceita(pedido)) {
-    const receita = await db.receitas.get(receitaId);
-    if (!receita) continue;
-    const faltam = doses - (receita.dosesProntas ?? 0);
+  for (const [id, doses] of dosesPorReceita(pedido)) {
+    const receita = await db.receitas.get(id);
+    if (!receita) throw new Error("Receita do pedido inexistente.");
+    const faltam = doses - naoNegativo(receita.dosesProntas ?? 0, "Doses prontas");
     if (faltam > 0) faltas.push({ receita, dosesNecessarias: doses, faltam });
   }
   return faltas;
 }
-
-/**
- * Marca o pedido como entregue e abate as doses prontas vendidas.
- * Com `produzirFaltas`, regista antes a produção em falta (em lotes
- * inteiros — faz-se o bolo todo, não a fatia). Devolve avisos legíveis
- * (despensa curta, doses insuficientes) para mostrar ao utilizador.
- */
 export async function entregarPedido(
   pedido: Pedido,
   opts: { produzirFaltas: boolean },
 ): Promise<string[]> {
-  const avisos: string[] = [];
-
-  if (opts.produzirFaltas) {
-    for (const f of await faltasParaEntrega(pedido)) {
-      const lotes = Math.ceil(f.faltam / Math.max(1, f.receita.rendimento));
-      const faltasIng = await registarProducao(f.receita, lotes);
-      for (const fi of faltasIng) {
-        avisos.push(
-          i18n.t("producao.avisoDespensa", {
-            nome: fi.nome,
-            qtd: arredonda(fi.falta),
-            unidade: fi.unidade,
-          }),
-        );
-      }
+  return db.transaction("rw", tabelas(), async () => {
+    const atual = await db.pedidos.get(pedido.id);
+    if (!atual) throw new Error("Pedido inexistente.");
+    if (atual.estado === "entregue") return [];
+    if (atual.estado === "cancelado")
+      throw new Error("Reabra o pedido cancelado antes de entregar.");
+    const faltas = await faltasParaEntrega(atual);
+    if (faltas.length && !opts.produzirFaltas)
+      throw new Error("Doses insuficientes. Produza antes de entregar.");
+    for (const f of faltas)
+      await registarProducao(
+        f.receita,
+        Math.ceil(f.faltam / positivo(f.receita.rendimento, "Rendimento")),
+      );
+    const baixas = [...dosesPorReceita(atual)].map(([receitaId, quantidade]) => ({
+      receitaId,
+      quantidade,
+    }));
+    for (const baixa of baixas) {
+      const receita = (await db.receitas.get(baixa.receitaId))!;
+      const saldo = naoNegativo((receita.dosesProntas ?? 0) - baixa.quantidade, "Doses finais");
+      await db.receitas.update(receita.id, { dosesProntas: saldo });
     }
-  }
-
-  await db.transaction("rw", [db.receitas, db.pedidos], async () => {
-    for (const [receitaId, doses] of dosesPorReceita(pedido)) {
-      const receita = await db.receitas.get(receitaId);
-      if (!receita) continue;
-      const prontas = receita.dosesProntas ?? 0;
-      if (doses > prontas) {
-        avisos.push(i18n.t("producao.avisoDoses", { nome: receita.nome, doses, prontas }));
-      }
-      await db.receitas.update(receitaId, { dosesProntas: Math.max(0, prontas - doses) });
-    }
-    await db.pedidos.update(pedido.id, { estado: "entregue" });
+    await db.pedidos.update(atual.id, {
+      estado: "entregue",
+      baixaEntrega: baixas,
+      movimentosEntrega: [
+        ...(atual.movimentosEntrega ?? []),
+        { tipo: "entrega", baixas, createdAt: new Date() },
+      ],
+    });
+    return [];
   });
-
-  return avisos;
 }
-
-function arredonda(v: number): number {
-  return Math.round(v * 100) / 100;
+/** Repor apenas doses efetivamente baixadas; produção permanece no histórico. */
+export async function mudarEstadoPedido(id: number, estado: EstadoPedido) {
+  return db.transaction("rw", tabelas(), async () => {
+    const atual = await db.pedidos.get(id);
+    if (!atual) throw new Error("Pedido inexistente.");
+    if (estado === atual.estado) return;
+    if (estado === "entregue") {
+      await entregarPedido(atual, { produzirFaltas: false });
+      return;
+    }
+    if (atual.estado === "entregue") {
+      if (!atual.baixaEntrega)
+        throw new Error(
+          "Entrega antiga sem registro de baixa: reversão automática indisponível. Preserve este pedido e confira o estoque manualmente.",
+        );
+      for (const baixa of atual.baixaEntrega) {
+        const receita = await db.receitas.get(baixa.receitaId);
+        if (!receita) throw new Error("Receita removida: não é possível repor as doses.");
+        await db.receitas.update(receita.id, {
+          dosesProntas: naoNegativo(
+            naoNegativo(receita.dosesProntas ?? 0, "Doses prontas") +
+              positivo(baixa.quantidade, "Reposição"),
+            "Doses finais",
+          ),
+        });
+      }
+      await db.pedidos.update(id, {
+        estado,
+        baixaEntrega: undefined,
+        movimentosEntrega: [
+          ...(atual.movimentosEntrega ?? []),
+          { tipo: "reversao", baixas: atual.baixaEntrega, createdAt: new Date() },
+        ],
+      });
+    } else await db.pedidos.update(id, { estado });
+  });
+}
+export async function guardarPedido(
+  payload: Omit<Pedido, "id" | "createdAt" | "baixaEntrega" | "movimentosEntrega">,
+  id?: number,
+) {
+  return db.transaction("rw", tabelas(), async () => {
+    if (!["pendente", "confirmado", "entregue", "cancelado"].includes(payload.estado))
+      throw new Error("Estado inválido.");
+    if (
+      !/^\d{4}-\d{2}-\d{2}$/.test(payload.dataEntrega) ||
+      !Number.isFinite(Date.parse(payload.dataEntrega))
+    )
+      throw new Error("Data de entrega inválida.");
+    const anterior = id === undefined ? undefined : await db.pedidos.get(id);
+    if (id !== undefined && !anterior) throw new Error("Pedido inexistente.");
+    if (anterior?.estado === "entregue")
+      throw new Error(
+        "Reabra o pedido pelo seletor de estado antes de editar. As doses serão repostas.",
+      );
+    if (!(await db.clientes.get(payload.clienteId))) throw new Error("Cliente inexistente.");
+    const novo = { ...payload, createdAt: anterior?.createdAt ?? new Date() };
+    await faltasParaEntrega(novo as Pedido);
+    const estado = payload.estado === "entregue" ? "confirmado" : payload.estado;
+    if (id === undefined) id = await db.pedidos.add({ ...novo, estado });
+    else await db.pedidos.update(id, { ...payload, estado });
+    if (payload.estado === "entregue")
+      await entregarPedido({ id } as Pedido, { produzirFaltas: false });
+    return id;
+  });
 }

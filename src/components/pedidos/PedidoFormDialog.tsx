@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { entregarPedido } from "@/lib/producao";
+import { guardarPedido } from "@/lib/producao";
 import { z } from "zod";
 import { Plus, Trash2 } from "lucide-react";
 import {
@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import {
-  db,
   type Cliente,
   type EstadoPedido,
   type Ingrediente,
@@ -142,6 +141,21 @@ export function PedidoFormDialog({
       setErrors(errs);
       return;
     }
+    if (
+      linhas.some(
+        (l) =>
+          l.receitaId == null ||
+          !Number.isFinite(Number(l.quantidade)) ||
+          Number(l.quantidade) <= 0 ||
+          !Number.isFinite(Number(l.precoUnitario)) ||
+          Number(l.precoUnitario) < 0,
+      )
+    ) {
+      toast.error(
+        "Reveja todas as linhas: selecione a receita, informe quantidade positiva e preço não negativo.",
+      );
+      return;
+    }
     if (itensValidos.length === 0) {
       toast.error(t("pedidoForm.adicionaReceita"));
       return;
@@ -155,29 +169,12 @@ export function PedidoFormDialog({
         notas: notas.trim(),
         itens: itensValidos,
       };
-      if (isEdit && pedido) {
-        await db.pedidos.update(pedido.id, payload);
-        toast.success(t("pedidoForm.pedidoAtualizado"));
-        if (estado === "entregue" && pedido.estado !== "entregue") {
-          const avisos = await entregarPedido({ ...pedido, ...payload }, { produzirFaltas: false });
-          avisos.forEach((a) => toast.warning(a));
-        }
-      } else {
-        const novo = { ...payload, createdAt: new Date() } as Pedido;
-        const id = await db.pedidos.add(novo);
-        toast.success(t("pedidoForm.pedidoCriado"));
-        if (estado === "entregue") {
-          const avisos = await entregarPedido(
-            { ...novo, id: id as number },
-            { produzirFaltas: false },
-          );
-          avisos.forEach((a) => toast.warning(a));
-        }
-      }
+      await guardarPedido(payload, pedido?.id);
+      toast.success(t(isEdit ? "pedidoForm.pedidoAtualizado" : "pedidoForm.pedidoCriado"));
       onOpenChange(false);
     } catch (err) {
       console.error(err);
-      toast.error(t("comum.erroGravar"));
+      toast.error(err instanceof Error ? err.message : t("comum.erroGravar"));
     } finally {
       setSubmitting(false);
     }
@@ -194,7 +191,11 @@ export function PedidoFormDialog({
           <SheetTitle className="font-heading text-2xl font-normal">
             {isEdit ? t("pedidoForm.editarTitulo") : t("pedidoForm.novoTitulo")}
           </SheetTitle>
-          <SheetDescription>{t("pedidoForm.desc")}</SheetDescription>
+          <SheetDescription>
+            {pedido?.estado === "entregue"
+              ? "Pedido entregue: reabra pelo seletor de estado antes de editar. A reversão repõe as doses; entregas antigas sem registro de baixa não permitem reversão automática."
+              : t("pedidoForm.desc")}
+          </SheetDescription>
         </SheetHeader>
 
         <form

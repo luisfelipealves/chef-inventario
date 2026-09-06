@@ -85,6 +85,7 @@ export interface Cliente {
  * Criado ao "Adicionar compra" e ao importar faturas; nunca é editado.
  */
 export interface Compra {
+  operacaoId?: string;
   id: number;
   /** Pode apontar para um ingrediente entretanto removido. */
   ingredienteId?: number;
@@ -109,6 +110,13 @@ export interface ItemPedido {
 
 export interface Pedido {
   id: number;
+  /** Ausente em entregas legadas: nunca inferir uma reposição. */
+  baixaEntrega?: { receitaId: number; quantidade: number }[];
+  movimentosEntrega?: {
+    tipo: "entrega" | "reversao";
+    baixas: { receitaId: number; quantidade: number }[];
+    createdAt: Date;
+  }[];
   clienteId: number;
   itens: ItemPedido[];
   dataEntrega: string;
