@@ -1,3 +1,4 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
 import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
-import { custoTotalReceita, custoPorDose, custoLinha } from "@/lib/receita-custo";
+import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
@@ -42,11 +43,8 @@ const FILTROS_KEYS = [
   { key: "falhas", labelKey: "receitas.filtroFalhas" },
 ];
 
-interface ReceitaCalc {
+interface ReceitaCalc extends ReturnType<typeof resumoReceita> {
   receita: Receita;
-  custoTotal: number;
-  custoDose: number;
-  margem: number | null;
   temFalha: boolean;
 }
 
@@ -73,12 +71,8 @@ function ReceitasPage() {
   const calculados = useMemo<ReceitaCalc[]>(
     () =>
       lista.map((r) => {
-        const custoTotal = custoTotalReceita(r, ingMap);
-        const custoDose = custoPorDose(custoTotal, r.rendimento);
-        const venda = r.precoVenda ?? 0;
-        const margem = venda > 0 && custoDose > 0 ? ((venda - custoDose) / custoDose) * 100 : null;
-        const temFalha = r.ingredientes.some((l) => !ingMap.has(l.ingredienteId));
-        return { receita: r, custoTotal, custoDose, margem, temFalha };
+        const resumo = resumoReceita(r, ingMap);
+        return { receita: r, ...resumo, temFalha: !resumo.completo };
       }),
     [lista, ingMap],
   );
@@ -159,7 +153,14 @@ function ReceitasPage() {
                     data-selected={selecionado?.receita.id === c.receita.id}
                     onClick={() => setSelection("receitas", c.receita.id)}
                   >
-                    <td className="primeira">{c.receita.nome}</td>
+                    <td className="primeira">
+                      {c.receita.nome}
+                      {c.temFalha && (
+                        <span className="block text-sm" role="status">
+                          {t("custos.incompletoCurto")}
+                        </span>
+                      )}
+                    </td>
                     <td className="num">{c.receita.ingredientes.length}</td>
                     <td>
                       {c.receita.rendimento} {c.receita.unidadeRendimento}
@@ -173,9 +174,15 @@ function ReceitasPage() {
                     </td>
                     <td
                       className="num"
-                      style={{ color: "var(--color-accent-2-700)", fontWeight: 600 }}
+                      style={{
+                        color:
+                          c.margem != null && c.margem < 0
+                            ? "var(--color-accent-700)"
+                            : "var(--color-accent-2-700)",
+                        fontWeight: 600,
+                      }}
                     >
-                      {c.margem != null ? `+${Math.round(c.margem)}%` : "—"}
+                      {c.margem != null ? `${Math.round(c.margem)}%` : "—"}
                     </td>
                   </tr>
                 ))}
@@ -251,7 +258,7 @@ function ReceitaDetalhe({
   onProduzir: () => void;
 }) {
   const { t } = useTranslation();
-  const { receita, custoTotal, custoDose, margem } = calc;
+  const { receita, custoTotal, custoDose } = calc;
   const prontas = receita.dosesProntas ?? 0;
 
   return (
@@ -340,7 +347,7 @@ function ReceitaDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            {t("receitas.custoPorDose")}
+            {t("custos.custoUnidade", { unidade: receita.unidadeRendimento })}
           </span>
           <span
             style={{
@@ -377,45 +384,18 @@ function ReceitaDetalhe({
         </div>
       </div>
 
-      {margem != null && (
-        <div
-          style={{
-            background: "var(--color-accent-2-100)",
-            color: "var(--color-accent-2-800)",
-            borderRadius: 22,
-            padding: "16px 18px",
-          }}
-        >
-          <span
-            style={{
-              display: "block",
-              fontFamily: "var(--font-heading)",
-              fontSize: 19,
-            }}
-          >
-            +{Math.round(margem)}%
-          </span>
-          <div
-            style={{
-              height: 7,
-              borderRadius: 999,
-              background: "color-mix(in srgb, var(--color-accent-2-800) 18%, transparent)",
-              margin: "8px 0 6px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${Math.min(100, margem / 4)}%`,
-                background: "var(--color-accent-2-600)",
-                borderRadius: 999,
-              }}
-            />
-          </div>
-          <span style={{ fontSize: 12, opacity: 0.85 }}>{t("receitas.acimaCusto")}</span>
+      <div className="detalhe-card">
+        <div>
+          {t("custos.precoUnitario", { unidade: receita.unidadeRendimento })}:{" "}
+          <strong>{formatEuro(calc.precoUnitario)}</strong>
         </div>
-      )}
+        <ResumoIndicadores
+          resultado={calc.resultado}
+          margem={calc.margem}
+          acrescimo={calc.acrescimo}
+        />
+        <AvisoCusto completo={calc.completo} />
+      </div>
 
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onProduzir}>

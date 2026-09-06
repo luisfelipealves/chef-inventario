@@ -1,3 +1,4 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -28,8 +29,8 @@ import {
   type Receita,
   type UnidadeMedida,
 } from "@/lib/db";
-import { custoPorUnidade, formatEuro } from "@/lib/format";
-import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
+import { formatEuro } from "@/lib/format";
+import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 
 type FormValues = {
   nome: string;
@@ -73,12 +74,14 @@ export function ReceitaFormDialog({
         nome: z.string().trim().min(1, t("receitaForm.errNome")).max(80),
         rendimento: z.coerce
           .number({ invalid_type_error: t("receitaForm.errNumero") })
+          .finite(t("receitaForm.errNumero"))
           .positive(t("receitaForm.errPositivo")),
         unidadeRendimento: z.enum(["g", "kg", "ml", "l", "un"]),
         precoVenda: z.preprocess(
           (v) => (v === "" ? undefined : v),
           z.coerce
             .number({ invalid_type_error: t("receitaForm.errNumero") })
+            .finite(t("receitaForm.errNumero"))
             .nonnegative(t("receitaForm.errNaoNegativo"))
             .optional(),
         ),
@@ -128,12 +131,18 @@ export function ReceitaFormDialog({
     [linhas],
   );
 
-  const custoTotal = custoTotalReceita({ ingredientes: linhasValidas }, ingMap);
-  const rendimentoNum = Number(values.rendimento) || 0;
-  const custoDose = custoPorDose(custoTotal, rendimentoNum);
-  const precoVendaNum = Number(values.precoVenda) || 0;
-  const margem = precoVendaNum > 0 ? precoVendaNum - custoTotal : null;
-  const margemPct = margem != null && custoTotal > 0 ? (margem / custoTotal) * 100 : null;
+  const resumo = resumoReceita(
+    {
+      ingredientes: linhas.map((l) => ({
+        ingredienteId: l.ingredienteId ?? -1,
+        quantidade: Number(l.quantidade),
+      })),
+      rendimento: Number(values.rendimento),
+      precoVenda: values.precoVenda.trim() === "" ? undefined : Number(values.precoVenda),
+    },
+    ingMap,
+  );
+  const { custoTotal, custoDose } = resumo;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,7 +156,11 @@ export function ReceitaFormDialog({
       setErrors(errs);
       return;
     }
-    if (linhasValidas.length === 0) {
+    if (
+      linhasValidas.length === 0 ||
+      linhasValidas.length !== linhas.length ||
+      linhas.some((l) => !Number.isFinite(Number(l.quantidade)))
+    ) {
       toast.error(t("receitaForm.adicionaIngrediente"));
       return;
     }
@@ -332,10 +345,13 @@ export function ReceitaFormDialog({
                         </div>
                         <span className="min-w-16 text-right text-sm font-medium tabular-nums text-foreground">
                           {formatEuro(
-                            ing && Number(linha.quantidade) > 0
-                              ? custoPorUnidade(ing.precoEmbalagem, ing.quantidadeEmbalagem) *
-                                  Number(linha.quantidade)
-                              : 0,
+                            custoLinha(
+                              {
+                                ingredienteId: linha.ingredienteId ?? -1,
+                                quantidade: Number(linha.quantidade),
+                              },
+                              ing,
+                            ),
                             { compact: true },
                           )}
                         </span>
@@ -378,31 +394,16 @@ export function ReceitaFormDialog({
               </span>
               <span className="font-semibold tabular-nums">{formatEuro(custoDose)}</span>
             </div>
-            {margem != null && (
-              <>
-                <div className="my-1 border-t border-border" />
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("receitaForm.precoVendaResumo")}</span>
-                  <span className="font-semibold tabular-nums">
-                    {formatEuro(precoVendaNum, { compact: true })}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">{t("receitaForm.margem")}</span>
-                  <span
-                    className={`font-semibold tabular-nums ${margem >= 0 ? "text-green-600" : "text-destructive"}`}
-                  >
-                    {formatEuro(margem, { compact: true })}
-                    {margemPct != null && (
-                      <span className="ml-1 text-xs font-normal">
-                        ({margemPct >= 0 ? "+" : ""}
-                        {margemPct.toFixed(0)}%)
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </>
-            )}
+            <div>
+              {t("custos.precoUnitario", { unidade: values.unidadeRendimento })}:{" "}
+              <strong>{formatEuro(resumo.precoUnitario)}</strong>
+            </div>
+            <ResumoIndicadores
+              resultado={resumo.resultado}
+              margem={resumo.margem}
+              acrescimo={resumo.acrescimo}
+            />
+            <AvisoCusto completo={resumo.completo} />
           </div>
 
           <SheetFooter className="gap-2 sm:gap-2">

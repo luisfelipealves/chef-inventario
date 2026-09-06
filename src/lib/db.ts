@@ -48,6 +48,7 @@ export interface Receita {
   rendimento: number;
   unidadeRendimento: UnidadeMedida;
   ingredientes: IngredienteReceita[];
+  /** Preço da receita completa; dividir pelo rendimento para obter o preço unitário. */
   precoVenda?: number;
   /** Doses produzidas e ainda não vendidas (stock de produto acabado). */
   dosesProntas?: number;

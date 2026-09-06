@@ -345,12 +345,16 @@ function FinanceiroPage() {
         <Indicador
           kicker={t("financeiro.kCusto")}
           valor={formatEuro(dados.custoProducao, { compact: true })}
-          nota={t("financeiro.kCustoNota")}
+          nota={
+            Number.isFinite(dados.custoProducao)
+              ? t("financeiro.kCustoNota")
+              : t("custos.incompleto")
+          }
         />
         <Indicador
           kicker={t("financeiro.kLucro")}
           valor={formatEuro(dados.lucro, { compact: true })}
-          nota={t("financeiro.kLucroNota")}
+          nota={Number.isFinite(dados.lucro) ? t("financeiro.kLucroNota") : t("custos.incompleto")}
         />
       </div>
 

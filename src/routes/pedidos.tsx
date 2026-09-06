@@ -1,3 +1,4 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -173,7 +174,14 @@ function PedidosPage() {
                       </td>
                       <td>{dataEntregaCurta(p.dataEntrega)}</td>
                       <td>{t("pedidos.nReceitas", { count: p.itens.length })}</td>
-                      <td className="num">{formatEuro(totais.custo, { compact: true })}</td>
+                      <td
+                        className="num"
+                        title={totais.completo ? undefined : t("custos.incompleto")}
+                      >
+                        {totais.completo
+                          ? formatEuro(totais.custo, { compact: true })
+                          : t("custos.incompletoCurto")}
+                      </td>
                       <td className="num">{formatEuro(totais.venda, { compact: true })}</td>
                       <td>
                         <EstadoSelect pedido={p} />
@@ -311,6 +319,7 @@ function PedidoDetalhe({
                 <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
                   {t("pedidos.porDose", {
                     preco: formatEuro(item.precoUnitario, { compact: true }),
+                    unidade: receita?.unidadeRendimento ?? "un",
                     custo: formatEuro(custoDose, { compact: true }),
                   })}
                 </span>
@@ -330,18 +339,12 @@ function PedidoDetalhe({
             {formatEuro(totais.custo, { compact: true })}
           </span>
         </div>
-        <div className="kv">
-          <span className="kv-label">{t("pedidos.lucro")}</span>
-          <span
-            style={{
-              color: "var(--color-accent-2-700)",
-              fontWeight: 600,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {formatEuro(totais.lucro, { compact: true })}
-          </span>
-        </div>
+        <ResumoIndicadores
+          resultado={totais.lucro}
+          margem={totais.margem}
+          acrescimo={totais.acrescimo}
+        />
+        <AvisoCusto completo={totais.completo} />
         <div style={{ borderTop: "1px solid var(--color-divider)", margin: "8px 0" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
@@ -357,9 +360,6 @@ function PedidoDetalhe({
               }}
             >
               {formatEuro(totais.venda, { compact: true })}
-            </span>
-            <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
-              {t("pedidos.margem", { pct: Math.round(totais.margem) })}
             </span>
           </span>
         </div>

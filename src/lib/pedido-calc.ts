@@ -1,12 +1,12 @@
 import type { EstadoPedido, Ingrediente, ItemPedido, Receita } from "@/lib/db";
-import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
+import { custoTotalReceita, custoPorDose, indicadoresVenda } from "@/lib/receita-custo";
 
-/** Custo de produção por dose de uma receita. */
+/** Custo dos ingredientes por unidade de rendimento. */
 export function custoDoseReceita(
   receita: Receita | undefined,
   ingredientesMap: Map<number, Ingrediente>,
 ): number {
-  if (!receita) return 0;
+  if (!receita) return NaN;
   return custoPorDose(custoTotalReceita(receita, ingredientesMap), receita.rendimento);
 }
 
@@ -18,12 +18,15 @@ export function totaisPedido(
   let custo = 0;
   let venda = 0;
   for (const item of itens) {
-    custo += custoDoseReceita(receitasMap.get(item.receitaId), ingredientesMap) * item.quantidade;
-    venda += item.precoUnitario * item.quantidade;
+    const quantidade =
+      Number.isFinite(item.quantidade) && item.quantidade > 0 ? item.quantidade : NaN;
+    const preco =
+      Number.isFinite(item.precoUnitario) && item.precoUnitario >= 0 ? item.precoUnitario : NaN;
+    custo += custoDoseReceita(receitasMap.get(item.receitaId), ingredientesMap) * quantidade;
+    venda += preco * quantidade;
   }
-  const lucro = venda - custo;
-  const margem = custo > 0 ? (lucro / custo) * 100 : 0;
-  return { custo, venda, lucro, margem };
+  const { resultado: lucro, margem, acrescimo } = indicadoresVenda(custo, venda);
+  return { custo, venda, lucro, margem, acrescimo, completo: Number.isFinite(custo) };
 }
 
 export const estadoLabel: Record<EstadoPedido, string> = {
