@@ -23,6 +23,7 @@ import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
+import { eliminarReceita } from "@/lib/operacional";
 
 export const Route = createFileRoute("/receitas")({
   head: () => ({
@@ -108,7 +109,7 @@ function ReceitasPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.receitas.delete(toDelete.id);
+      await eliminarReceita(toDelete.id);
       toast.success(t("receitas.removida"));
     } catch (err) {
       console.error(err);

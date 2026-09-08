@@ -23,6 +23,7 @@ import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
 import { EstadoTag } from "@/components/EstadoTag";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
+import { eliminarCliente } from "@/lib/operacional";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
@@ -117,7 +118,7 @@ function ClientesPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.clientes.delete(toDelete.id);
+      await eliminarCliente(toDelete.id);
       toast.success(t("clientes.removido"));
     } catch (err) {
       console.error(err);

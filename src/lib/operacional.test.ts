@@ -1,7 +1,13 @@
 import "fake-indexeddb/auto";
 import { beforeEach, afterAll, describe, expect, it, vi } from "vitest";
 import { db } from "./db";
-import { converterQuantidade, registarCompras } from "./operacional";
+import {
+  converterQuantidade,
+  eliminarCliente,
+  eliminarIngrediente,
+  eliminarReceita,
+  registarCompras,
+} from "./operacional";
 import {
   entregarPedido,
   eliminarPedido,
@@ -101,6 +107,20 @@ describe("compras e conversões", () => {
   });
 });
 describe("produção e pedidos", () => {
+  it("bloqueia a remoção de ingrediente e receita com referências", async () => {
+    await expect(eliminarIngrediente(1)).rejects.toThrow("utilizado");
+    expect(await db.ingredientes.get(1)).toBeDefined();
+    await pedido();
+    await expect(eliminarReceita(1)).rejects.toThrow("pedido");
+    expect(await db.receitas.get(1)).toBeDefined();
+  });
+
+  it("bloqueia a remoção de cliente com pedidos associados", async () => {
+    await pedido();
+    await expect(eliminarCliente(1)).rejects.toThrow("pedidos");
+    expect(await db.clientes.get(1)).toBeDefined();
+  });
+
   it("relê o banco e impede entrega duplicada concorrente", async () => {
     const p = await pedido();
     await Promise.all([

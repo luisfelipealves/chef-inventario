@@ -22,6 +22,7 @@ import { calcularAlertasStock, mapaAlertas, type AlertaStock } from "@/lib/stock
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
+import { eliminarIngrediente } from "@/lib/operacional";
 
 export const Route = createFileRoute("/ingredientes")({
   head: () => ({
@@ -102,7 +103,7 @@ function IngredientesPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.ingredientes.delete(toDelete.id);
+      await eliminarIngrediente(toDelete.id);
       toast.success(t("ingredientes.removido"));
     } catch (err) {
       console.error(err);
