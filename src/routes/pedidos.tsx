@@ -30,6 +30,7 @@ import { dataEntregaCurta, dataEntregaLonga } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
 import { EstadoSelect } from "@/components/pedidos/EstadoSelect";
+import { eliminarPedido } from "@/lib/producao";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 
 export const Route = createFileRoute("/pedidos")({
@@ -123,7 +124,7 @@ function PedidosPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.pedidos.delete(toDelete.id);
+      await eliminarPedido(toDelete.id);
       toast.success(t("pedidos.removido"));
     } catch (err) {
       console.error(err);
