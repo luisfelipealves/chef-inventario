@@ -122,6 +122,153 @@ function reviverDatas<T extends { createdAt: unknown }>(arr: T[]): T[] {
   return arr.map((x) => ({ ...x, createdAt: new Date(x.createdAt as string) }));
 }
 
+const UNIDADES = new Set(["g", "kg", "ml", "l", "un"]);
+const ESTADOS = new Set(["pendente", "confirmado", "entregue", "cancelado"]);
+const registo = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null;
+const inteiro = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v > 0;
+const numero = (v: unknown, minimo = 0): v is number =>
+  typeof v === "number" && Number.isFinite(v) && v >= minimo;
+const dataValida = (v: unknown) => typeof v === "string" && Number.isFinite(new Date(v).getTime());
+
+function estruturaBackupValida(dados: Record<string, unknown>): boolean {
+  if (
+    dados.versao !== 1 ||
+    !dataValida(dados.exportadoEm) ||
+    !Array.isArray(dados.ingredientes) ||
+    !Array.isArray(dados.receitas) ||
+    !Array.isArray(dados.clientes) ||
+    !Array.isArray(dados.pedidos) ||
+    (dados.compras !== undefined && !Array.isArray(dados.compras)) ||
+    (dados.producoes !== undefined && !Array.isArray(dados.producoes))
+  )
+    return false;
+
+  const ingredienteIds = new Set<number>();
+  for (const raw of dados.ingredientes) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      ingredienteIds.has(raw.id) ||
+      typeof raw.nome !== "string" ||
+      !raw.nome.trim() ||
+      typeof raw.unidade !== "string" ||
+      !UNIDADES.has(raw.unidade) ||
+      !numero(raw.quantidadeEmbalagem, Number.MIN_VALUE) ||
+      !numero(raw.precoEmbalagem) ||
+      !dataValida(raw.createdAt) ||
+      (raw.stock !== undefined && !numero(raw.stock)) ||
+      (raw.codigoBarras !== undefined && typeof raw.codigoBarras !== "string")
+    )
+      return false;
+    ingredienteIds.add(raw.id);
+  }
+
+  const receitaIds = new Set<number>();
+  for (const raw of dados.receitas) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      receitaIds.has(raw.id) ||
+      typeof raw.nome !== "string" ||
+      !raw.nome.trim() ||
+      !numero(raw.rendimento, Number.MIN_VALUE) ||
+      typeof raw.unidadeRendimento !== "string" ||
+      !UNIDADES.has(raw.unidadeRendimento) ||
+      !Array.isArray(raw.ingredientes) ||
+      !dataValida(raw.createdAt) ||
+      (raw.precoVenda !== undefined && !numero(raw.precoVenda)) ||
+      (raw.dosesProntas !== undefined && !numero(raw.dosesProntas))
+    )
+      return false;
+    for (const linha of raw.ingredientes) {
+      if (
+        !registo(linha) ||
+        !inteiro(linha.ingredienteId) ||
+        !ingredienteIds.has(linha.ingredienteId) ||
+        !numero(linha.quantidade, Number.MIN_VALUE)
+      )
+        return false;
+    }
+    receitaIds.add(raw.id);
+  }
+
+  const clienteIds = new Set<number>();
+  for (const raw of dados.clientes) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      clienteIds.has(raw.id) ||
+      typeof raw.nome !== "string" ||
+      !raw.nome.trim() ||
+      typeof raw.telefone !== "string" ||
+      typeof raw.endereco !== "string" ||
+      typeof raw.nif !== "string" ||
+      !dataValida(raw.createdAt)
+    )
+      return false;
+    clienteIds.add(raw.id);
+  }
+
+  const pedidoIds = new Set<number>();
+  for (const raw of dados.pedidos) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      pedidoIds.has(raw.id) ||
+      !inteiro(raw.clienteId) ||
+      !clienteIds.has(raw.clienteId) ||
+      !Array.isArray(raw.itens) ||
+      typeof raw.dataEntrega !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(raw.dataEntrega) ||
+      !ESTADOS.has(String(raw.estado)) ||
+      typeof raw.notas !== "string" ||
+      !dataValida(raw.createdAt)
+    )
+      return false;
+    for (const item of raw.itens) {
+      if (
+        !registo(item) ||
+        !inteiro(item.receitaId) ||
+        !receitaIds.has(item.receitaId) ||
+        !numero(item.quantidade, Number.MIN_VALUE) ||
+        !numero(item.precoUnitario)
+      )
+        return false;
+    }
+    pedidoIds.add(raw.id);
+  }
+
+  for (const raw of dados.compras ?? []) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      typeof raw.nome !== "string" ||
+      !raw.nome.trim() ||
+      !numero(raw.quantidade, Number.MIN_VALUE) ||
+      typeof raw.unidade !== "string" ||
+      !UNIDADES.has(raw.unidade) ||
+      !numero(raw.valor) ||
+      !dataValida(raw.createdAt) ||
+      (raw.ingredienteId !== undefined && !inteiro(raw.ingredienteId))
+    )
+      return false;
+  }
+  for (const raw of dados.producoes ?? []) {
+    if (
+      !registo(raw) ||
+      !inteiro(raw.id) ||
+      !inteiro(raw.receitaId) ||
+      typeof raw.nome !== "string" ||
+      !raw.nome.trim() ||
+      !numero(raw.lotes, Number.MIN_VALUE) ||
+      !numero(raw.doses, Number.MIN_VALUE) ||
+      !dataValida(raw.createdAt)
+    )
+      return false;
+  }
+  return true;
+}
+
 /** Valida o texto de um ficheiro de backup e devolve as contagens (sem importar). */
 export function validarBackup(texto: string): { dados: BackupData; contagem: ContagemBackup } {
   let dados: BackupData;
@@ -130,13 +277,7 @@ export function validarBackup(texto: string): { dados: BackupData; contagem: Con
   } catch {
     throw new Error(i18n.t("backupLib.jsonIlegivel"));
   }
-  const ok =
-    dados &&
-    dados.app === "chefgestao" &&
-    Array.isArray(dados.ingredientes) &&
-    Array.isArray(dados.receitas) &&
-    Array.isArray(dados.clientes) &&
-    Array.isArray(dados.pedidos);
+  const ok = registo(dados) && dados.app === "chefgestao" && estruturaBackupValida(dados);
   if (!ok) {
     throw new Error(i18n.t("backupLib.naoEBackup"));
   }

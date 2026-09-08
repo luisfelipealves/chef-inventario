@@ -4,6 +4,16 @@ As notas de cada versão são publicadas automaticamente na release do GitHub
 (ver `scripts/release-notes.mjs`). O título de cada secção tem de ser `## vX.Y.Z`,
 igual à tag, senão a release sai com as notas por omissão.
 
+## v1.1.8
+
+### Corrigido
+
+- Impede eliminar pedidos entregues sem repor as doses baixadas no stock.
+- Impede eliminações que deixariam ingredientes, receitas ou clientes referenciados por outros registos.
+- Remove produções associadas ao apagar dados de exemplo.
+- Valida a estrutura e as referências internas dos backups antes da importação.
+- Permite configurar o modelo Gemini e identifica modelos indisponíveis.
+
 ## v1.1.6
 
 ### Corrigido

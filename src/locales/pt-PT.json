@@ -521,6 +521,7 @@
     "semRede": "Sem ligação à internet. A leitura de faturas precisa de rede.",
     "chaveInvalida": "Chave da API inválida ou sem acesso. Verifica a chave do Gemini.",
     "limite": "Limite gratuito atingido por agora. Tenta novamente mais tarde.",
+    "modeloIndisponivel": "O modelo Gemini {{modelo}} não está disponível. Atualiza VITE_GEMINI_MODEL nas definições do build.",
     "erroGemini": "Erro do Gemini ({{status}}). Tenta novamente.",
     "naoLeu": "Não foi possível ler a fatura. Tenta outra foto.",
     "respostaInesperada": "Resposta inesperada do Gemini. Tenta outra foto."

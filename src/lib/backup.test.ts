@@ -13,16 +13,26 @@ const valido = JSON.stringify({
   app: "chefgestao",
   versao: 1,
   exportadoEm: "2026-08-23T10:00:00.000Z",
-  ingredientes: [{ id: 1, nome: "Farinha", createdAt: "2026-01-01T00:00:00.000Z" }],
+  ingredientes: [
+    {
+      id: 1,
+      nome: "Farinha",
+      unidade: "g",
+      quantidadeEmbalagem: 1000,
+      precoEmbalagem: 2,
+      stock: 1000,
+      createdAt: "2026-01-01T00:00:00.000Z",
+    },
+  ],
   receitas: [],
   clientes: [],
-  pedidos: [{ id: 1, createdAt: "2026-01-01T00:00:00.000Z" }],
+  pedidos: [],
 });
 
 describe("validarBackup", () => {
   it("aceita um backup válido e conta os registos", () => {
     const { contagem } = validarBackup(valido);
-    expect(contagem).toEqual({ ingredientes: 1, receitas: 0, clientes: 0, pedidos: 1 });
+    expect(contagem).toEqual({ ingredientes: 1, receitas: 0, clientes: 0, pedidos: 0 });
   });
 
   it("rejeita JSON ilegível", () => {
@@ -44,5 +54,41 @@ describe("validarBackup", () => {
 
   it("aceita backups antigos sem a tabela de compras", () => {
     expect(() => validarBackup(valido)).not.toThrow();
+  });
+
+  it("rejeita registos internos incompletos", () => {
+    const dados = JSON.parse(valido);
+    dados.ingredientes[0].quantidadeEmbalagem = 0;
+    expect(() => validarBackup(JSON.stringify(dados))).toThrow(msg("backupLib.naoEBackup"));
+  });
+
+  it("rejeita referências de pedidos inexistentes", () => {
+    const dados = JSON.parse(valido);
+    dados.clientes.push({
+      id: 1,
+      nome: "Cliente",
+      telefone: "",
+      endereco: "",
+      nif: "",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    dados.receitas.push({
+      id: 1,
+      nome: "Receita",
+      rendimento: 1,
+      unidadeRendimento: "un",
+      ingredientes: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    dados.pedidos.push({
+      id: 1,
+      clienteId: 1,
+      itens: [{ receitaId: 999, quantidade: 1, precoUnitario: 1 }],
+      dataEntrega: "2026-01-01",
+      estado: "pendente",
+      notas: "",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(() => validarBackup(JSON.stringify(dados))).toThrow(msg("backupLib.naoEBackup"));
   });
 });

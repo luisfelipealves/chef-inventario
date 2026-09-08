@@ -521,6 +521,7 @@
     "semRede": "No internet connection. Receipt scanning needs a network.",
     "chaveInvalida": "Invalid or unauthorised API key. Check your Gemini key.",
     "limite": "Free quota reached for now. Try again later.",
+    "modeloIndisponivel": "The Gemini model {{modelo}} is unavailable. Update VITE_GEMINI_MODEL in the build settings.",
     "erroGemini": "Gemini error ({{status}}). Try again.",
     "naoLeu": "Could not read the receipt. Try another photo.",
     "respostaInesperada": "Unexpected Gemini response. Try another photo."
