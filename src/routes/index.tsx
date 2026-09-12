@@ -139,9 +139,15 @@ function Painel() {
   }
 
   return (
-    <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
+    <div
+      className="dashboard-page"
+      style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}
+    >
       {/* Faixa de indicadores */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div
+        className="dashboard-indicators"
+        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+      >
         <Indicador
           kicker={t("painel.pedidosAbertos")}
           valor={String(abertos.length)}
@@ -168,6 +174,7 @@ function Painel() {
 
       {/* Grid principal */}
       <div
+        className="dashboard-main-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1.35fr 1fr",
@@ -214,6 +221,7 @@ function Painel() {
                     key={p.id}
                     type="button"
                     onClick={() => abrirPedido(p.id)}
+                    className="dashboard-delivery-row"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "62px minmax(0,1fr) auto auto",
@@ -315,6 +323,7 @@ function Painel() {
                     key={a.ingrediente.id}
                     type="button"
                     onClick={() => abrirIngrediente(a.ingrediente.id)}
+                    className="dashboard-stock-row"
                     style={{
                       display: "flex",
                       alignItems: "center",

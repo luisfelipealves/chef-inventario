@@ -4,6 +4,18 @@ As notas de cada versão são publicadas automaticamente na release do GitHub
 (ver `scripts/release-notes.mjs`). O título de cada secção tem de ser `## vX.Y.Z`,
 igual à tag, senão a release sai com as notas por omissão.
 
+## v1.1.9
+
+### Adicionado
+
+- Adapta a aplicação para utilização em browsers mobile e tablets, com navegação, listas, detalhes, formulários e diálogos responsivos.
+- Permite gerar uma lista de compras em ficheiro de texto com os ingredientes em stock baixo.
+
+### Corrigido
+
+- Ajusta o layout mobile para viewports inferiores a 1024 px.
+- Corrige o encaixe e o alinhamento dos botões em ecrãs pequenos.
+
 ## v1.1.8
 
 ### Corrigido

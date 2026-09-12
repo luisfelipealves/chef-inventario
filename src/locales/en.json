@@ -6,6 +6,7 @@
     "ingredientes": "Ingredients",
     "clientes": "Customers",
     "financeiro": "Finances",
+    "menu": "Menu",
     "definicoes": "Settings",
     "recolher": "Collapse",
     "stockBaixo": "{{n}} low on stock"
@@ -19,7 +20,9 @@
     "novoIngrediente": "New ingredient",
     "novoCliente": "New customer",
     "pesquisar": "Search everything…",
-    "pesquisaGlobal": "Global search"
+    "pesquisaGlobal": "Global search",
+    "abrirMenu": "Open menu",
+    "fecharMenu": "Close menu"
   },
   "painel": {
     "pedidosAbertos": "Open orders",
@@ -57,6 +60,7 @@
     "descricao": "The app and its documents follow the chosen language."
   },
   "comum": {
+    "voltar": "Back",
     "cancelar": "Cancel",
     "remover": "Delete",
     "guardar": "Save",
@@ -232,6 +236,11 @@
     "filtroStockBaixo": "Low stock",
     "filtroSemCodigo": "No barcode",
     "contagem": "{{n}} of {{total}} ingredients",
+    "gerarListaStockBaixo": "Generate low-stock list",
+    "listaTitulo": "Shopping list — low stock",
+    "listaData": "Generated on {{data}}",
+    "listaGerada": "List generated with {{n}} ingredient(s)",
+    "semStockBaixo": "There are no low-stock ingredients.",
     "lerFatura": "Scan receipt",
     "thIngrediente": "Ingredient",
     "thStock": "Stock",

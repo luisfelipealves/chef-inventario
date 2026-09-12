@@ -6,6 +6,7 @@
     "ingredientes": "Ingredientes",
     "clientes": "Clientes",
     "financeiro": "Financeiro",
+    "menu": "Menu",
     "definicoes": "Definições",
     "recolher": "Recolher",
     "stockBaixo": "{{n}} em stock baixo"
@@ -19,7 +20,9 @@
     "novoIngrediente": "Novo ingrediente",
     "novoCliente": "Novo cliente",
     "pesquisar": "Pesquisar em tudo…",
-    "pesquisaGlobal": "Pesquisa global"
+    "pesquisaGlobal": "Pesquisa global",
+    "abrirMenu": "Abrir menu",
+    "fecharMenu": "Fechar menu"
   },
   "painel": {
     "pedidosAbertos": "Pedidos abertos",
@@ -57,6 +60,7 @@
     "descricao": "A app e os documentos seguem o idioma escolhido."
   },
   "comum": {
+    "voltar": "Voltar",
     "cancelar": "Cancelar",
     "remover": "Remover",
     "guardar": "Guardar",
@@ -232,6 +236,11 @@
     "filtroStockBaixo": "Stock baixo",
     "filtroSemCodigo": "Sem código",
     "contagem": "{{n}} de {{total}} ingredientes",
+    "gerarListaStockBaixo": "Gerar lista de stock baixo",
+    "listaTitulo": "Lista de compras — stock baixo",
+    "listaData": "Gerada em {{data}}",
+    "listaGerada": "Lista gerada com {{n}} ingrediente(s)",
+    "semStockBaixo": "Não há ingredientes em stock baixo.",
     "lerFatura": "Ler fatura",
     "thIngrediente": "Ingrediente",
     "thStock": "Stock",

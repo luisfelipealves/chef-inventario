@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Printer, BookOpen, Plus, CookingPot } from "lucide-react";
+import { Pencil, Printer, BookOpen, Plus, CookingPot, Trash2 } from "lucide-react";
 import { db, type Receita, type Ingrediente } from "@/lib/db";
 import {
   AlertDialog,
@@ -21,7 +21,9 @@ import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
 import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useShell } from "@/lib/shell";
+import { MobileDetail } from "@/components/lista/MobileDetail";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 import { eliminarReceita } from "@/lib/operacional";
 
@@ -65,6 +67,7 @@ function ReceitasPage() {
   const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const isMobile = useIsMobile();
   const filtroAtual = filtro.receitas;
 
   const lista = useMemo(() => receitas ?? [], [receitas]);
@@ -86,8 +89,9 @@ function ReceitasPage() {
     return calculados;
   }, [calculados, filtroAtual]);
 
-  const selecionado =
-    filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null;
+  const selecionado = isMobile
+    ? (filtrados.find((c) => c.receita.id === selection.receitas) ?? null)
+    : (filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [producaoOpen, setProducaoOpen] = useState(false);
@@ -120,7 +124,7 @@ function ReceitasPage() {
   }
 
   return (
-    <div className="lista-view">
+    <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
         <FiltroBar
           opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
@@ -154,7 +158,7 @@ function ReceitasPage() {
                     data-selected={selecionado?.receita.id === c.receita.id}
                     onClick={() => setSelection("receitas", c.receita.id)}
                   >
-                    <td className="primeira">
+                    <td className="primeira" data-label={t("receitas.thReceita")}>
                       {c.receita.nome}
                       {c.temFalha && (
                         <span className="block text-sm" role="status">
@@ -162,19 +166,26 @@ function ReceitasPage() {
                         </span>
                       )}
                     </td>
-                    <td className="num">{c.receita.ingredientes.length}</td>
-                    <td>
+                    <td className="num" data-label={t("receitas.thIngredientes")}>
+                      {c.receita.ingredientes.length}
+                    </td>
+                    <td data-label={t("receitas.thRende")}>
                       {c.receita.rendimento} {c.receita.unidadeRendimento}
                     </td>
-                    <td className="num">{formatEuro(c.custoTotal, { compact: true })}</td>
-                    <td className="num">{formatEuro(c.custoDose)}</td>
-                    <td className="num">
+                    <td className="num" data-label={t("receitas.thCustoTotal")}>
+                      {formatEuro(c.custoTotal, { compact: true })}
+                    </td>
+                    <td className="num" data-label={t("receitas.thPorDose")}>
+                      {formatEuro(c.custoDose)}
+                    </td>
+                    <td className="num" data-label={t("receitas.thVenda")}>
                       {c.receita.precoVenda != null
                         ? formatEuro(c.receita.precoVenda, { compact: true })
                         : "—"}
                     </td>
                     <td
                       className="num"
+                      data-label={t("receitas.thMargem")}
                       style={{
                         color:
                           c.margem != null && c.margem < 0
@@ -195,14 +206,41 @@ function ReceitasPage() {
 
       <aside className="detalhe-panel">
         {selecionado ? (
-          <ReceitaDetalhe
-            calc={selecionado}
-            ingMap={ingMap}
-            onEdit={() =>
-              openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
-            }
-            onProduzir={() => setProducaoOpen(true)}
-          />
+          isMobile ? (
+            <MobileDetail
+              title={selecionado.receita.nome}
+              backLabel={t("comum.voltar")}
+              onBack={() => setSelection("receitas", null)}
+              destructiveActions={
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block mobile-detail-remove"
+                  onClick={() => setToDelete(selecionado.receita)}
+                >
+                  <Trash2 size={16} strokeWidth={2.75} />
+                  {t("comum.remover")}
+                </button>
+              }
+            >
+              <ReceitaDetalhe
+                calc={selecionado}
+                ingMap={ingMap}
+                onEdit={() =>
+                  openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
+                }
+                onProduzir={() => setProducaoOpen(true)}
+              />
+            </MobileDetail>
+          ) : (
+            <ReceitaDetalhe
+              calc={selecionado}
+              ingMap={ingMap}
+              onEdit={() =>
+                openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
+              }
+              onProduzir={() => setProducaoOpen(true)}
+            />
+          )
         ) : (
           <div className="detalhe-empty">{t("receitas.seleciona")}</div>
         )}
@@ -283,7 +321,7 @@ function ReceitaDetalhe({
           return (
             <div
               key={i}
-              className="kv"
+              className="kv receita-detail-ingredient"
               style={{
                 borderTop:
                   i === 0
@@ -338,7 +376,10 @@ function ReceitaDetalhe({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div
+        className="receita-detail-metrics"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+      >
         <div className="detalhe-card">
           <span
             style={{

@@ -80,6 +80,7 @@ export function EstadoSelect({ pedido }: { pedido: Pedido }) {
         <DropdownMenuTrigger asChild>
           <button
             type="button"
+            className="estado-select-trigger"
             aria-label={t("pedidos.mudarEstado")}
             style={{
               display: "inline-flex",
