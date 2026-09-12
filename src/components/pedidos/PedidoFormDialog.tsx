@@ -35,6 +35,7 @@ import {
 } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { custoDoseReceita, totaisPedido } from "@/lib/pedido-calc";
+import { gerarId } from "@/lib/id";
 
 const ESTADOS: EstadoPedido[] = ["pendente", "confirmado", "entregue", "cancelado"];
 
@@ -47,7 +48,7 @@ type LinhaDraft = {
 
 function newLinha(): LinhaDraft {
   return {
-    key: crypto.randomUUID?.() ?? String(Math.random()),
+    key: gerarId(),
     receitaId: null,
     quantidade: "1",
     precoUnitario: "",
@@ -98,7 +99,7 @@ export function PedidoFormDialog({
       setLinhas(
         pedido.itens.length > 0
           ? pedido.itens.map((i) => ({
-              key: crypto.randomUUID?.() ?? String(Math.random()),
+              key: gerarId(),
               receitaId: i.receitaId,
               quantidade: String(i.quantidade),
               precoUnitario: String(i.precoUnitario),

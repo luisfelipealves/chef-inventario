@@ -31,6 +31,7 @@ import {
 } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { resumoReceita, custoLinha } from "@/lib/receita-custo";
+import { gerarId } from "@/lib/id";
 
 type FormValues = {
   nome: string;
@@ -49,7 +50,7 @@ const empty: FormValues = { nome: "", rendimento: "", unidadeRendimento: "un", p
 
 function newLinha(): LinhaDraft {
   return {
-    key: crypto.randomUUID?.() ?? String(Math.random()),
+    key: gerarId(),
     ingredienteId: null,
     quantidade: "",
   };
@@ -106,7 +107,7 @@ export function ReceitaFormDialog({
       setLinhas(
         receita.ingredientes.length > 0
           ? receita.ingredientes.map((l) => ({
-              key: crypto.randomUUID?.() ?? String(Math.random()),
+              key: gerarId(),
               ingredienteId: l.ingredienteId,
               quantidade: String(l.quantidade),
             }))

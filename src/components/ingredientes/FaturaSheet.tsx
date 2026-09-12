@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { type Ingrediente, type UnidadeMedida } from "@/lib/db";
 import { custoPorUnidade, formatEuro } from "@/lib/format";
 import { getGeminiKey, setGeminiKey, lerFatura, type ItemFatura } from "@/lib/fatura-ocr";
+import { gerarId } from "@/lib/id";
 
 type Etapa = "chave" | "captura" | "processar" | "rever";
 
@@ -51,7 +52,7 @@ export function FaturaSheet({
   const [linhas, setLinhas] = useState<Linha[]>([]);
   const [aGravar, setAGravar] = useState(false);
 
-  const operacaoId = useRef(crypto.randomUUID());
+  const operacaoId = useRef(gerarId());
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -63,7 +64,7 @@ export function FaturaSheet({
 
   // Estado inicial ao abrir: pede chave se não houver, senão vai para captura.
   useEffect(() => {
-    if (open) operacaoId.current = crypto.randomUUID();
+    if (open) operacaoId.current = gerarId();
     if (!open) {
       pararCamara();
       return;
