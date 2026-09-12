@@ -717,6 +717,25 @@ body { margin: 0; }
 .search-empty { padding: 18px; text-align: center; font-size: 13px; color: var(--color-neutral-600); }
 
 @media (max-width: 1023px) {
+  .btn {
+    min-width: 0;
+    max-width: 100%;
+    min-height: var(--touch-target-min);
+    height: auto;
+    padding: 10px 14px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .btn-icon {
+    width: var(--touch-target-min);
+    height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
+    padding: 0;
+    flex: none;
+    white-space: nowrap;
+  }
+
   .topbar {
     flex-wrap: wrap;
     align-content: center;
@@ -742,8 +761,18 @@ body { margin: 0; }
     order: 3;
     width: var(--touch-target-min);
     height: var(--touch-target-min);
+    min-height: var(--touch-target-min);
     padding: 0;
     font-size: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+  }
+  .topbar > .btn-primary svg {
+    display: block;
+    flex: none;
+    margin: 0;
   }
   .topbar-search {
     order: 4;
@@ -1109,6 +1138,19 @@ body { margin: 0; }
   .lista-filtros-action > button,
   .lista-filtros-action > .btn,
   .lista-filtros-action > .btn-ghost { min-height: var(--touch-target-min); }
+  .lista-filtros-action > span {
+    display: flex !important;
+    flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+  .lista-filtros-action > span > .btn,
+  .lista-filtros-action > span > .btn-ghost {
+    flex: 1 1 160px;
+    min-width: 0;
+    min-height: var(--touch-target-min);
+  }
   .lista-count { flex: none; }
 
   .lista-table-wrap {
