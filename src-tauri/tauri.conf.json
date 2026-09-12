@@ -41,6 +41,9 @@
       "webviewInstallMode": {
         "type": "downloadBootstrapper"
       }
+    },
+    "android": {
+      "versionCode": 109
     }
   }
 }
