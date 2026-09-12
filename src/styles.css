@@ -195,12 +195,11 @@
 
   /* ── responsive foundations ─────────────────────────────────────────
    * Breakpoint intervals used by the mobile adaptation:
-   *   mobile: 0–767px
-   *   tablet: 768–1023px
+   *   mobile/tablet: 0–1023px
    *   desktop: 1024px and above
    * Keep these values as tokens so later component rules share one contract.
    */
-  --breakpoint-mobile: 768px;
+  --breakpoint-mobile: 1024px;
   --breakpoint-tablet: 1024px;
   --gutter-mobile: 16px;
   --touch-target-min: 44px;
@@ -717,7 +716,7 @@ body { margin: 0; }
 .search-result-meta { font-size: 11px; color: var(--color-neutral-600); white-space: nowrap; }
 .search-empty { padding: 18px; text-align: center; font-size: 13px; color: var(--color-neutral-600); }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .topbar {
     flex-wrap: wrap;
     align-content: center;
@@ -953,7 +952,7 @@ body { margin: 0; }
 }
 .mobile-detail-remove { color: var(--color-accent-700); }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .dashboard-page,
   .financeiro-page { padding: 4px var(--gutter-mobile) var(--gutter-mobile) !important; }
   .dashboard-indicators,
@@ -1080,7 +1079,7 @@ body { margin: 0; }
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .lista-filtros {
     flex-wrap: wrap;
     align-items: stretch;

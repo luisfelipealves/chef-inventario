@@ -1,7 +1,7 @@
 import * as React from "react";
 
-/** The mobile layout applies to viewports narrower than 768px. */
-export const MOBILE_BREAKPOINT = 768;
+/** The mobile layout applies to viewports narrower than 1024px. */
+export const MOBILE_BREAKPOINT = 1024;
 export const MOBILE_MEDIA_QUERY = `(max-width: ${MOBILE_BREAKPOINT - 1}px)`;
 
 export function isMobileViewport(width: number) {

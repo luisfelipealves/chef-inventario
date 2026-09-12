@@ -289,7 +289,7 @@ Este documento é um plano de execução. Cada tarefa abaixo é deliberadamente 
 
 > Atualize `README.md` ou documentação apropriada com o suporte mobile, breakpoints adotados, limitações conhecidas e comandos de verificação. Registre critérios de aceitação: sem overflow horizontal em 320 px, navegação acessível, todos os fluxos críticos utilizáveis com toque, desktop preservado e testes/build passando.
 
-**Validação:** `bun run test`, `bun run typecheck`, `bun run lint` e `bun run build`; working tree contém apenas alterações relacionadas ao plano mobile.
+**Validação:** `bun run test`, `bun run typecheck`, `bun run lint` e `bun run build`; working tree contém apenas alterações relacionadas ao plano mobile. O layout mobile aplica-se a viewports inferiores a 1024 px, incluindo tablets e emulações comuns do Chrome.
 
 ## Ordem recomendada de execução
 
