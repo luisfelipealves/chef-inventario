@@ -67,7 +67,7 @@ export function ProducaoDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="producao-dialog sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>{t("producaoDialog.titulo")}</DialogTitle>
           <DialogDescription>
@@ -79,7 +79,7 @@ export function ProducaoDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div className="producao-lotes" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Input
             type="number"
             min={1}
@@ -96,7 +96,7 @@ export function ProducaoDialog({
         </div>
 
         {lotes > 0 && (
-          <div className="detalhe-card" style={{ padding: "12px 16px" }}>
+          <div className="detalhe-card producao-details" style={{ padding: "12px 16px" }}>
             {receita.ingredientes.map((l, i) => {
               const ing = ingMap.get(l.ingredienteId);
               if (!ing) return null;
@@ -127,7 +127,7 @@ export function ProducaoDialog({
           </div>
         )}
 
-        <div style={{ display: "flex", gap: 8 }}>
+        <div className="producao-actions" style={{ display: "flex", gap: 8 }}>
           <Button
             variant="outline"
             onClick={() => onOpenChange(false)}

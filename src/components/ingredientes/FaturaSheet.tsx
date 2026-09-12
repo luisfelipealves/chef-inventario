@@ -201,7 +201,7 @@ export function FaturaSheet({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="fatura-sheet flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("fatura.kicker")}</span>
@@ -368,7 +368,10 @@ export function FaturaSheet({
                       ))}
                     </select>
 
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", gap: 8 }}>
+                    <div
+                      className="fatura-review-grid"
+                      style={{ display: "grid", gridTemplateColumns: "1fr 72px 1fr", gap: 8 }}
+                    >
                       <input
                         inputMode="decimal"
                         value={l.quantidade}
@@ -409,7 +412,7 @@ export function FaturaSheet({
 
         {etapa === "rever" && (
           <div
-            className="detalhe-actions"
+            className="detalhe-actions fatura-sheet-footer"
             style={{ borderTop: "1px solid var(--color-divider)", paddingTop: 12 }}
           >
             <button

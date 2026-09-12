@@ -195,7 +195,7 @@ export function PedidoFormDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="pedido-form-sheet flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("pedidos.kicker")}</span>
@@ -233,7 +233,7 @@ export function PedidoFormDialog({
             {errors.clienteId && <p className="text-xs text-destructive">{errors.clienteId}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="pedido-form-date-state-grid grid grid-cols-2 gap-3">
             <div className="space-y-2 min-w-0">
               <Label htmlFor="dataEntrega">{t("pedidoForm.entrega")}</Label>
               <Input
@@ -293,7 +293,7 @@ export function PedidoFormDialog({
                     (linha.precoUnitario.trim() === "" ? NaN : Number(linha.precoUnitario)) * qtd;
                   return (
                     <li key={linha.key} className="rounded-lg border border-border bg-card p-3">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      <div className="pedido-form-recipe-grid grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <Select
                           value={linha.receitaId != null ? String(linha.receitaId) : ""}
                           onValueChange={(v) =>
@@ -342,7 +342,7 @@ export function PedidoFormDialog({
                         </Button>
                       </div>
 
-                      <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="pedido-form-price-grid mt-2 grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">
                             {t("pedidoForm.quantidade")}
@@ -435,7 +435,7 @@ export function PedidoFormDialog({
             </div>
           </div>
 
-          <SheetFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="pedido-form-footer gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"

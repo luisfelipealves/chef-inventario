@@ -2,7 +2,15 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Package, Plus, ShoppingBasket, TriangleAlert, ScanLine } from "lucide-react";
+import {
+  Pencil,
+  Package,
+  Plus,
+  ShoppingBasket,
+  TriangleAlert,
+  ScanLine,
+  Trash2,
+} from "lucide-react";
 import { db, stockDe, type Ingrediente, type Receita } from "@/lib/db";
 import { FaturaSheet } from "@/components/ingredientes/FaturaSheet";
 import {
@@ -20,7 +28,9 @@ import { IngredienteFormDialog } from "@/components/ingredientes/IngredienteForm
 import { custoPorUnidade, formatEuro, unidadeMinimaLabel } from "@/lib/format";
 import { calcularAlertasStock, mapaAlertas, type AlertaStock } from "@/lib/stock-alerta";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useShell } from "@/lib/shell";
+import { MobileDetail } from "@/components/lista/MobileDetail";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 import { eliminarIngrediente } from "@/lib/operacional";
 
@@ -69,6 +79,7 @@ function IngredientesPage() {
   );
 
   const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const isMobile = useIsMobile();
   const filtroAtual = filtro.ingredientes;
 
   const filtrados = useMemo(() => {
@@ -77,8 +88,9 @@ function IngredientesPage() {
     return lista;
   }, [lista, filtroAtual, alertaMap]);
 
-  const selecionado =
-    filtrados.find((i) => i.id === selection.ingredientes) ?? filtrados[0] ?? null;
+  const selecionado = isMobile
+    ? (filtrados.find((i) => i.id === selection.ingredientes) ?? null)
+    : (filtrados.find((i) => i.id === selection.ingredientes) ?? filtrados[0] ?? null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Ingrediente | null>(null);
@@ -114,7 +126,7 @@ function IngredientesPage() {
   }
 
   return (
-    <div className="lista-view">
+    <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
         <FiltroBar
           opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
@@ -167,12 +179,20 @@ function IngredientesPage() {
                       data-selected={selecionado?.id === ing.id}
                       onClick={() => setSelection("ingredientes", ing.id)}
                     >
-                      <td className="primeira">{ing.nome}</td>
-                      <td className="num">
+                      <td className="primeira" data-label={t("ingredientes.thIngrediente")}>
+                        {ing.nome}
+                      </td>
+                      <td className="num" data-label={t("ingredientes.thStock")}>
                         {stockDe(ing)} {ing.unidade}
                       </td>
-                      <td className="num">{formatEuro(ing.precoEmbalagem, { compact: true })}</td>
-                      <td className="num" style={{ color: "var(--color-accent-700)" }}>
+                      <td className="num" data-label={t("ingredientes.thPrecoEmbalagem")}>
+                        {formatEuro(ing.precoEmbalagem, { compact: true })}
+                      </td>
+                      <td
+                        className="num"
+                        data-label={t("ingredientes.thCustoUnitario")}
+                        style={{ color: "var(--color-accent-700)" }}
+                      >
                         {formatEuro(unit)} / {unidadeMinimaLabel(ing.unidade)}
                       </td>
                       <td>
@@ -191,19 +211,65 @@ function IngredientesPage() {
 
       <aside className="detalhe-panel">
         {selecionado ? (
-          <IngredienteDetalhe
-            ingrediente={selecionado}
-            alerta={alertaMap.get(selecionado.id) ?? null}
-            receitas={receitas}
-            onCompra={() =>
-              openSheet({ module: "ingredientes", mode: "compra", id: selecionado.id })
-            }
-            onEdit={() => openSheet({ module: "ingredientes", mode: "editar", id: selecionado.id })}
-            onAbrirReceita={(id) => {
-              setSelection("receitas", id);
-              navigate({ to: "/receitas" });
-            }}
-          />
+          isMobile ? (
+            <MobileDetail
+              title={selecionado.nome}
+              backLabel={t("comum.voltar")}
+              onBack={() => setSelection("ingredientes", null)}
+              actions={
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-icon"
+                  onClick={() => setFaturaOpen(true)}
+                  aria-label={t("ingredientes.lerFatura")}
+                >
+                  <ScanLine size={17} strokeWidth={2.75} />
+                </button>
+              }
+              destructiveActions={
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block mobile-detail-remove"
+                  onClick={() => setToDelete(selecionado)}
+                >
+                  <Trash2 size={16} strokeWidth={2.75} />
+                  {t("comum.remover")}
+                </button>
+              }
+            >
+              <IngredienteDetalhe
+                ingrediente={selecionado}
+                alerta={alertaMap.get(selecionado.id) ?? null}
+                receitas={receitas}
+                onCompra={() =>
+                  openSheet({ module: "ingredientes", mode: "compra", id: selecionado.id })
+                }
+                onEdit={() =>
+                  openSheet({ module: "ingredientes", mode: "editar", id: selecionado.id })
+                }
+                onAbrirReceita={(id) => {
+                  setSelection("receitas", id);
+                  navigate({ to: "/receitas" });
+                }}
+              />
+            </MobileDetail>
+          ) : (
+            <IngredienteDetalhe
+              ingrediente={selecionado}
+              alerta={alertaMap.get(selecionado.id) ?? null}
+              receitas={receitas}
+              onCompra={() =>
+                openSheet({ module: "ingredientes", mode: "compra", id: selecionado.id })
+              }
+              onEdit={() =>
+                openSheet({ module: "ingredientes", mode: "editar", id: selecionado.id })
+              }
+              onAbrirReceita={(id) => {
+                setSelection("receitas", id);
+                navigate({ to: "/receitas" });
+              }}
+            />
+          )
         ) : (
           <div className="detalhe-empty">{t("ingredientes.seleciona")}</div>
         )}
@@ -279,7 +345,10 @@ function IngredienteDetalhe({
         <h3 style={{ fontSize: 25, margin: "2px 0" }}>{ingrediente.nome}</h3>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div
+        className="ingrediente-detail-metrics"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+      >
         <div className="detalhe-card" style={{ padding: "14px 16px" }}>
           <span
             style={{

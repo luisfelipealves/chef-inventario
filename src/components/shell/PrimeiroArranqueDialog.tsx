@@ -58,7 +58,7 @@ export function PrimeiroArranqueDialog() {
         setFechado(true);
       }}
     >
-      <DialogContent className="sm:max-w-sm">
+      <DialogContent className="onboarding-dialog sm:max-w-sm">
         {etapa === "nome" ? (
           <>
             <DialogHeader>

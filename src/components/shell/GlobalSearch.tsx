@@ -109,7 +109,7 @@ const ROTA: Record<ModuloLista, string> = {
 export const GlobalSearch = forwardRef<HTMLInputElement, { datasets: Datasets }>(
   function GlobalSearch({ datasets }, ref) {
     const { t } = useTranslation();
-    const { query, setQuery, setSelection } = useShell();
+    const { query, setQuery, setSelection, closeMobileNav } = useShell();
     const navigate = useNavigate();
 
     const resultados = useMemo(() => construirResultados(query, datasets, t), [query, datasets, t]);
@@ -117,6 +117,7 @@ export const GlobalSearch = forwardRef<HTMLInputElement, { datasets: Datasets }>
     function abrir(r: Resultado) {
       setSelection(r.module, r.id);
       setQuery("");
+      closeMobileNav();
       navigate({ to: ROTA[r.module] });
     }
 

@@ -196,7 +196,7 @@ export function ReceitaFormDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="receita-form-sheet flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("receitaForm.kicker")}</span>
@@ -224,7 +224,7 @@ export function ReceitaFormDialog({
             {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
           </div>
 
-          <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+          <div className="receita-form-yield-grid grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
             <div className="space-y-2 min-w-0">
               <Label htmlFor="rendimento">{t("receitaForm.rendimento")}</Label>
               <Input
@@ -285,7 +285,7 @@ export function ReceitaFormDialog({
                   const ing = linha.ingredienteId ? ingMap.get(linha.ingredienteId) : undefined;
                   return (
                     <li key={linha.key} className="rounded-lg border border-border bg-card p-3">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      <div className="receita-form-ingredient-grid grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <Select
                           value={linha.ingredienteId != null ? String(linha.ingredienteId) : ""}
                           onValueChange={(v) =>
@@ -322,7 +322,7 @@ export function ReceitaFormDialog({
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
-                      <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                      <div className="receita-form-quantity-grid mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                         <div className="relative">
                           <Input
                             inputMode="decimal"
@@ -406,7 +406,7 @@ export function ReceitaFormDialog({
             <AvisoCusto completo={resumo.completo} />
           </div>
 
-          <SheetFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="receita-form-footer gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"

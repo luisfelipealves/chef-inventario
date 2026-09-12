@@ -268,7 +268,7 @@ export function DefinicoesSheet({
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="right"
-          className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+          className="definicoes-sheet flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
         >
           <SheetHeader>
             <span className="card-kicker">{t("definicoes.kicker")}</span>
@@ -288,6 +288,7 @@ export function DefinicoesSheet({
                 e.preventDefault();
                 guardarNomePerfil();
               }}
+              className="definicoes-inline-form"
               style={{ display: "flex", gap: 8 }}
             >
               <Input
@@ -315,6 +316,7 @@ export function DefinicoesSheet({
                 e.preventDefault();
                 guardarNegocio();
               }}
+              className="definicoes-inline-form"
               style={{ display: "flex", gap: 8 }}
             >
               <Input

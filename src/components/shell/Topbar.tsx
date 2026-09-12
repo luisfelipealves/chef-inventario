@@ -1,9 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useTranslation, type UseTranslationResponse } from "react-i18next";
-import { Plus } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 import { GlobalSearch } from "./GlobalSearch";
 import { useShell, type ModuloLista } from "@/lib/shell";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useNomeUtilizador } from "@/lib/perfil";
 import type { Cliente, Ingrediente, Pedido, Receita } from "@/lib/db";
 
@@ -77,7 +78,8 @@ function configPara(pathname: string, nome: string, t: T): RotaConfig {
 export function Topbar({ datasets }: { datasets: Datasets }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
-  const { openSheet } = useShell();
+  const { openSheet, mobileNavOpen, toggleMobileNav } = useShell();
+  const isMobile = useIsMobile();
   const searchRef = useRef<HTMLInputElement>(null);
   const { t } = useTranslation();
   const nome = useNomeUtilizador();
@@ -96,6 +98,17 @@ export function Topbar({ datasets }: { datasets: Datasets }) {
 
   return (
     <header className="topbar">
+      {isMobile && (
+        <button
+          type="button"
+          className="btn btn-icon topbar-menu"
+          aria-label={t(mobileNavOpen ? "topbar.fecharMenu" : "topbar.abrirMenu")}
+          aria-expanded={mobileNavOpen}
+          onClick={toggleMobileNav}
+        >
+          <Menu size={21} strokeWidth={2.5} />
+        </button>
+      )}
       <h1 className="topbar-title">{titulo}</h1>
       <GlobalSearch ref={searchRef} datasets={datasets} />
       <button

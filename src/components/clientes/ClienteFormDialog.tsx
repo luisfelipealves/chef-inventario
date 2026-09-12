@@ -112,7 +112,7 @@ export function ClienteFormDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="cliente-form-sheet flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("clienteForm.kicker")}</span>
@@ -132,6 +132,7 @@ export function ClienteFormDialog({
               placeholder={t("clienteForm.nomePlaceholder")}
               className="h-12 text-base"
               autoComplete="name"
+              autoFocus
             />
             {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
           </div>
@@ -176,7 +177,7 @@ export function ClienteFormDialog({
             {errors.nif && <p className="text-xs text-destructive">{errors.nif}</p>}
           </div>
 
-          <SheetFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="cliente-form-footer gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"
