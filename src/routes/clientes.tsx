@@ -20,9 +20,12 @@ import { formatEuro } from "@/lib/format";
 import { totaisPedido } from "@/lib/pedido-calc";
 import { dataComAno } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useShell } from "@/lib/shell";
+import { MobileDetail } from "@/components/lista/MobileDetail";
 import { EstadoTag } from "@/components/EstadoTag";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
+import { eliminarCliente } from "@/lib/operacional";
 
 export const Route = createFileRoute("/clientes")({
   head: () => ({
@@ -81,6 +84,7 @@ function ClientesPage() {
   }, [pedidos]);
 
   const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const isMobile = useIsMobile();
   const filtroAtual = filtro.clientes;
 
   const lista = useMemo(() => clientes ?? [], [clientes]);
@@ -96,7 +100,9 @@ function ClientesPage() {
     return lista;
   }, [lista, filtroAtual, pedidosPorCliente]);
 
-  const selecionado = filtrados.find((c) => c.id === selection.clientes) ?? filtrados[0] ?? null;
+  const selecionado = isMobile
+    ? (filtrados.find((c) => c.id === selection.clientes) ?? null)
+    : (filtrados.find((c) => c.id === selection.clientes) ?? filtrados[0] ?? null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Cliente | null>(null);
@@ -117,7 +123,7 @@ function ClientesPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.clientes.delete(toDelete.id);
+      await eliminarCliente(toDelete.id);
       toast.success(t("clientes.removido"));
     } catch (err) {
       console.error(err);
@@ -128,7 +134,7 @@ function ClientesPage() {
   }
 
   return (
-    <div className="lista-view">
+    <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
         <FiltroBar
           opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
@@ -160,9 +166,12 @@ function ClientesPage() {
                     data-selected={selecionado?.id === c.id}
                     onClick={() => setSelection("clientes", c.id)}
                   >
-                    <td className="primeira">{c.nome}</td>
-                    <td>{c.telefone || "—"}</td>
+                    <td className="primeira" data-label={t("clientes.thCliente")}>
+                      {c.nome}
+                    </td>
+                    <td data-label={t("clientes.thTelefone")}>{c.telefone || "—"}</td>
                     <td
+                      data-label={t("clientes.thEndereco")}
                       style={{
                         maxWidth: 220,
                         overflow: "hidden",
@@ -171,8 +180,10 @@ function ClientesPage() {
                     >
                       {c.endereco || "—"}
                     </td>
-                    <td>{c.nif || "—"}</td>
-                    <td className="num">{(pedidosPorCliente.get(c.id) ?? []).length}</td>
+                    <td data-label={t("clientes.thNif")}>{c.nif || "—"}</td>
+                    <td className="num" data-label={t("clientes.thPedidos")}>
+                      {(pedidosPorCliente.get(c.id) ?? []).length}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -183,18 +194,39 @@ function ClientesPage() {
 
       <aside className="detalhe-panel">
         {selecionado ? (
-          <ClienteDetalhe
-            cliente={selecionado}
-            pedidos={pedidosPorCliente.get(selecionado.id) ?? []}
-            receitaMap={receitaMap}
-            ingMap={ingMap}
-            onEdit={() => openSheet({ module: "clientes", mode: "editar", id: selecionado.id })}
-            onDelete={() => setToDelete(selecionado)}
-            onAbrirPedido={(id) => {
-              setSelection("pedidos", id);
-              navigate({ to: "/pedidos" });
-            }}
-          />
+          isMobile ? (
+            <MobileDetail
+              title={selecionado.nome}
+              backLabel={t("comum.voltar")}
+              onBack={() => setSelection("clientes", null)}
+            >
+              <ClienteDetalhe
+                cliente={selecionado}
+                pedidos={pedidosPorCliente.get(selecionado.id) ?? []}
+                receitaMap={receitaMap}
+                ingMap={ingMap}
+                onEdit={() => openSheet({ module: "clientes", mode: "editar", id: selecionado.id })}
+                onDelete={() => setToDelete(selecionado)}
+                onAbrirPedido={(id) => {
+                  setSelection("pedidos", id);
+                  navigate({ to: "/pedidos" });
+                }}
+              />
+            </MobileDetail>
+          ) : (
+            <ClienteDetalhe
+              cliente={selecionado}
+              pedidos={pedidosPorCliente.get(selecionado.id) ?? []}
+              receitaMap={receitaMap}
+              ingMap={ingMap}
+              onEdit={() => openSheet({ module: "clientes", mode: "editar", id: selecionado.id })}
+              onDelete={() => setToDelete(selecionado)}
+              onAbrirPedido={(id) => {
+                setSelection("pedidos", id);
+                navigate({ to: "/pedidos" });
+              }}
+            />
+          )
         ) : (
           <div className="detalhe-empty">{t("clientes.seleciona")}</div>
         )}
@@ -283,6 +315,7 @@ function ClienteDetalhe({
               <button
                 key={pedido.id}
                 type="button"
+                className="cliente-history-row"
                 onClick={() => onAbrirPedido(pedido.id)}
                 style={{
                   display: "grid",

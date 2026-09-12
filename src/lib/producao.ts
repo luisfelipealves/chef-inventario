@@ -146,6 +146,33 @@ export async function mudarEstadoPedido(id: number, estado: EstadoPedido) {
     } else await db.pedidos.update(id, { estado });
   });
 }
+
+/** Remove um pedido e repõe as doses que uma entrega desse pedido baixou. */
+export async function eliminarPedido(id: number) {
+  return db.transaction("rw", tabelas(), async () => {
+    const atual = await db.pedidos.get(id);
+    if (!atual) throw new Error("Pedido inexistente.");
+    if (atual.estado === "entregue") {
+      if (!atual.baixaEntrega)
+        throw new Error(
+          "Entrega antiga sem registro de baixa: não é possível eliminar automaticamente. Preserve este pedido e confira o estoque manualmente.",
+        );
+      for (const baixa of atual.baixaEntrega) {
+        const receita = await db.receitas.get(baixa.receitaId);
+        if (!receita) throw new Error("Receita removida: não é possível repor as doses.");
+        await db.receitas.update(receita.id, {
+          dosesProntas: naoNegativo(
+            naoNegativo(receita.dosesProntas ?? 0, "Doses prontas") +
+              positivo(baixa.quantidade, "Reposição"),
+            "Doses finais",
+          ),
+        });
+      }
+    }
+    await db.pedidos.delete(id);
+  });
+}
+
 export async function guardarPedido(
   payload: Omit<Pedido, "id" | "createdAt" | "baixaEntrega" | "movimentosEntrega">,
   id?: number,

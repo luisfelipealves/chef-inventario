@@ -104,6 +104,13 @@ export function IngredienteFormDialog({
   const [scanning, setScanning] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState<string | undefined>(undefined);
   const lastScannedRef = useRef<string | null>(null);
+  const scannerTriggerRef = useRef<HTMLButtonElement>(null);
+  const scannerWasOpenRef = useRef(false);
+
+  useEffect(() => {
+    if (scannerWasOpenRef.current && !scannerOpen) scannerTriggerRef.current?.focus();
+    scannerWasOpenRef.current = scannerOpen;
+  }, [scannerOpen]);
 
   async function handleBarcode(code: string) {
     if (lastScannedRef.current === code) return;
@@ -266,7 +273,7 @@ export function IngredienteFormDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="ingrediente-form-sheet flex w-full flex-col gap-4 overflow-y-auto border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("ingredienteForm.kicker")}</span>
@@ -280,7 +287,7 @@ export function IngredienteFormDialog({
 
         {isEdit ? (
           <Tabs value={tab} onValueChange={(v) => setTab(v as "dados" | "compra")}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="ingrediente-form-tabs grid w-full grid-cols-2">
               <TabsTrigger value="dados">{t("ingredienteForm.tabDados")}</TabsTrigger>
               <TabsTrigger value="compra">{t("ingredienteForm.tabCompra")}</TabsTrigger>
             </TabsList>
@@ -371,7 +378,7 @@ export function IngredienteFormDialog({
                   </div>
                 )}
 
-                <SheetFooter className="gap-2 sm:gap-2">
+                <SheetFooter className="ingrediente-form-footer gap-2 sm:gap-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -391,6 +398,7 @@ export function IngredienteFormDialog({
           <div className="space-y-3">
             <Button
               type="button"
+              ref={scannerTriggerRef}
               variant="outline"
               onClick={() => setScannerOpen(true)}
               disabled={scanning}
@@ -457,7 +465,7 @@ function EditFields({
         {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
+      <div className="ingrediente-form-quantity-grid grid grid-cols-[minmax(0,1fr)_7rem] gap-3">
         <div className="space-y-2 min-w-0">
           <Label htmlFor="quantidade">{t("ingredienteForm.quantidadeTotal")}</Label>
           <Input
@@ -524,7 +532,7 @@ function EditFields({
         </div>
       )}
 
-      <SheetFooter className="gap-2 sm:gap-2">
+      <SheetFooter className="ingrediente-form-footer gap-2 sm:gap-2">
         <Button
           type="button"
           variant="outline"

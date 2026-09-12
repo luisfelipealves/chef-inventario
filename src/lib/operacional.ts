@@ -86,3 +86,44 @@ export async function registarCompras(linhas: LinhaCompra[], operacaoId?: string
     }
   });
 }
+
+/** Remove um ingrediente apenas quando nenhuma receita ainda o utiliza. */
+export async function eliminarIngrediente(id: number) {
+  return db.transaction("rw", [db.ingredientes, db.receitas], async () => {
+    const existe = await db.ingredientes.get(id);
+    if (!existe) throw new Error("Ingrediente inexistente.");
+    const dependente = await db.receitas
+      .toCollection()
+      .filter((receita) => receita.ingredientes.some((linha) => linha.ingredienteId === id))
+      .first();
+    if (dependente) throw new Error(`Ingrediente utilizado na receita “${dependente.nome}”.`);
+    await db.ingredientes.delete(id);
+  });
+}
+
+/** Remove uma receita apenas quando não há pedidos nem produções dependentes. */
+export async function eliminarReceita(id: number) {
+  return db.transaction("rw", [db.receitas, db.pedidos, db.producoes], async () => {
+    const existe = await db.receitas.get(id);
+    if (!existe) throw new Error("Receita inexistente.");
+    const producao = await db.producoes.where("receitaId").equals(id).first();
+    if (producao) throw new Error("Receita possui registos de produção.");
+    const pedido = await db.pedidos
+      .toCollection()
+      .filter((p) => p.itens.some((item) => item.receitaId === id))
+      .first();
+    if (pedido) throw new Error("Receita utilizada num pedido.");
+    await db.receitas.delete(id);
+  });
+}
+
+/** Remove um cliente apenas quando não há pedidos associados. */
+export async function eliminarCliente(id: number) {
+  return db.transaction("rw", [db.clientes, db.pedidos], async () => {
+    const existe = await db.clientes.get(id);
+    if (!existe) throw new Error("Cliente inexistente.");
+    const pedido = await db.pedidos.where("clienteId").equals(id).first();
+    if (pedido) throw new Error("Cliente possui pedidos associados.");
+    await db.clientes.delete(id);
+  });
+}

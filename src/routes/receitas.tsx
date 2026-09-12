@@ -1,8 +1,9 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
-import { Pencil, Printer, BookOpen, Plus, CookingPot } from "lucide-react";
+import { Pencil, Printer, BookOpen, Plus, CookingPot, Trash2 } from "lucide-react";
 import { db, type Receita, type Ingrediente } from "@/lib/db";
 import {
   AlertDialog,
@@ -18,10 +19,13 @@ import { toast } from "sonner";
 import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
 import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
-import { custoTotalReceita, custoPorDose, custoLinha } from "@/lib/receita-custo";
+import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useShell } from "@/lib/shell";
+import { MobileDetail } from "@/components/lista/MobileDetail";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
+import { eliminarReceita } from "@/lib/operacional";
 
 export const Route = createFileRoute("/receitas")({
   head: () => ({
@@ -42,11 +46,8 @@ const FILTROS_KEYS = [
   { key: "falhas", labelKey: "receitas.filtroFalhas" },
 ];
 
-interface ReceitaCalc {
+interface ReceitaCalc extends ReturnType<typeof resumoReceita> {
   receita: Receita;
-  custoTotal: number;
-  custoDose: number;
-  margem: number | null;
   temFalha: boolean;
 }
 
@@ -66,6 +67,7 @@ function ReceitasPage() {
   const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const isMobile = useIsMobile();
   const filtroAtual = filtro.receitas;
 
   const lista = useMemo(() => receitas ?? [], [receitas]);
@@ -73,12 +75,8 @@ function ReceitasPage() {
   const calculados = useMemo<ReceitaCalc[]>(
     () =>
       lista.map((r) => {
-        const custoTotal = custoTotalReceita(r, ingMap);
-        const custoDose = custoPorDose(custoTotal, r.rendimento);
-        const venda = r.precoVenda ?? 0;
-        const margem = venda > 0 && custoDose > 0 ? ((venda - custoDose) / custoDose) * 100 : null;
-        const temFalha = r.ingredientes.some((l) => !ingMap.has(l.ingredienteId));
-        return { receita: r, custoTotal, custoDose, margem, temFalha };
+        const resumo = resumoReceita(r, ingMap);
+        return { receita: r, ...resumo, temFalha: !resumo.completo };
       }),
     [lista, ingMap],
   );
@@ -91,8 +89,9 @@ function ReceitasPage() {
     return calculados;
   }, [calculados, filtroAtual]);
 
-  const selecionado =
-    filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null;
+  const selecionado = isMobile
+    ? (filtrados.find((c) => c.receita.id === selection.receitas) ?? null)
+    : (filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [producaoOpen, setProducaoOpen] = useState(false);
@@ -114,7 +113,7 @@ function ReceitasPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.receitas.delete(toDelete.id);
+      await eliminarReceita(toDelete.id);
       toast.success(t("receitas.removida"));
     } catch (err) {
       console.error(err);
@@ -125,7 +124,7 @@ function ReceitasPage() {
   }
 
   return (
-    <div className="lista-view">
+    <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
         <FiltroBar
           opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
@@ -159,23 +158,43 @@ function ReceitasPage() {
                     data-selected={selecionado?.receita.id === c.receita.id}
                     onClick={() => setSelection("receitas", c.receita.id)}
                   >
-                    <td className="primeira">{c.receita.nome}</td>
-                    <td className="num">{c.receita.ingredientes.length}</td>
-                    <td>
+                    <td className="primeira" data-label={t("receitas.thReceita")}>
+                      {c.receita.nome}
+                      {c.temFalha && (
+                        <span className="block text-sm" role="status">
+                          {t("custos.incompletoCurto")}
+                        </span>
+                      )}
+                    </td>
+                    <td className="num" data-label={t("receitas.thIngredientes")}>
+                      {c.receita.ingredientes.length}
+                    </td>
+                    <td data-label={t("receitas.thRende")}>
                       {c.receita.rendimento} {c.receita.unidadeRendimento}
                     </td>
-                    <td className="num">{formatEuro(c.custoTotal, { compact: true })}</td>
-                    <td className="num">{formatEuro(c.custoDose)}</td>
-                    <td className="num">
+                    <td className="num" data-label={t("receitas.thCustoTotal")}>
+                      {formatEuro(c.custoTotal, { compact: true })}
+                    </td>
+                    <td className="num" data-label={t("receitas.thPorDose")}>
+                      {formatEuro(c.custoDose)}
+                    </td>
+                    <td className="num" data-label={t("receitas.thVenda")}>
                       {c.receita.precoVenda != null
                         ? formatEuro(c.receita.precoVenda, { compact: true })
                         : "—"}
                     </td>
                     <td
                       className="num"
-                      style={{ color: "var(--color-accent-2-700)", fontWeight: 600 }}
+                      data-label={t("receitas.thMargem")}
+                      style={{
+                        color:
+                          c.margem != null && c.margem < 0
+                            ? "var(--color-accent-700)"
+                            : "var(--color-accent-2-700)",
+                        fontWeight: 600,
+                      }}
                     >
-                      {c.margem != null ? `+${Math.round(c.margem)}%` : "—"}
+                      {c.margem != null ? `${Math.round(c.margem)}%` : "—"}
                     </td>
                   </tr>
                 ))}
@@ -187,14 +206,41 @@ function ReceitasPage() {
 
       <aside className="detalhe-panel">
         {selecionado ? (
-          <ReceitaDetalhe
-            calc={selecionado}
-            ingMap={ingMap}
-            onEdit={() =>
-              openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
-            }
-            onProduzir={() => setProducaoOpen(true)}
-          />
+          isMobile ? (
+            <MobileDetail
+              title={selecionado.receita.nome}
+              backLabel={t("comum.voltar")}
+              onBack={() => setSelection("receitas", null)}
+              destructiveActions={
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-block mobile-detail-remove"
+                  onClick={() => setToDelete(selecionado.receita)}
+                >
+                  <Trash2 size={16} strokeWidth={2.75} />
+                  {t("comum.remover")}
+                </button>
+              }
+            >
+              <ReceitaDetalhe
+                calc={selecionado}
+                ingMap={ingMap}
+                onEdit={() =>
+                  openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
+                }
+                onProduzir={() => setProducaoOpen(true)}
+              />
+            </MobileDetail>
+          ) : (
+            <ReceitaDetalhe
+              calc={selecionado}
+              ingMap={ingMap}
+              onEdit={() =>
+                openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
+              }
+              onProduzir={() => setProducaoOpen(true)}
+            />
+          )
         ) : (
           <div className="detalhe-empty">{t("receitas.seleciona")}</div>
         )}
@@ -251,7 +297,7 @@ function ReceitaDetalhe({
   onProduzir: () => void;
 }) {
   const { t } = useTranslation();
-  const { receita, custoTotal, custoDose, margem } = calc;
+  const { receita, custoTotal, custoDose } = calc;
   const prontas = receita.dosesProntas ?? 0;
 
   return (
@@ -275,7 +321,7 @@ function ReceitaDetalhe({
           return (
             <div
               key={i}
-              className="kv"
+              className="kv receita-detail-ingredient"
               style={{
                 borderTop:
                   i === 0
@@ -330,7 +376,10 @@ function ReceitaDetalhe({
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+      <div
+        className="receita-detail-metrics"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}
+      >
         <div className="detalhe-card">
           <span
             style={{
@@ -340,7 +389,7 @@ function ReceitaDetalhe({
               color: "var(--color-neutral-600)",
             }}
           >
-            {t("receitas.custoPorDose")}
+            {t("custos.custoUnidade", { unidade: receita.unidadeRendimento })}
           </span>
           <span
             style={{
@@ -377,45 +426,18 @@ function ReceitaDetalhe({
         </div>
       </div>
 
-      {margem != null && (
-        <div
-          style={{
-            background: "var(--color-accent-2-100)",
-            color: "var(--color-accent-2-800)",
-            borderRadius: 22,
-            padding: "16px 18px",
-          }}
-        >
-          <span
-            style={{
-              display: "block",
-              fontFamily: "var(--font-heading)",
-              fontSize: 19,
-            }}
-          >
-            +{Math.round(margem)}%
-          </span>
-          <div
-            style={{
-              height: 7,
-              borderRadius: 999,
-              background: "color-mix(in srgb, var(--color-accent-2-800) 18%, transparent)",
-              margin: "8px 0 6px",
-              overflow: "hidden",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${Math.min(100, margem / 4)}%`,
-                background: "var(--color-accent-2-600)",
-                borderRadius: 999,
-              }}
-            />
-          </div>
-          <span style={{ fontSize: 12, opacity: 0.85 }}>{t("receitas.acimaCusto")}</span>
+      <div className="detalhe-card">
+        <div>
+          {t("custos.precoUnitario", { unidade: receita.unidadeRendimento })}:{" "}
+          <strong>{formatEuro(calc.precoUnitario)}</strong>
         </div>
-      )}
+        <ResumoIndicadores
+          resultado={calc.resultado}
+          margem={calc.margem}
+          acrescimo={calc.acrescimo}
+        />
+        <AvisoCusto completo={calc.completo} />
+      </div>
 
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onProduzir}>

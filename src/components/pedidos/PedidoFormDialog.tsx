@@ -1,3 +1,5 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
+import { precoVendaPorUnidade } from "@/lib/receita-custo";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { guardarPedido } from "@/lib/producao";
@@ -122,12 +124,20 @@ export function PedidoFormDialog({
         .map((l) => ({
           receitaId: l.receitaId as number,
           quantidade: Number(l.quantidade),
-          precoUnitario: Number(l.precoUnitario) || 0,
+          precoUnitario: l.precoUnitario.trim() === "" ? NaN : Number(l.precoUnitario),
         })),
     [linhas],
   );
 
-  const totais = totaisPedido(itensValidos, receitaMap, ingMap);
+  const totais = totaisPedido(
+    linhas.map((l) => ({
+      receitaId: l.receitaId ?? -1,
+      quantidade: Number(l.quantidade),
+      precoUnitario: l.precoUnitario.trim() === "" ? NaN : Number(l.precoUnitario),
+    })),
+    receitaMap,
+    ingMap,
+  );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -147,6 +157,7 @@ export function PedidoFormDialog({
           l.receitaId == null ||
           !Number.isFinite(Number(l.quantidade)) ||
           Number(l.quantidade) <= 0 ||
+          l.precoUnitario.trim() === "" ||
           !Number.isFinite(Number(l.precoUnitario)) ||
           Number(l.precoUnitario) < 0,
       )
@@ -184,7 +195,7 @@ export function PedidoFormDialog({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
+        className="pedido-form-sheet flex w-full flex-col gap-4 overflow-hidden border-0 bg-[var(--color-surface)] p-6 shadow-[var(--shadow-lg)] sm:max-w-[480px] sm:rounded-l-[32px]"
       >
         <SheetHeader>
           <span className="card-kicker">{t("pedidos.kicker")}</span>
@@ -222,7 +233,7 @@ export function PedidoFormDialog({
             {errors.clienteId && <p className="text-xs text-destructive">{errors.clienteId}</p>}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="pedido-form-date-state-grid grid grid-cols-2 gap-3">
             <div className="space-y-2 min-w-0">
               <Label htmlFor="dataEntrega">{t("pedidoForm.entrega")}</Label>
               <Input
@@ -278,10 +289,11 @@ export function PedidoFormDialog({
                   const receita = linha.receitaId ? receitaMap.get(linha.receitaId) : undefined;
                   const custoUnit = custoDoseReceita(receita, ingMap);
                   const qtd = Number(linha.quantidade) || 0;
-                  const subtotal = (Number(linha.precoUnitario) || 0) * qtd;
+                  const subtotal =
+                    (linha.precoUnitario.trim() === "" ? NaN : Number(linha.precoUnitario)) * qtd;
                   return (
                     <li key={linha.key} className="rounded-lg border border-border bg-card p-3">
-                      <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                      <div className="pedido-form-recipe-grid grid grid-cols-[minmax(0,1fr)_auto] gap-2">
                         <Select
                           value={linha.receitaId != null ? String(linha.receitaId) : ""}
                           onValueChange={(v) =>
@@ -294,10 +306,8 @@ export function PedidoFormDialog({
                                       precoUnitario: (() => {
                                         if (l.precoUnitario !== "") return l.precoUnitario;
                                         const r = receitaMap.get(Number(v));
-                                        if (r?.precoVenda != null && r.rendimento > 0) {
-                                          return (r.precoVenda / r.rendimento).toFixed(2);
-                                        }
-                                        return (custoDoseReceita(r, ingMap) * 3).toFixed(2);
+                                        const preco = r ? precoVendaPorUnidade(r) : NaN;
+                                        return Number.isFinite(preco) ? String(preco) : "";
                                       })(),
                                     }
                                   : l,
@@ -332,7 +342,7 @@ export function PedidoFormDialog({
                         </Button>
                       </div>
 
-                      <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="pedido-form-price-grid mt-2 grid grid-cols-2 gap-2">
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">
                             {t("pedidoForm.quantidade")}
@@ -353,7 +363,9 @@ export function PedidoFormDialog({
                         </div>
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">
-                            {t("pedidoForm.precoUnidade")}
+                            {t("pedidoForm.precoUnidade", {
+                              unidade: receita?.unidadeRendimento ?? "un",
+                            })}
                           </Label>
                           <Input
                             inputMode="decimal"
@@ -373,7 +385,10 @@ export function PedidoFormDialog({
 
                       <div className="mt-2 flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">
-                          {t("pedidoForm.custoUn", { v: formatEuro(custoUnit) })}
+                          {t("pedidoForm.custoUn", {
+                            v: formatEuro(custoUnit),
+                            unidade: receita?.unidadeRendimento ?? "un",
+                          })}
                         </span>
                         <span className="font-medium tabular-nums text-foreground">
                           {formatEuro(subtotal, { compact: true })}
@@ -406,12 +421,12 @@ export function PedidoFormDialog({
                 {formatEuro(totais.custo, { compact: true })}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">{t("pedidoForm.lucroEstimado")}</span>
-              <span className="font-medium tabular-nums">
-                {formatEuro(totais.lucro, { compact: true })} ({totais.margem.toFixed(0)}%)
-              </span>
-            </div>
+            <ResumoIndicadores
+              resultado={totais.lucro}
+              margem={totais.margem}
+              acrescimo={totais.acrescimo}
+            />
+            <AvisoCusto completo={totais.completo} />
             <div className="flex justify-between border-t border-border pt-1 text-base">
               <span className="font-medium">{t("pedidoForm.valorFinal")}</span>
               <span className="font-bold tabular-nums">
@@ -420,7 +435,7 @@ export function PedidoFormDialog({
             </div>
           </div>
 
-          <SheetFooter className="gap-2 sm:gap-2">
+          <SheetFooter className="pedido-form-footer gap-2 sm:gap-2">
             <Button
               type="button"
               variant="outline"

@@ -287,14 +287,20 @@ function FinanceiroPage() {
   }
 
   return (
-    <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
+    <div
+      className="financeiro-page"
+      style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}
+    >
       <FiltroBar
         opcoes={PERIODOS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
         valor={preset}
         onChange={setPreset}
         contagem={t("financeiro.contagem", { pedidos: dados.nPedidos, compras: dados.nCompras })}
         acao={
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            className="financeiro-filtros-acao"
+            style={{ display: "flex", alignItems: "center", gap: 8 }}
+          >
             {preset === "perso" && (
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <input
@@ -328,7 +334,10 @@ function FinanceiroPage() {
       />
 
       {/* Indicadores do período */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div
+        className="financeiro-indicators"
+        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+      >
         <Indicador
           kicker={t("financeiro.kReceita")}
           valor={formatEuro(dados.receita, { compact: true })}
@@ -345,16 +354,21 @@ function FinanceiroPage() {
         <Indicador
           kicker={t("financeiro.kCusto")}
           valor={formatEuro(dados.custoProducao, { compact: true })}
-          nota={t("financeiro.kCustoNota")}
+          nota={
+            Number.isFinite(dados.custoProducao)
+              ? t("financeiro.kCustoNota")
+              : t("custos.incompleto")
+          }
         />
         <Indicador
           kicker={t("financeiro.kLucro")}
           valor={formatEuro(dados.lucro, { compact: true })}
-          nota={t("financeiro.kLucroNota")}
+          nota={Number.isFinite(dados.lucro) ? t("financeiro.kLucroNota") : t("custos.incompleto")}
         />
       </div>
 
       <div
+        className="financeiro-main-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1.35fr 1fr",
@@ -373,7 +387,7 @@ function FinanceiroPage() {
           }}
         >
           <h4 style={{ fontSize: 20 }}>{t("financeiro.graficoTitulo")}</h4>
-          <div style={{ height: 280, marginTop: 12 }}>
+          <div className="financeiro-chart" style={{ height: 280, marginTop: 12 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={dados.serie} margin={{ top: 4, right: 4, left: -12, bottom: 0 }}>
                 <CartesianGrid
@@ -403,7 +417,7 @@ function FinanceiroPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
+          <div className="financeiro-legend" style={{ display: "flex", gap: 16, marginTop: 8 }}>
             <LegendaCor cor="var(--color-accent-2-500)" label={t("financeiro.legReceita")} />
             <LegendaCor cor="var(--color-accent-500)" label={t("financeiro.legGastos")} />
           </div>

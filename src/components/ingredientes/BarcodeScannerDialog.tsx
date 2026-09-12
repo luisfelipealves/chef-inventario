@@ -114,7 +114,7 @@ export function BarcodeScannerDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="barcode-scanner-dialog sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("scanner.titulo")}</DialogTitle>
           <DialogDescription>{t("scanner.desc")}</DialogDescription>
@@ -122,7 +122,10 @@ export function BarcodeScannerDialog({
 
         <div className="overflow-hidden rounded-lg border border-border bg-black">
           {/* Espelha só a pré-visualização; o vídeo original (não espelhado) é o que o leitor descodifica */}
-          <div id={containerId} className="min-h-[240px] w-full [&_video]:-scale-x-100" />
+          <div
+            id={containerId}
+            className="barcode-scanner-view min-h-[240px] w-full [&_video]:-scale-x-100"
+          />
         </div>
 
         {starting && (

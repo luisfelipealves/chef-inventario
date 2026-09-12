@@ -35,8 +35,8 @@ export function FiltroBar({
           </button>
         ))}
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        {acao}
+      <div className="lista-filtros-meta">
+        {acao && <div className="lista-filtros-action">{acao}</div>}
         <span className="lista-count">{contagem}</span>
       </div>
     </div>

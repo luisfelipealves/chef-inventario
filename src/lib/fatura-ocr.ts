@@ -22,7 +22,12 @@ const KEY_STORAGE = "chefgestao:gemini-key";
 // A Google descontinua modelos antigos (o 2.5-flash passou a devolver 404 em
 // Agosto 2026); se voltar a falhar com 404, verificar o modelo recomendado na
 // mensagem de erro da API.
-const MODELO = "gemini-3.6-flash";
+const MODELO_PADRAO = "gemini-3.6-flash";
+
+export function getGeminiModel(): string {
+  const configurado = (import.meta.env as Record<string, string | undefined>).VITE_GEMINI_MODEL;
+  return configurado?.trim() || MODELO_PADRAO;
+}
 
 /**
  * Chave a usar. Preferência: a chave embutida no build (`VITE_GEMINI_KEY`,
@@ -103,7 +108,8 @@ const SCHEMA = {
  * Lança erro com mensagem legível em caso de falha.
  */
 export async function lerFatura(imagemBase64: string, apiKey: string): Promise<ItemFatura[]> {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODELO}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const modelo = getGeminiModel();
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const body = {
     contents: [
       {
@@ -135,6 +141,9 @@ export async function lerFatura(imagemBase64: string, apiKey: string): Promise<I
   }
   if (res.status === 429) {
     throw new Error(i18n.t("ocr.limite"));
+  }
+  if (res.status === 404) {
+    throw new Error(i18n.t("ocr.modeloIndisponivel", { modelo }));
   }
   if (!res.ok) {
     throw new Error(i18n.t("ocr.erroGemini", { status: res.status }));

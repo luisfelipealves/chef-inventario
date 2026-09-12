@@ -19,6 +19,12 @@ interface ShellValue {
   setSidebarOpen: (v: boolean) => void;
   toggleSidebar: () => void;
 
+  /** Navegação móvel; independente da sidebar persistente do desktop. */
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (v: boolean) => void;
+  toggleMobileNav: () => void;
+  closeMobileNav: () => void;
+
   /** Pesquisa global; limpa ao navegar. */
   query: string;
   setQuery: (v: string) => void;
@@ -66,6 +72,10 @@ export function ShellProvider({ children }: { children: ReactNode }) {
     [sidebarOpen, setSidebarOpen],
   );
 
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const toggleMobileNav = useCallback(() => setMobileNavOpen((open) => !open), []);
+  const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
+
   const [query, setQuery] = useState("");
 
   const [selection, setSelectionState] = useState<Record<ModuloLista, number | null>>({
@@ -93,6 +103,10 @@ export function ShellProvider({ children }: { children: ReactNode }) {
         sidebarOpen,
         setSidebarOpen,
         toggleSidebar,
+        mobileNavOpen,
+        setMobileNavOpen,
+        toggleMobileNav,
+        closeMobileNav,
         query,
         setQuery,
         selection,

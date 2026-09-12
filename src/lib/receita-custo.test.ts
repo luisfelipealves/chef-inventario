@@ -25,17 +25,17 @@ describe("custoLinha", () => {
     expect(custoLinha({ ingredienteId: 1, quantidade: 200 }, ing(1, 1000, 5))).toBeCloseTo(1);
   });
 
-  it("devolve 0 para ingrediente removido", () => {
-    expect(custoLinha({ ingredienteId: 1, quantidade: 200 }, undefined)).toBe(0);
+  it("assinala custo desconhecido para ingrediente removido", () => {
+    expect(custoLinha({ ingredienteId: 1, quantidade: 200 }, undefined)).toBeNaN();
   });
 
-  it("devolve 0 quando a embalagem tem quantidade 0 (evita divisão por zero)", () => {
-    expect(custoLinha({ ingredienteId: 1, quantidade: 200 }, ing(1, 0, 5))).toBe(0);
+  it("assinala custo desconhecido quando a embalagem tem quantidade 0", () => {
+    expect(custoLinha({ ingredienteId: 1, quantidade: 200 }, ing(1, 0, 5))).toBeNaN();
   });
 });
 
 describe("custoTotalReceita", () => {
-  it("soma as linhas, ignorando ingredientes em falta no mapa", () => {
+  it("não apresenta soma parcial quando faltam ingredientes", () => {
     const mapa = new Map<number, Ingrediente>([
       [1, ing(1, 1000, 5)], // 0,005 €/g
       [2, ing(2, 500, 2)], // 0,004 €/g
@@ -47,7 +47,7 @@ describe("custoTotalReceita", () => {
         { ingredienteId: 99, quantidade: 999 }, // removido → 0
       ],
     };
-    expect(custoTotalReceita(receita, mapa)).toBeCloseTo(1.5);
+    expect(custoTotalReceita(receita, mapa)).toBeNaN();
   });
 });
 
@@ -78,8 +78,8 @@ describe("custoPorDose", () => {
     expect(custoPorDose(12, 4)).toBe(3);
   });
 
-  it("devolve 0 com rendimento 0 ou negativo", () => {
-    expect(custoPorDose(12, 0)).toBe(0);
-    expect(custoPorDose(12, -1)).toBe(0);
+  it("assinala custo desconhecido com rendimento 0 ou negativo", () => {
+    expect(custoPorDose(12, 0)).toBeNaN();
+    expect(custoPorDose(12, -1)).toBeNaN();
   });
 });

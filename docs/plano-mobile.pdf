@@ -1,0 +1,440 @@
+%PDF-1.4
+%âãÏÓ
+1 0 obj
+<< /Type /Pages /Kids [5 0 R 7 0 R 9 0 R 11 0 R 13 0 R 15 0 R 17 0 R 19 0 R] /Count 8 >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Length 4883 >>
+stream
+BT
+/F2 18 Tf 1 0 0 1 48 794 Tm (Plano de implementação - ecrãs mobile/celular) Tj
+/F2 14 Tf 1 0 0 1 48 765 Tm (Objetivo) Tj
+/F1 9.5 Tf 1 0 0 1 48 740 Tm (Adaptar a aplicação Caderninho de Receitas para telemóveis em orientação vertical e) Tj
+/F1 9.5 Tf 1 0 0 1 48 727 Tm (horizontal, mantendo o comportamento desktop existente e reaproveitando os serviços,) Tj
+/F1 9.5 Tf 1 0 0 1 48 714 Tm (componentes de domínio e dados atuais. O resultado deve ser utilizável com toque, sem scroll) Tj
+/F1 9.5 Tf 1 0 0 1 48 701 Tm (horizontal involuntário, com conteúdo legível em larguras de 320 px a 767 px e com) Tj
+/F1 9.5 Tf 1 0 0 1 48 688 Tm (formulários que não fiquem escondidos pelo teclado virtual.) Tj
+/F1 9.5 Tf 1 0 0 1 48 668 Tm (Este documento é um plano de execução. Cada tarefa abaixo é deliberadamente pequena: pode) Tj
+/F1 9.5 Tf 1 0 0 1 48 655 Tm (ser copiada como uma instrução independente para o Codex. A ordem indicada reduz retrabalho) Tj
+/F1 9.5 Tf 1 0 0 1 48 642 Tm (e mantém cada alteração verificável.) Tj
+/F2 14 Tf 1 0 0 1 48 622 Tm (Contexto técnico encontrado) Tj
+/F1 9.5 Tf 1 0 0 1 48 597 Tm (" O shell está em `src/lib/shell.tsx`, `src/components/shell/AppShell.tsx`, `Sidebar.tsx` e) Tj
+/F1 9.5 Tf 1 0 0 1 48 584 Tm (`Topbar.tsx`.) Tj
+/F1 9.5 Tf 1 0 0 1 48 570 Tm (" `src/styles.css` define `.shell-root { min-width: 1180px; }` e `#root { overflow-x: auto;) Tj
+/F1 9.5 Tf 1 0 0 1 48 557 Tm (}`; isso permite uma página desktop comprimida/rolável, mas não uma experiência mobile real.) Tj
+/F1 9.5 Tf 1 0 0 1 48 543 Tm (" Existe `src/hooks/use-mobile.tsx` com breakpoint de 768 px, porém o hook é usado pelos) Tj
+/F1 9.5 Tf 1 0 0 1 48 530 Tm (componentes Radix de sidebar e não pela navegação própria da aplicação.) Tj
+/F1 9.5 Tf 1 0 0 1 48 516 Tm (" As páginas de ingredientes, receitas, pedidos e clientes usam `.lista-view` com painel de) Tj
+/F1 9.5 Tf 1 0 0 1 48 503 Tm (tabela e `.detalhe-panel` de 392 px.) Tj
+/F1 9.5 Tf 1 0 0 1 48 489 Tm (" O dashboard \(`src/routes/index.tsx`\) e o financeiro \(`src/routes/financeiro.tsx`\) têm) Tj
+/F1 9.5 Tf 1 0 0 1 48 476 Tm (grids inline de quatro colunas e grids de duas colunas.) Tj
+/F1 9.5 Tf 1 0 0 1 48 462 Tm (" Os formulários principais já usam `Sheet`/`Dialog` com largura `w-full` e limite) Tj
+/F1 9.5 Tf 1 0 0 1 48 449 Tm (`sm:max-w`, mas ainda precisam de ajustes de viewport, espaçamento, teclado e campos em) Tj
+/F1 9.5 Tf 1 0 0 1 48 436 Tm (colunas.) Tj
+/F1 9.5 Tf 1 0 0 1 48 422 Tm (" Os fluxos de stock, compras, produção, pedidos, backup e OCR estão em serviços separados;) Tj
+/F1 9.5 Tf 1 0 0 1 48 409 Tm (o trabalho mobile deve alterar apresentação e interação, sem copiar ou reimplementar essas) Tj
+/F1 9.5 Tf 1 0 0 1 48 396 Tm (regras.) Tj
+/F2 14 Tf 1 0 0 1 48 376 Tm (Decisões de produto a manter) Tj
+/F1 9.5 Tf 1 0 0 1 48 351 Tm (" Em mobile, uma lista e o respetivo detalhe não ficam lado a lado. A lista ocupa a rota; o) Tj
+/F1 9.5 Tf 1 0 0 1 48 338 Tm (detalhe abre como uma folha/página de detalhe.) Tj
+/F1 9.5 Tf 1 0 0 1 48 324 Tm (" A navegação principal fica acessível por botão de menu e folha lateral ou inferior. Não se) Tj
+/F1 9.5 Tf 1 0 0 1 48 311 Tm (deve manter a sidebar desktop ocupando largura mínima.) Tj
+/F1 9.5 Tf 1 0 0 1 48 297 Tm (" Ações primárias continuam visíveis e fáceis de tocar; ações destrutivas permanecem) Tj
+/F1 9.5 Tf 1 0 0 1 48 284 Tm (protegidas por confirmação.) Tj
+/F1 9.5 Tf 1 0 0 1 48 270 Tm (" Tabelas densas viram cartões/linhas empilhadas quando a informação puder ser apresentada) Tj
+/F1 9.5 Tf 1 0 0 1 48 257 Tm (sem perda. Só usar scroll horizontal para dados genuinamente tabulares que não tenham) Tj
+/F1 9.5 Tf 1 0 0 1 48 244 Tm (alternativa clara.) Tj
+/F1 9.5 Tf 1 0 0 1 48 230 Tm (" O desktop deve continuar com a mesma arquitetura visual e não deve perder a seleção) Tj
+/F1 9.5 Tf 1 0 0 1 48 217 Tm (persistente da aplicação.) Tj
+/F1 9.5 Tf 1 0 0 1 48 203 Tm (" A acessibilidade é requisito funcional: foco, nomes acessíveis, ordem de leitura,) Tj
+/F1 9.5 Tf 1 0 0 1 48 190 Tm (contraste, tamanho de toque e navegação por teclado devem ser testados.) Tj
+/F2 14 Tf 1 0 0 1 48 170 Tm (Regras de execução para todas as tarefas) Tj
+/F1 9.5 Tf 1 0 0 1 48 145 Tm (" Antes de editar, ler o ficheiro indicado e preservar alterações existentes.) Tj
+/F1 9.5 Tf 1 0 0 1 48 131 Tm (" Preferir classes CSS reutilizáveis a estilos inline repetidos.) Tj
+/F1 9.5 Tf 1 0 0 1 48 117 Tm (" Não alterar serviços de Dexie ou regras de cálculo numa tarefa puramente visual.) Tj
+/F1 9.5 Tf 1 0 0 1 48 103 Tm (" Em cada tarefa, executar pelo menos o teste ou verificação indicado e confirmar que o) Tj
+/F1 9.5 Tf 1 0 0 1 48 90 Tm (working tree contém apenas a alteração esperada.) Tj
+/F1 9.5 Tf 1 0 0 1 48 76 Tm (" Validar sempre em 320x568, 360x800, 390x844, 430x932 e 768x1024; usar 1024x768 e 1440x900) Tj
+/F1 9.5 Tf 1 0 0 1 48 63 Tm (como regressão desktop.) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 4 0 R >>
+endobj
+6 0 obj
+<< /Length 4266 >>
+stream
+BT
+/F2 14 Tf 1 0 0 1 48 794 Tm (Tarefas copiáveis) Tj
+/F2 11.5 Tf 1 0 0 1 48 769 Tm (M01 - inventariar o contrato visual atual) Tj
+/F2 10 Tf 1 0 0 1 48 747 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 726 Tm (Leia `src/styles.css`, `src/lib/shell.tsx`, `src/components/shell/AppShell.tsx`,) Tj
+/F1 9.5 Tf 1 0 0 1 48 713 Tm (`Sidebar.tsx`, `Topbar.tsx`, `GlobalSearch.tsx` e todas as rotas em `src/routes`. Liste as) Tj
+/F1 9.5 Tf 1 0 0 1 48 700 Tm (dimensões mínimas, larguras fixas, grids inline, tabelas, sheets e diálogos que podem causar) Tj
+/F1 9.5 Tf 1 0 0 1 48 687 Tm (overflow abaixo de 768 px. Não faça alterações. Entregue um inventário com ficheiro, linha) Tj
+/F1 9.5 Tf 1 0 0 1 48 674 Tm (aproximada, impacto mobile e proposta de classe/abstração a usar depois.) Tj
+/F1 9.5 Tf 1 0 0 1 48 653 Tm (Validação: confirmar que o inventário cobre shell, dashboard, quatro listas, financeiro,) Tj
+/F1 9.5 Tf 1 0 0 1 48 640 Tm (formulários e diálogos.) Tj
+/F2 11.5 Tf 1 0 0 1 48 620 Tm (M02 - definir tokens e breakpoints mobile) Tj
+/F2 10 Tf 1 0 0 1 48 598 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 577 Tm (Em `src/styles.css`, adicione tokens CSS para breakpoint mobile, gutter horizontal mobile,) Tj
+/F1 9.5 Tf 1 0 0 1 48 564 Tm (altura mínima de alvo de toque, raio de cartões e espaçamento vertical de secções. Use nomes) Tj
+/F1 9.5 Tf 1 0 0 1 48 551 Tm (semânticos e valores compatíveis com o sistema visual existente. Não altere ainda os) Tj
+/F1 9.5 Tf 1 0 0 1 48 538 Tm (componentes. Documente no próprio CSS o intervalo de cada breakpoint.) Tj
+/F1 9.5 Tf 1 0 0 1 48 517 Tm (Validação: bun run typecheck, bun run lint e inspeção visual de que nenhum estilo desktop) Tj
+/F1 9.5 Tf 1 0 0 1 48 504 Tm (mudou.) Tj
+/F2 11.5 Tf 1 0 0 1 48 484 Tm (M03 - remover a restrição estrutural de largura mínima) Tj
+/F2 10 Tf 1 0 0 1 48 462 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 441 Tm (Ajuste o shell em `src/styles.css` para permitir viewport de 320 px: remova ou substitua a) Tj
+/F1 9.5 Tf 1 0 0 1 48 428 Tm (dependência de `min-width: 1180px` em `.shell-root`, elimine scroll horizontal global de) Tj
+/F1 9.5 Tf 1 0 0 1 48 415 Tm (`#root` e preserve `min-width: 0` nos descendentes flexíveis. Adicione proteção contra) Tj
+/F1 9.5 Tf 1 0 0 1 48 402 Tm (overflow de texto, tabelas e gráficos sem esconder conteúdo de forma silenciosa. Não) Tj
+/F1 9.5 Tf 1 0 0 1 48 389 Tm (implemente ainda a navegação mobile.) Tj
+/F1 9.5 Tf 1 0 0 1 48 368 Tm (Validação: abrir a aplicação em 320 px e confirmar que a página não ganha scrollbar) Tj
+/F1 9.5 Tf 1 0 0 1 48 355 Tm (horizontal; verificar desktop em 1440 px.) Tj
+/F2 11.5 Tf 1 0 0 1 48 335 Tm (M04 - criar contrato de viewport e hook responsivo) Tj
+/F2 10 Tf 1 0 0 1 48 313 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 292 Tm (Reveja `src/hooks/use-mobile.tsx`. Transforme-o num hook estável para renderização) Tj
+/F1 9.5 Tf 1 0 0 1 48 279 Tm (client-side, com breakpoint alinhado aos tokens CSS e subscrição correta a `matchMedia`.) Tj
+/F1 9.5 Tf 1 0 0 1 48 266 Tm (Exponha, se necessário, `useIsMobile` e um estado de hidratação que não cause layout errado) Tj
+/F1 9.5 Tf 1 0 0 1 48 253 Tm (no primeiro render. Não duplique listeners em cada componente.) Tj
+/F1 9.5 Tf 1 0 0 1 48 232 Tm (Validação: adicionar teste do hook para viewport mobile/desktop e executar a suíte Vitest.) Tj
+/F2 11.5 Tf 1 0 0 1 48 212 Tm (M05 - adaptar o AppShell para dois modos de navegação) Tj
+/F2 10 Tf 1 0 0 1 48 190 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 169 Tm (Em `src/components/shell/AppShell.tsx` e `src/lib/shell.tsx`, defina o contrato entre shell) Tj
+/F1 9.5 Tf 1 0 0 1 48 156 Tm (desktop e mobile: desktop conserva sidebar persistente; mobile renderiza conteúdo sem a) Tj
+/F1 9.5 Tf 1 0 0 1 48 143 Tm (sidebar ocupando espaço e fornece estado `mobileNavOpen`. Garanta que abrir/fechar navegação) Tj
+/F1 9.5 Tf 1 0 0 1 48 130 Tm (não altera rota, filtro ou seleção. Evite ler `window` durante SSR/hidratação.) Tj
+/F1 9.5 Tf 1 0 0 1 48 109 Tm (Validação: teste de montagem ou teste manual: alternar largura não perde rota nem seleção.) Tj
+/F2 11.5 Tf 1 0 0 1 48 89 Tm (M06 - criar trigger e folha de navegação mobile) Tj
+/F2 10 Tf 1 0 0 1 48 67 Tm (Instrução para o Codex) Tj
+ET
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 6 0 R >>
+endobj
+8 0 obj
+<< /Length 4422 >>
+stream
+BT
+/F1 9.5 Tf 1 0 0 1 48 794 Tm (Adapte `Sidebar.tsx` para mobile usando o componente `Sheet` existente. Crie um botão de) Tj
+/F1 9.5 Tf 1 0 0 1 48 781 Tm (menu com `aria-label`, foco visível e alvo mínimo de 44 px. Reutilize `NAV`, contagens,) Tj
+/F1 9.5 Tf 1 0 0 1 48 768 Tm (alerta de stock, definições e ação de recolher quando fizer sentido; ao navegar, feche a) Tj
+/F1 9.5 Tf 1 0 0 1 48 755 Tm (folha. A sidebar desktop deve manter o comportamento atual.) Tj
+/F1 9.5 Tf 1 0 0 1 48 734 Tm (Validação: testar abrir, navegar para cada rota, fechar com X, Escape, clique no overlay e) Tj
+/F1 9.5 Tf 1 0 0 1 48 721 Tm (voltar do browser.) Tj
+/F2 11.5 Tf 1 0 0 1 48 701 Tm (M07 - adaptar o Topbar e a pesquisa global) Tj
+/F2 10 Tf 1 0 0 1 48 679 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 658 Tm (Adapte `Topbar.tsx` e `GlobalSearch.tsx` para mobile. Organize o título, botão de menu,) Tj
+/F1 9.5 Tf 1 0 0 1 48 645 Tm (pesquisa e ação primária sem sobreposição; em larguras pequenas, permita que a pesquisa) Tj
+/F1 9.5 Tf 1 0 0 1 48 632 Tm (ocupe uma segunda linha ou abra uma folha dedicada. Garanta que resultados da pesquisa não) Tj
+/F1 9.5 Tf 1 0 0 1 48 619 Tm (ficam cortados pelo viewport e que selecionar um resultado fecha a pesquisa/navegação) Tj
+/F1 9.5 Tf 1 0 0 1 48 606 Tm (corretamente.) Tj
+/F1 9.5 Tf 1 0 0 1 48 585 Tm (Validação: testar títulos longos, nome de utilizador longo, teclado virtual, resultados com) Tj
+/F1 9.5 Tf 1 0 0 1 48 572 Tm (nomes longos e ação Novo em 320 px.) Tj
+/F2 11.5 Tf 1 0 0 1 48 552 Tm (M08 - definir o padrão de detalhe mobile) Tj
+/F2 10 Tf 1 0 0 1 48 530 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 509 Tm (Crie um padrão reutilizável para detalhe de item em mobile: cabeçalho com botão voltar,) Tj
+/F1 9.5 Tf 1 0 0 1 48 496 Tm (título, estado e ações; corpo rolável; ações destrutivas no fim. Pode ser um componente em) Tj
+/F1 9.5 Tf 1 0 0 1 48 483 Tm (`src/components/lista` ou uma folha configurável. O padrão deve permitir que a rota mostre) Tj
+/F1 9.5 Tf 1 0 0 1 48 470 Tm (lista ou detalhe, sem duplicar o conteúdo de cada detalhe.) Tj
+/F1 9.5 Tf 1 0 0 1 48 449 Tm (Validação: demonstrar o padrão com um mock simples e confirmar foco inicial no título/botão) Tj
+/F1 9.5 Tf 1 0 0 1 48 436 Tm (voltar.) Tj
+/F2 11.5 Tf 1 0 0 1 48 416 Tm (M09 - adaptar `.lista-view`, painel e seleção) Tj
+/F2 10 Tf 1 0 0 1 48 394 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 373 Tm (Atualize as classes partilhadas de listas em `src/styles.css`: desktop continua em duas) Tj
+/F1 9.5 Tf 1 0 0 1 48 360 Tm (colunas; abaixo de 768 px, `.lista-view` vira uma coluna, o painel de detalhe não aparece) Tj
+/F1 9.5 Tf 1 0 0 1 48 347 Tm (simultaneamente e a seleção deve abrir o padrão de detalhe mobile. Preserve estados) Tj
+/F1 9.5 Tf 1 0 0 1 48 334 Tm (`data-selected`, filtros e scroll vertical interno onde forem necessários.) Tj
+/F1 9.5 Tf 1 0 0 1 48 313 Tm (Validação: testar lista vazia, carregamento, um item, muitos itens e retorno do detalhe para) Tj
+/F1 9.5 Tf 1 0 0 1 48 300 Tm (a mesma posição da lista.) Tj
+/F2 11.5 Tf 1 0 0 1 48 280 Tm (M10 - criar apresentação mobile para linhas de tabela) Tj
+/F2 10 Tf 1 0 0 1 48 258 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 237 Tm (Crie classes/componentes para converter as tabelas das listas em cartões ou linhas) Tj
+/F1 9.5 Tf 1 0 0 1 48 224 Tm (responsivas. Cada item deve manter o nome principal, os indicadores essenciais, estado e) Tj
+/F1 9.5 Tf 1 0 0 1 48 211 Tm (ação de seleção; dados secundários podem ficar numa segunda linha. Não remova dados) Tj
+/F1 9.5 Tf 1 0 0 1 48 198 Tm (necessários: disponibilize-os no detalhe. Não use `display:none` em informação sem decidir) Tj
+/F1 9.5 Tf 1 0 0 1 48 185 Tm (onde ela reaparece.) Tj
+/F1 9.5 Tf 1 0 0 1 48 164 Tm (Validação: verificar leitura sem zoom e ausência de overflow em 320 px; testar nomes e) Tj
+/F1 9.5 Tf 1 0 0 1 48 151 Tm (valores longos.) Tj
+/F2 11.5 Tf 1 0 0 1 48 131 Tm (M11 - adaptar a barra de filtros \(`FiltroBar`\)) Tj
+/F2 10 Tf 1 0 0 1 48 109 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 88 Tm (Adapte `src/components/lista/FiltroBar.tsx` para mobile. Permita filtros em scroll) Tj
+/F1 9.5 Tf 1 0 0 1 48 75 Tm (horizontal controlado ou menu compacto, mantenha contagem legível e reserve uma linha) Tj
+/F1 9.5 Tf 1 0 0 1 48 62 Tm (própria para a ação primária. A barra deve ter alvos de toque mínimos e não empurrar o) Tj
+ET
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 8 0 R >>
+endobj
+10 0 obj
+<< /Length 4083 >>
+stream
+BT
+/F1 9.5 Tf 1 0 0 1 48 794 Tm (conteúdo para fora da viewport.) Tj
+/F1 9.5 Tf 1 0 0 1 48 773 Tm (Validação: testar as quatro listas com todos os filtros e com traduções pt-PT/en.) Tj
+/F2 11.5 Tf 1 0 0 1 48 753 Tm (M12 - adaptar a rota de ingredientes) Tj
+/F2 10 Tf 1 0 0 1 48 731 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 710 Tm (Adapte `src/routes/ingredientes.tsx` ao padrão mobile: cartão de ingrediente com nome,) Tj
+/F1 9.5 Tf 1 0 0 1 48 697 Tm (stock, unidade, alerta e preço; detalhe mobile com ações editar, comprar, ler fatura e) Tj
+/F1 9.5 Tf 1 0 0 1 48 684 Tm (remover; manter filtros e seleção. Reaproveite `IngredienteFormDialog`, `FaturaSheet` e) Tj
+/F1 9.5 Tf 1 0 0 1 48 671 Tm (regras de stock existentes. Não altere cálculos.) Tj
+/F1 9.5 Tf 1 0 0 1 48 650 Tm (Validação: testar stock baixo, ingrediente sem código de barras, ingrediente) Tj
+/F1 9.5 Tf 1 0 0 1 48 637 Tm (removido/referenciado, lista vazia e retorno após guardar compra.) Tj
+/F2 11.5 Tf 1 0 0 1 48 617 Tm (M13 - adaptar o formulário de ingrediente) Tj
+/F2 10 Tf 1 0 0 1 48 595 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 574 Tm (Ajuste `IngredienteFormDialog.tsx` para mobile: padding menor, cabeçalho fixo quando) Tj
+/F1 9.5 Tf 1 0 0 1 48 561 Tm (necessário, corpo rolável, footer acessível acima do teclado e campos em uma coluna abaixo) Tj
+/F1 9.5 Tf 1 0 0 1 48 548 Tm (de 480 px. Garanta que o campo de stock e validações continuam acessíveis no modo edição e) Tj
+/F1 9.5 Tf 1 0 0 1 48 535 Tm (que o scanner não perde o foco.) Tj
+/F1 9.5 Tf 1 0 0 1 48 514 Tm (Validação: criar, editar e adicionar compra em 320 px; testar teclado numérico, erro de) Tj
+/F1 9.5 Tf 1 0 0 1 48 501 Tm (validação e cancelamento.) Tj
+/F2 11.5 Tf 1 0 0 1 48 481 Tm (M14 - adaptar leitura de fatura e scanner) Tj
+/F2 10 Tf 1 0 0 1 48 459 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 438 Tm (Ajuste `FaturaSheet.tsx` e `BarcodeScannerDialog.tsx` para ecrãs pequenos: área de câmara) Tj
+/F1 9.5 Tf 1 0 0 1 48 425 Tm (proporcional, controlos grandes, upload acessível, revisão de linhas sem colunas comprimidas) Tj
+/F1 9.5 Tf 1 0 0 1 48 412 Tm (e footer fixo/rolável. Preserve permissões de câmara, encerramento e mensagens de erro. Não) Tj
+/F1 9.5 Tf 1 0 0 1 48 399 Tm (altere OCR nem conversões.) Tj
+/F1 9.5 Tf 1 0 0 1 48 378 Tm (Validação: testar sem câmara, com permissão recusada, upload, linha longa, remoção de linha) Tj
+/F1 9.5 Tf 1 0 0 1 48 365 Tm (e confirmação com teclado aberto.) Tj
+/F2 11.5 Tf 1 0 0 1 48 345 Tm (M15 - adaptar a rota de receitas) Tj
+/F2 10 Tf 1 0 0 1 48 323 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 302 Tm (Adapte `src/routes/receitas.tsx` para cartões mobile com nome, rendimento, custo por dose,) Tj
+/F1 9.5 Tf 1 0 0 1 48 289 Tm (preço e margem. Mova ingredientes, indicadores, produção e ações para o detalhe mobile.) Tj
+/F1 9.5 Tf 1 0 0 1 48 276 Tm (Preserve os filtros `todas`, `rentaveis` e `falhas`, incluindo a indicação de custo) Tj
+/F1 9.5 Tf 1 0 0 1 48 263 Tm (incompleto.) Tj
+/F1 9.5 Tf 1 0 0 1 48 242 Tm (Validação: testar receita sem ingredientes, ingrediente removido, margem negativa, receita) Tj
+/F1 9.5 Tf 1 0 0 1 48 229 Tm (rentável e produção.) Tj
+/F2 11.5 Tf 1 0 0 1 48 209 Tm (M16 - adaptar formulário e produção de receita) Tj
+/F2 10 Tf 1 0 0 1 48 187 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 166 Tm (Ajuste `ReceitaFormDialog.tsx` e `ProducaoDialog.tsx` para mobile. Transforme a edição de) Tj
+/F1 9.5 Tf 1 0 0 1 48 153 Tm (ingredientes numa lista empilhada com controlos de quantidade e remoção fáceis de tocar;) Tj
+/F1 9.5 Tf 1 0 0 1 48 140 Tm (mantenha rendimento, preço e validações. No diálogo de produção, garanta que a prévia de) Tj
+/F1 9.5 Tf 1 0 0 1 48 127 Tm (consumo e stock não fica cortada e que o botão de confirmação permanece alcançável.) Tj
+/F1 9.5 Tf 1 0 0 1 48 106 Tm (Validação: criar/editar receita com vários ingredientes, erro de rendimento, stock) Tj
+/F1 9.5 Tf 1 0 0 1 48 93 Tm (insuficiente e produção bem-sucedida.) Tj
+/F2 11.5 Tf 1 0 0 1 48 73 Tm (M17 - adaptar a rota de pedidos) Tj
+ET
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 10 0 R >>
+endobj
+12 0 obj
+<< /Length 4077 >>
+stream
+BT
+/F2 10 Tf 1 0 0 1 48 794 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 773 Tm (Adapte `src/routes/pedidos.tsx` para cartões com cliente, data, total, estado e resumo de) Tj
+/F1 9.5 Tf 1 0 0 1 48 760 Tm (itens. No detalhe mobile, mantenha edição, PDF, estado e remoção protegida. Faça o estado) Tj
+/F1 9.5 Tf 1 0 0 1 48 747 Tm (clicável ter alvo de toque mínimo e não depender de hover.) Tj
+/F1 9.5 Tf 1 0 0 1 48 726 Tm (Validação: testar cada estado do pedido, filtro, cliente removido, receita removida,) Tj
+/F1 9.5 Tf 1 0 0 1 48 713 Tm (exportação PDF e remoção protegida.) Tj
+/F2 11.5 Tf 1 0 0 1 48 693 Tm (M18 - adaptar formulário e estado de pedido) Tj
+/F2 10 Tf 1 0 0 1 48 671 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 650 Tm (Ajuste `PedidoFormDialog.tsx` e `EstadoSelect.tsx` para mobile. Empilhe cliente, data,) Tj
+/F1 9.5 Tf 1 0 0 1 48 637 Tm (estado e linhas de receita; mantenha resumo de custo/venda/margem; garanta que o menu de) Tj
+/F1 9.5 Tf 1 0 0 1 48 624 Tm (estado e o alerta de doses insuficientes cabem acima do teclado. Não altere `guardarPedido`,) Tj
+/F1 9.5 Tf 1 0 0 1 48 611 Tm (`entregarPedido` ou regras de stock.) Tj
+/F1 9.5 Tf 1 0 0 1 48 590 Tm (Validação: criar pedido, editar pedido, entrega com produção automática, erro por falta de) Tj
+/F1 9.5 Tf 1 0 0 1 48 577 Tm (stock, reabertura e tentativa concorrente.) Tj
+/F2 11.5 Tf 1 0 0 1 48 557 Tm (M19 - adaptar a rota de clientes) Tj
+/F2 10 Tf 1 0 0 1 48 535 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 514 Tm (Adapte `src/routes/clientes.tsx` para cartões mobile com nome, contacto, pedidos abertos e) Tj
+/F1 9.5 Tf 1 0 0 1 48 501 Tm (total. No detalhe, empilhe contacto, morada, NIF e histórico. Mantenha navegação para) Tj
+/F1 9.5 Tf 1 0 0 1 48 488 Tm (pedidos e bloqueio de remoção quando houver dependências.) Tj
+/F1 9.5 Tf 1 0 0 1 48 467 Tm (Validação: testar telefone/morada longos, cliente sem pedidos, cliente com pedidos, filtro) Tj
+/F1 9.5 Tf 1 0 0 1 48 454 Tm (de abertos e remoção bloqueada.) Tj
+/F2 11.5 Tf 1 0 0 1 48 434 Tm (M20 - adaptar formulário de cliente) Tj
+/F2 10 Tf 1 0 0 1 48 412 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 391 Tm (Ajuste `ClienteFormDialog.tsx` para uma coluna em mobile, com labels associados, teclado) Tj
+/F1 9.5 Tf 1 0 0 1 48 378 Tm (adequado por campo, footer alcançável e mensagens de validação próximas do campo. Preserve) Tj
+/F1 9.5 Tf 1 0 0 1 48 365 Tm (limite de texto e estado de submissão.) Tj
+/F1 9.5 Tf 1 0 0 1 48 344 Tm (Validação: criar e editar cliente em 320 px e testar teclado, rotação e cancelamento.) Tj
+/F2 11.5 Tf 1 0 0 1 48 324 Tm (M21 - adaptar dashboard inicial) Tj
+/F2 10 Tf 1 0 0 1 48 302 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 281 Tm (Adapte `src/routes/index.tsx`: transforme o grid de quatro indicadores numa coluna ou) Tj
+/F1 9.5 Tf 1 0 0 1 48 268 Tm (carrossel acessível; empilhe os blocos de próximas entregas e stock baixo; preserve) Tj
+/F1 9.5 Tf 1 0 0 1 48 255 Tm (navegação para pedidos/ingredientes. Evite gráficos ou cartões com largura fixa. Mantenha) Tj
+/F1 9.5 Tf 1 0 0 1 48 242 Tm (dados demo e estados vazios.) Tj
+/F1 9.5 Tf 1 0 0 1 48 221 Tm (Validação: testar dashboard vazio, com dados demo, com nomes longos e em orientação) Tj
+/F1 9.5 Tf 1 0 0 1 48 208 Tm (vertical/horizontal.) Tj
+/F2 11.5 Tf 1 0 0 1 48 188 Tm (M22 - adaptar financeiro) Tj
+/F2 10 Tf 1 0 0 1 48 166 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 145 Tm (Adapte `src/routes/financeiro.tsx`: indicadores em cartões empilhados, filtros de período em) Tj
+/F1 9.5 Tf 1 0 0 1 48 132 Tm (linhas que caibam, gráfico com altura responsiva e largura mínima segura, estados/compras em) Tj
+/F1 9.5 Tf 1 0 0 1 48 119 Tm (listas e exportação CSV acessível. Preserve cálculos e ordenação. Se um gráfico exigir) Tj
+/F1 9.5 Tf 1 0 0 1 48 106 Tm (scroll, limite-o ao cartão e documente o motivo.) Tj
+/F1 9.5 Tf 1 0 0 1 48 85 Tm (Validação: testar cada período, intervalo personalizado, sem movimentos, muitas compras,) Tj
+/F1 9.5 Tf 1 0 0 1 48 72 Tm (valores negativos/zero e exportação.) Tj
+ET
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 12 0 R >>
+endobj
+14 0 obj
+<< /Length 4177 >>
+stream
+BT
+/F2 11.5 Tf 1 0 0 1 48 794 Tm (M23 - adaptar Definições e onboarding) Tj
+/F2 10 Tf 1 0 0 1 48 772 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 751 Tm (Ajuste `DefinicoesSheet.tsx` e `PrimeiroArranqueDialog.tsx` para mobile: folha quase em ecrã) Tj
+/F1 9.5 Tf 1 0 0 1 48 738 Tm (inteiro, secções empilhadas, botões de backup e remoção de demo com alvos grandes, textos) Tj
+/F1 9.5 Tf 1 0 0 1 48 725 Tm (longos quebráveis e confirmação destrutiva visível. Preserve importação/exportação e estados) Tj
+/F1 9.5 Tf 1 0 0 1 48 712 Tm (de erro.) Tj
+/F1 9.5 Tf 1 0 0 1 48 691 Tm (Validação: testar primeiro arranque, backup manual, importação inválida, pasta adicional) Tj
+/F1 9.5 Tf 1 0 0 1 48 678 Tm (Tauri e remoção de dados demo.) Tj
+/F2 11.5 Tf 1 0 0 1 48 658 Tm (M24 - garantir comportamento de teclado virtual e safe areas) Tj
+/F2 10 Tf 1 0 0 1 48 636 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 615 Tm (Reverta todos os sheets/dialogs e o shell para suportar `100dvh`, `env\(safe-area-inset-top\)`) Tj
+/F1 9.5 Tf 1 0 0 1 48 602 Tm (e `env\(safe-area-inset-bottom\)`. Footer de formulários deve continuar visível quando o) Tj
+/F1 9.5 Tf 1 0 0 1 48 589 Tm (teclado aparece; conteúdo deve poder rolar para o campo focado. Não fixe elementos de forma) Tj
+/F1 9.5 Tf 1 0 0 1 48 576 Tm (que cubram mensagens de erro.) Tj
+/F1 9.5 Tf 1 0 0 1 48 555 Tm (Validação: testar iOS Safari, Android Chrome ou simuladores equivalentes, teclado aberto,) Tj
+/F1 9.5 Tf 1 0 0 1 48 542 Tm (orientação horizontal e notch/safe area.) Tj
+/F2 11.5 Tf 1 0 0 1 48 522 Tm (M25 - normalizar alvos de toque e foco) Tj
+/F2 10 Tf 1 0 0 1 48 500 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 479 Tm (Audite botões, links, ícones, linhas selecionáveis, estados e controlos de tabela. Crie) Tj
+/F1 9.5 Tf 1 0 0 1 48 466 Tm (classes partilhadas para alvo mínimo de 44x44 px, espaçamento entre ações e foco visível.) Tj
+/F1 9.5 Tf 1 0 0 1 48 453 Tm (Substitua dependências de hover por estados de toque/foco. Não aumente indiscriminadamente) Tj
+/F1 9.5 Tf 1 0 0 1 48 440 Tm (elementos decorativos.) Tj
+/F1 9.5 Tf 1 0 0 1 48 419 Tm (Validação: inspeção manual com navegação por teclado e teste de toque sem cliques acidentais) Tj
+/F1 9.5 Tf 1 0 0 1 48 406 Tm (entre ações adjacentes.) Tj
+/F2 11.5 Tf 1 0 0 1 48 386 Tm (M26 - corrigir overflow tipográfico e internacionalização) Tj
+/F2 10 Tf 1 0 0 1 48 364 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 343 Tm (Audite pt-PT e en em todos os ecrãs mobile. Corrija títulos, badges, mensagens, nomes,) Tj
+/F1 9.5 Tf 1 0 0 1 48 330 Tm (moradas, URLs, preços e datas que possam estourar a largura. Use quebra de palavras ou) Tj
+/F1 9.5 Tf 1 0 0 1 48 317 Tm (truncamento apenas quando o detalhe mantiver o texto completo. Não traduza strings nesta) Tj
+/F1 9.5 Tf 1 0 0 1 48 304 Tm (tarefa; apenas torne o layout resiliente.) Tj
+/F1 9.5 Tf 1 0 0 1 48 283 Tm (Validação: alternar idioma em 320 px e verificar cada rota, sheet, alerta e estado.) Tj
+/F2 11.5 Tf 1 0 0 1 48 263 Tm (M27 - adicionar testes de componentes para shell mobile) Tj
+/F2 10 Tf 1 0 0 1 48 241 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 220 Tm (Crie testes focados para navegação mobile, Topbar, padrão de detalhe, FiltroBar e estados de) Tj
+/F1 9.5 Tf 1 0 0 1 48 207 Tm (lista. Teste abertura/fecho, acessibilidade básica, seleção, retorno e ação primária. Use) Tj
+/F1 9.5 Tf 1 0 0 1 48 194 Tm (mocks mínimos de Dexie/datasets; não replique testes de serviços já existentes.) Tj
+/F1 9.5 Tf 1 0 0 1 48 173 Tm (Validação: bun run test e relatório dos cenários cobertos.) Tj
+/F2 11.5 Tf 1 0 0 1 48 153 Tm (M28 - criar matriz de testes manuais por fluxo) Tj
+/F2 10 Tf 1 0 0 1 48 131 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 110 Tm (Crie `docs/mobile-test-matrix.md` com uma matriz por viewport, orientação, navegador e) Tj
+/F1 9.5 Tf 1 0 0 1 48 97 Tm (fluxo: onboarding, dashboard, ingredientes, OCR, scanner, receitas, produção, pedidos,) Tj
+/F1 9.5 Tf 1 0 0 1 48 84 Tm (entrega/reversão, clientes, financeiro, backup, idioma e tema. Cada célula deve ter) Tj
+/F1 9.5 Tf 1 0 0 1 48 71 Tm (pré-condições, passos, resultado esperado e severidade.) Tj
+ET
+endstream
+endobj
+15 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 14 0 R >>
+endobj
+16 0 obj
+<< /Length 4002 >>
+stream
+BT
+/F1 9.5 Tf 1 0 0 1 48 794 Tm (Validação: garantir que cada tarefa M12M26 aparece na matriz.) Tj
+/F2 11.5 Tf 1 0 0 1 48 774 Tm (M29 - executar auditoria visual e acessível) Tj
+/F2 10 Tf 1 0 0 1 48 752 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 731 Tm (Execute a matriz mobile em dados demo e dados vazios. Registe screenshots dos casos com) Tj
+/F1 9.5 Tf 1 0 0 1 48 718 Tm (maior risco, problemas de foco, overflow, scroll preso, conteúdo coberto pelo teclado,) Tj
+/F1 9.5 Tf 1 0 0 1 48 705 Tm (contraste ou alvo pequeno. Corrija apenas regressões introduzidas pelo trabalho mobile e) Tj
+/F1 9.5 Tf 1 0 0 1 48 692 Tm (associe cada correção à tarefa correspondente.) Tj
+/F1 9.5 Tf 1 0 0 1 48 671 Tm (Validação: checklist aprovado em 320, 390, 430 e 768 px; desktop sem regressões.) Tj
+/F2 11.5 Tf 1 0 0 1 48 651 Tm (M30 - verificar desempenho e bundle) Tj
+/F2 10 Tf 1 0 0 1 48 629 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 608 Tm (Faça uma verificação de desempenho em mobile: tempo até conteúdo inicial, troca de rota,) Tj
+/F1 9.5 Tf 1 0 0 1 48 595 Tm (abertura de sheets e carregamento de OCR/scanner sob demanda. Não faça otimizações de) Tj
+/F1 9.5 Tf 1 0 0 1 48 582 Tm (produto nesta tarefa; apenas identifique regressões causadas pelo layout e registre o) Tj
+/F1 9.5 Tf 1 0 0 1 48 569 Tm (tamanho dos chunks relevantes.) Tj
+/F1 9.5 Tf 1 0 0 1 48 548 Tm (Validação: bun run build, comparação dos tamanhos de dist/assets e teste em throttling de) Tj
+/F1 9.5 Tf 1 0 0 1 48 535 Tm (rede/CPU.) Tj
+/F2 11.5 Tf 1 0 0 1 48 515 Tm (M31 - revisão final de regressão desktop) Tj
+/F2 10 Tf 1 0 0 1 48 493 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 472 Tm (Faça uma revisão exclusiva de desktop em 1024x768, 1280x820 e 1440x900. Confirme sidebar,) Tj
+/F1 9.5 Tf 1 0 0 1 48 459 Tm (topbar, tabelas, painel de detalhe, grids financeiros, folhas, diálogos, filtros e ações.) Tj
+/F1 9.5 Tf 1 0 0 1 48 446 Tm (Corrija regressões sem desfazer o comportamento mobile.) Tj
+/F1 9.5 Tf 1 0 0 1 48 425 Tm (Validação: screenshots comparativos ou checklist assinado por rota.) Tj
+/F2 11.5 Tf 1 0 0 1 48 405 Tm (M32 - fechar documentação e critérios de aceitação) Tj
+/F2 10 Tf 1 0 0 1 48 383 Tm (Instrução para o Codex) Tj
+/F1 9.5 Tf 1 0 0 1 48 362 Tm (Atualize `README.md` ou documentação apropriada com o suporte mobile, breakpoints adotados,) Tj
+/F1 9.5 Tf 1 0 0 1 48 349 Tm (limitações conhecidas e comandos de verificação. Registre critérios de aceitação: sem) Tj
+/F1 9.5 Tf 1 0 0 1 48 336 Tm (overflow horizontal em 320 px, navegação acessível, todos os fluxos críticos utilizáveis com) Tj
+/F1 9.5 Tf 1 0 0 1 48 323 Tm (toque, desktop preservado e testes/build passando.) Tj
+/F1 9.5 Tf 1 0 0 1 48 302 Tm (Validação: bun run test, bun run typecheck, bun run lint e bun run build; working tree) Tj
+/F1 9.5 Tf 1 0 0 1 48 289 Tm (contém apenas alterações relacionadas ao plano mobile.) Tj
+/F2 14 Tf 1 0 0 1 48 269 Tm (Ordem recomendada de execução) Tj
+/F1 9.5 Tf 1 0 0 1 48 244 Tm (1. M01M04: contrato e fundação responsiva.) Tj
+/F1 9.5 Tf 1 0 0 1 48 230 Tm (2. M05M11: shell, navegação, detalhe, listas e filtros.) Tj
+/F1 9.5 Tf 1 0 0 1 48 216 Tm (3. M12M20: ingredientes, receitas, pedidos e clientes.) Tj
+/F1 9.5 Tf 1 0 0 1 48 202 Tm (4. M21M23: dashboard, financeiro, definições e onboarding.) Tj
+/F1 9.5 Tf 1 0 0 1 48 188 Tm (5. M24M26: teclado, toque, foco e internacionalização.) Tj
+/F1 9.5 Tf 1 0 0 1 48 174 Tm (6. M27M30: testes, matriz, auditoria e desempenho.) Tj
+/F1 9.5 Tf 1 0 0 1 48 160 Tm (7. M31M32: regressão desktop, documentação e aceite.) Tj
+/F2 14 Tf 1 0 0 1 48 140 Tm (Critérios de conclusão) Tj
+/F1 9.5 Tf 1 0 0 1 48 115 Tm (" Nenhuma rota apresenta scroll horizontal global em 320 px.) Tj
+/F1 9.5 Tf 1 0 0 1 48 101 Tm (" Sidebar desktop não reduz a área mobile nem força largura mínima.) Tj
+/F1 9.5 Tf 1 0 0 1 48 87 Tm (" Todas as entidades de lista têm apresentação utilizável, detalhe acessível e retorno) Tj
+/F1 9.5 Tf 1 0 0 1 48 74 Tm (previsível.) Tj
+ET
+endstream
+endobj
+17 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 16 0 R >>
+endobj
+18 0 obj
+<< /Length 818 >>
+stream
+BT
+/F1 9.5 Tf 1 0 0 1 48 794 Tm (" Formulários e diálogos podem ser usados com teclado virtual aberto.) Tj
+/F1 9.5 Tf 1 0 0 1 48 780 Tm (" Ações primárias e destrutivas continuam identificáveis e têm alvo de toque adequado.) Tj
+/F1 9.5 Tf 1 0 0 1 48 766 Tm (" Stock, produção, entrega, reversão, backup, OCR, exportações e cálculos continuam usando) Tj
+/F1 9.5 Tf 1 0 0 1 48 753 Tm (os serviços existentes.) Tj
+/F1 9.5 Tf 1 0 0 1 48 739 Tm (" pt-PT e en não introduzem overflow.) Tj
+/F1 9.5 Tf 1 0 0 1 48 725 Tm (" Testes, typecheck, lint e build passam; os avisos já existentes do lint ficam) Tj
+/F1 9.5 Tf 1 0 0 1 48 712 Tm (documentados.) Tj
+/F1 9.5 Tf 1 0 0 1 48 698 Tm (" A release mobile só deve ser considerada após a matriz manual e a regressão desktop serem) Tj
+/F1 9.5 Tf 1 0 0 1 48 685 Tm (aprovadas.) Tj
+ET
+endstream
+endobj
+19 0 obj
+<< /Type /Page /Parent 1 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 2 0 R /F2 3 0 R >> >> /Contents 18 0 R >>
+endobj
+20 0 obj
+<< /Type /Catalog /Pages 1 0 R >>
+endobj
+xref
+0 21
+0000000000 65535 f 
+0000000015 00000 n 
+0000000119 00000 n 
+0000000216 00000 n 
+0000000318 00000 n 
+0000005253 00000 n 
+0000005389 00000 n 
+0000009707 00000 n 
+0000009843 00000 n 
+0000014317 00000 n 
+0000014453 00000 n 
+0000018589 00000 n 
+0000018727 00000 n 
+0000022857 00000 n 
+0000022995 00000 n 
+0000027225 00000 n 
+0000027363 00000 n 
+0000031418 00000 n 
+0000031556 00000 n 
+0000032426 00000 n 
+0000032564 00000 n 
+trailer
+<< /Size 21 /Root 20 0 R >>
+startxref
+32614
+%%EOF

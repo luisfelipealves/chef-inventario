@@ -1,3 +1,4 @@
+import { AvisoCusto } from "@/components/custos/ResumoIndicadores";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useTranslation, type UseTranslationResponse } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -7,7 +8,7 @@ import { db } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { totaisPedido } from "@/lib/pedido-calc";
-import { custoTotalReceita, custoPorDose } from "@/lib/receita-custo";
+import { resumoReceita } from "@/lib/receita-custo";
 import { calcularAlertasStock } from "@/lib/stock-alerta";
 import { useShell } from "@/lib/shell";
 import { EstadoTag } from "@/components/EstadoTag";
@@ -120,10 +121,10 @@ function Painel() {
     return receitas
       .filter((r) => (r.precoVenda ?? 0) > 0)
       .map((r) => {
-        const custoDose = custoPorDose(custoTotalReceita(r, ingMap), r.rendimento);
-        const margem = custoDose > 0 ? (((r.precoVenda ?? 0) - custoDose) / custoDose) * 100 : 0;
-        return { receita: r, margem };
+        const resumo = resumoReceita(r, ingMap);
+        return { receita: r, margem: resumo.margem };
       })
+      .filter((r): r is { receita: typeof r.receita; margem: number } => r.margem != null)
       .sort((a, b) => b.margem - a.margem)
       .slice(0, 3);
   }, [receitas, ingMap]);
@@ -138,9 +139,15 @@ function Painel() {
   }
 
   return (
-    <div style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}>
+    <div
+      className="dashboard-page"
+      style={{ padding: "4px 28px 28px", overflowY: "auto", flex: 1 }}
+    >
       {/* Faixa de indicadores */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+      <div
+        className="dashboard-indicators"
+        style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}
+      >
         <Indicador
           kicker={t("painel.pedidosAbertos")}
           valor={String(abertos.length)}
@@ -154,7 +161,9 @@ function Painel() {
         <Indicador
           kicker={t("painel.lucroPrevisto")}
           valor={formatEuro(resumo.lucro, { compact: true })}
-          nota={t("painel.sobrePedidosAbertos")}
+          nota={
+            Number.isFinite(resumo.lucro) ? t("painel.sobrePedidosAbertos") : t("custos.incompleto")
+          }
         />
         <Indicador
           kicker={t("painel.ingredientesStock")}
@@ -165,6 +174,7 @@ function Painel() {
 
       {/* Grid principal */}
       <div
+        className="dashboard-main-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "1.35fr 1fr",
@@ -211,6 +221,7 @@ function Painel() {
                     key={p.id}
                     type="button"
                     onClick={() => abrirPedido(p.id)}
+                    className="dashboard-delivery-row"
                     style={{
                       display: "grid",
                       gridTemplateColumns: "62px minmax(0,1fr) auto auto",
@@ -312,6 +323,7 @@ function Painel() {
                     key={a.ingrediente.id}
                     type="button"
                     onClick={() => abrirIngrediente(a.ingrediente.id)}
+                    className="dashboard-stock-row"
                     style={{
                       display: "flex",
                       alignItems: "center",
@@ -345,6 +357,7 @@ function Painel() {
             }}
           >
             <h4 style={{ fontSize: 20 }}>{t("painel.receitasRentaveis")}</h4>
+            <AvisoCusto completo />
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
               {topReceitas.length === 0 ? (
                 <p style={{ fontSize: 13, color: "var(--color-neutral-600)" }}>
@@ -359,10 +372,11 @@ function Painel() {
                         style={{
                           fontSize: 13,
                           fontWeight: 600,
-                          color: "var(--color-accent-2-700)",
+                          color:
+                            margem < 0 ? "var(--color-accent-700)" : "var(--color-accent-2-700)",
                         }}
                       >
-                        +{Math.round(margem)}%
+                        {Math.round(margem)}%
                       </span>
                     </div>
                     <div
@@ -377,7 +391,7 @@ function Painel() {
                       <div
                         style={{
                           height: "100%",
-                          width: `${Math.min(100, margem / 4)}%`,
+                          width: `${Math.max(0, Math.min(100, margem))}%`,
                           background: "var(--color-accent)",
                           borderRadius: 999,
                         }}

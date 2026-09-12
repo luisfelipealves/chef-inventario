@@ -1,3 +1,4 @@
+import { AvisoCusto, ResumoIndicadores } from "@/components/custos/ResumoIndicadores";
 import { createFileRoute } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
@@ -27,8 +28,11 @@ import { formatEuro } from "@/lib/format";
 import { totaisPedido, custoDoseReceita } from "@/lib/pedido-calc";
 import { dataEntregaCurta, dataEntregaLonga } from "@/lib/data-format";
 import { useHydrated } from "@/hooks/use-hydrated";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useShell } from "@/lib/shell";
+import { MobileDetail } from "@/components/lista/MobileDetail";
 import { EstadoSelect } from "@/components/pedidos/EstadoSelect";
+import { eliminarPedido } from "@/lib/producao";
 import { FiltroBar, type FiltroOpcao } from "@/components/lista/FiltroBar";
 
 export const Route = createFileRoute("/pedidos")({
@@ -92,6 +96,7 @@ function PedidosPage() {
   const ingMap = useMemo(() => new Map(ingredientes.map((i) => [i.id, i])), [ingredientes]);
 
   const { filtro, setFiltro, selection, setSelection, sheet, closeSheet, openSheet } = useShell();
+  const isMobile = useIsMobile();
   const filtroAtual = filtro.pedidos;
 
   const lista = useMemo(() => pedidos ?? [], [pedidos]);
@@ -100,7 +105,9 @@ function PedidosPage() {
     [lista, filtroAtual],
   );
 
-  const selecionado = filtrados.find((p) => p.id === selection.pedidos) ?? filtrados[0] ?? null;
+  const selecionado = isMobile
+    ? (filtrados.find((p) => p.id === selection.pedidos) ?? null)
+    : (filtrados.find((p) => p.id === selection.pedidos) ?? filtrados[0] ?? null);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Pedido | null>(null);
@@ -122,7 +129,7 @@ function PedidosPage() {
   async function confirmDelete() {
     if (!toDelete) return;
     try {
-      await db.pedidos.delete(toDelete.id);
+      await eliminarPedido(toDelete.id);
       toast.success(t("pedidos.removido"));
     } catch (err) {
       console.error(err);
@@ -133,7 +140,7 @@ function PedidosPage() {
   }
 
   return (
-    <div className="lista-view">
+    <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
         <FiltroBar
           opcoes={FILTROS_KEYS.map((f): FiltroOpcao => ({ key: f.key, label: t(f.labelKey) }))}
@@ -168,14 +175,26 @@ function PedidosPage() {
                       data-selected={selecionado?.id === p.id}
                       onClick={() => setSelection("pedidos", p.id)}
                     >
-                      <td className="primeira">
+                      <td className="primeira" data-label={t("pedidos.thCliente")}>
                         {clienteMap.get(p.clienteId)?.nome ?? t("painel.clienteRemovido")}
                       </td>
-                      <td>{dataEntregaCurta(p.dataEntrega)}</td>
-                      <td>{t("pedidos.nReceitas", { count: p.itens.length })}</td>
-                      <td className="num">{formatEuro(totais.custo, { compact: true })}</td>
-                      <td className="num">{formatEuro(totais.venda, { compact: true })}</td>
-                      <td>
+                      <td data-label={t("pedidos.thEntrega")}>{dataEntregaCurta(p.dataEntrega)}</td>
+                      <td data-label={t("pedidos.thItens")}>
+                        {t("pedidos.nReceitas", { count: p.itens.length })}
+                      </td>
+                      <td
+                        className="num"
+                        data-label={t("pedidos.thCusto")}
+                        title={totais.completo ? undefined : t("custos.incompleto")}
+                      >
+                        {totais.completo
+                          ? formatEuro(totais.custo, { compact: true })
+                          : t("custos.incompletoCurto")}
+                      </td>
+                      <td className="num" data-label={t("pedidos.thTotal")}>
+                        {formatEuro(totais.venda, { compact: true })}
+                      </td>
+                      <td data-label={t("pedidos.thEstado")}>
                         <EstadoSelect pedido={p} />
                       </td>
                     </tr>
@@ -189,15 +208,37 @@ function PedidosPage() {
 
       <aside className="detalhe-panel">
         {selecionado ? (
-          <PedidoDetalhe
-            pedido={selecionado}
-            clienteNome={clienteMap.get(selecionado.clienteId)?.nome ?? t("painel.clienteRemovido")}
-            cliente={clienteMap.get(selecionado.clienteId)}
-            receitaMap={receitaMap}
-            ingMap={ingMap}
-            onEdit={() => openSheet({ module: "pedidos", mode: "editar", id: selecionado.id })}
-            onDelete={() => setToDelete(selecionado)}
-          />
+          isMobile ? (
+            <MobileDetail
+              title={clienteMap.get(selecionado.clienteId)?.nome ?? t("painel.clienteRemovido")}
+              backLabel={t("comum.voltar")}
+              onBack={() => setSelection("pedidos", null)}
+            >
+              <PedidoDetalhe
+                pedido={selecionado}
+                clienteNome={
+                  clienteMap.get(selecionado.clienteId)?.nome ?? t("painel.clienteRemovido")
+                }
+                cliente={clienteMap.get(selecionado.clienteId)}
+                receitaMap={receitaMap}
+                ingMap={ingMap}
+                onEdit={() => openSheet({ module: "pedidos", mode: "editar", id: selecionado.id })}
+                onDelete={() => setToDelete(selecionado)}
+              />
+            </MobileDetail>
+          ) : (
+            <PedidoDetalhe
+              pedido={selecionado}
+              clienteNome={
+                clienteMap.get(selecionado.clienteId)?.nome ?? t("painel.clienteRemovido")
+              }
+              cliente={clienteMap.get(selecionado.clienteId)}
+              receitaMap={receitaMap}
+              ingMap={ingMap}
+              onEdit={() => openSheet({ module: "pedidos", mode: "editar", id: selecionado.id })}
+              onDelete={() => setToDelete(selecionado)}
+            />
+          )
         ) : (
           <div className="detalhe-empty">{t("pedidos.seleciona")}</div>
         )}
@@ -311,6 +352,7 @@ function PedidoDetalhe({
                 <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
                   {t("pedidos.porDose", {
                     preco: formatEuro(item.precoUnitario, { compact: true }),
+                    unidade: receita?.unidadeRendimento ?? "un",
                     custo: formatEuro(custoDose, { compact: true }),
                   })}
                 </span>
@@ -330,18 +372,12 @@ function PedidoDetalhe({
             {formatEuro(totais.custo, { compact: true })}
           </span>
         </div>
-        <div className="kv">
-          <span className="kv-label">{t("pedidos.lucro")}</span>
-          <span
-            style={{
-              color: "var(--color-accent-2-700)",
-              fontWeight: 600,
-              fontVariantNumeric: "tabular-nums",
-            }}
-          >
-            {formatEuro(totais.lucro, { compact: true })}
-          </span>
-        </div>
+        <ResumoIndicadores
+          resultado={totais.lucro}
+          margem={totais.margem}
+          acrescimo={totais.acrescimo}
+        />
+        <AvisoCusto completo={totais.completo} />
         <div style={{ borderTop: "1px solid var(--color-divider)", margin: "8px 0" }} />
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
           <span style={{ fontFamily: "var(--font-heading)", fontSize: 15 }}>
@@ -357,9 +393,6 @@ function PedidoDetalhe({
               }}
             >
               {formatEuro(totais.venda, { compact: true })}
-            </span>
-            <span style={{ fontSize: 11, color: "var(--color-neutral-600)" }}>
-              {t("pedidos.margem", { pct: Math.round(totais.margem) })}
             </span>
           </span>
         </div>

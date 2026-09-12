@@ -29,8 +29,8 @@ describe("custoDoseReceita", () => {
     expect(custoDoseReceita(bolo, ingMap)).toBeCloseTo(0.2);
   });
 
-  it("devolve 0 para receita removida", () => {
-    expect(custoDoseReceita(undefined, ingMap)).toBe(0);
+  it("assinala custo desconhecido para receita removida", () => {
+    expect(custoDoseReceita(undefined, ingMap)).toBeNaN();
   });
 });
 
@@ -44,22 +44,32 @@ describe("totaisPedido", () => {
     expect(t.custo).toBeCloseTo(2); // 0,20 € × 10
     expect(t.venda).toBeCloseTo(30);
     expect(t.lucro).toBeCloseTo(28);
-    expect(t.margem).toBeCloseTo(1400); // 28 / 2 × 100
+    expect(t.margem).toBeCloseTo((28 / 30) * 100);
+    expect(t.acrescimo).toBeCloseTo(1400);
   });
 
-  it("receita removida conta venda mas custo 0", () => {
+  it("receita removida mantém a venda e assinala o custo desconhecido", () => {
     const t = totaisPedido(
       [{ receitaId: 999, quantidade: 2, precoUnitario: 5 }],
       receitaMap,
       ingMap,
     );
-    expect(t.custo).toBe(0);
+    expect(t.custo).toBeNaN();
     expect(t.venda).toBe(10);
-    expect(t.margem).toBe(0); // sem custo, margem indefinida → 0
+    expect(t.margem).toBeNull();
+    expect(t.lucro).toBeNaN();
+    expect(t.completo).toBe(false);
   });
 
   it("pedido vazio dá tudo a zero", () => {
     const t = totaisPedido([], receitaMap, ingMap);
-    expect(t).toEqual({ custo: 0, venda: 0, lucro: 0, margem: 0 });
+    expect(t).toEqual({
+      custo: 0,
+      venda: 0,
+      lucro: 0,
+      margem: null,
+      acrescimo: null,
+      completo: true,
+    });
   });
 });

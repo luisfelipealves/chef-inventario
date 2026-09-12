@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -17,6 +17,8 @@ import { useTranslation } from "react-i18next";
 import { useShell, type ModuloLista } from "@/lib/shell";
 import type { AlertaStock } from "@/lib/stock-alerta";
 import { DefinicoesSheet } from "@/components/DefinicoesSheet";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 interface NavDef {
   to: string;
@@ -43,9 +45,11 @@ export function Sidebar({
   alertas: AlertaStock[];
 }) {
   const { t } = useTranslation();
-  const { sidebarOpen, toggleSidebar, setFiltro } = useShell();
+  const { sidebarOpen, toggleSidebar, setFiltro, mobileNavOpen, setMobileNavOpen, closeMobileNav } =
+    useShell();
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
-  const collapsed = !sidebarOpen;
+  const collapsed = !isMobile && !sidebarOpen;
   const [definicoesOpen, setDefinicoesOpen] = useState(false);
 
   function verStockBaixo() {
@@ -53,8 +57,8 @@ export function Sidebar({
     navigate({ to: "/ingredientes" });
   }
 
-  return (
-    <aside className="sidebar" data-collapsed={collapsed}>
+  const content: ReactNode = (
+    <>
       <div className="sidebar-brand">
         <span className="sidebar-brand-mark">C</span>
         {!collapsed && (
@@ -79,6 +83,7 @@ export function Sidebar({
               title={collapsed ? t(item.labelKey) : undefined}
               activeOptions={{ exact: item.exact ?? false }}
               activeProps={{ "data-active": "true" } as Record<string, string>}
+              onClick={closeMobileNav}
             >
               <Icon size={19} strokeWidth={2.75} />
               {!collapsed && (
@@ -94,7 +99,14 @@ export function Sidebar({
 
       <div className="sidebar-footer">
         {!collapsed && alertas.length > 0 && (
-          <button type="button" className="sidebar-alert" onClick={verStockBaixo}>
+          <button
+            type="button"
+            className="sidebar-alert"
+            onClick={() => {
+              verStockBaixo();
+              closeMobileNav();
+            }}
+          >
             <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <TriangleAlert size={17} strokeWidth={2.75} />
               <span
@@ -127,23 +139,46 @@ export function Sidebar({
           type="button"
           className="nav-item"
           title={collapsed ? t("nav.definicoes") : undefined}
-          onClick={() => setDefinicoesOpen(true)}
+          onClick={() => {
+            closeMobileNav();
+            setDefinicoesOpen(true);
+          }}
         >
           <Settings size={19} strokeWidth={2.75} />
           {!collapsed && <span className="nav-item-label">{t("nav.definicoes")}</span>}
         </button>
 
-        <button type="button" className="nav-item" onClick={toggleSidebar}>
-          {collapsed ? (
-            <PanelLeftOpen size={19} strokeWidth={2.75} />
-          ) : (
-            <PanelLeftClose size={19} strokeWidth={2.75} />
-          )}
-          {!collapsed && <span className="nav-item-label">{t("nav.recolher")}</span>}
-        </button>
+        {!isMobile && (
+          <button type="button" className="nav-item" onClick={toggleSidebar}>
+            {collapsed ? (
+              <PanelLeftOpen size={19} strokeWidth={2.75} />
+            ) : (
+              <PanelLeftClose size={19} strokeWidth={2.75} />
+            )}
+            {!collapsed && <span className="nav-item-label">{t("nav.recolher")}</span>}
+          </button>
+        )}
       </div>
+    </>
+  );
 
+  return (
+    <>
+      {isMobile ? (
+        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+          <SheetContent side="left" className="sidebar sidebar-mobile" aria-describedby={undefined}>
+            <SheetHeader className="sr-only">
+              <SheetTitle>{t("nav.menu")}</SheetTitle>
+            </SheetHeader>
+            {content}
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <aside className="sidebar" data-collapsed={collapsed}>
+          {content}
+        </aside>
+      )}
       <DefinicoesSheet open={definicoesOpen} onOpenChange={setDefinicoesOpen} />
-    </aside>
+    </>
   );
 }

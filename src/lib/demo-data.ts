@@ -273,14 +273,19 @@ export async function apagarDadosExemplo(): Promise<void> {
   if (ids) {
     await db.transaction(
       "rw",
-      [db.ingredientes, db.receitas, db.clientes, db.pedidos, db.compras],
+      [db.ingredientes, db.receitas, db.clientes, db.pedidos, db.compras, db.producoes],
       async () => {
+        // Produções não têm um marcador próprio: removemos as que apontam
+        // para receitas de exemplo, incluindo produções feitas pelo utilizador
+        // antes de apagar os dados de onboarding.
+        const producaoIds = await db.producoes.where("receitaId").anyOf(ids.receitas).primaryKeys();
         await Promise.all([
           db.ingredientes.bulkDelete(ids.ingredientes),
           db.receitas.bulkDelete(ids.receitas),
           db.clientes.bulkDelete(ids.clientes),
           db.pedidos.bulkDelete(ids.pedidos),
           db.compras.bulkDelete(ids.compras ?? []),
+          db.producoes.bulkDelete(producaoIds),
         ]);
       },
     );
