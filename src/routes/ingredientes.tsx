@@ -10,6 +10,7 @@ import {
   TriangleAlert,
   ScanLine,
   Trash2,
+  FileDown,
 } from "lucide-react";
 import { db, stockDe, type Ingrediente, type Receita } from "@/lib/db";
 import { FaturaSheet } from "@/components/ingredientes/FaturaSheet";
@@ -125,6 +126,33 @@ function IngredientesPage() {
     }
   }
 
+  function gerarListaStockBaixo() {
+    const alertas = [...alertaMap.values()].sort((a, b) => b.falta - a.falta);
+    if (alertas.length === 0) {
+      toast.info(t("ingredientes.semStockBaixo"));
+      return;
+    }
+
+    const data = new Intl.DateTimeFormat(undefined, { dateStyle: "short" }).format(new Date());
+    const linhas = [
+      t("ingredientes.listaTitulo"),
+      t("ingredientes.listaData", { data }),
+      "",
+      ...alertas.map(
+        ({ ingrediente, falta }) =>
+          `- ${ingrediente.nome}: ${Math.ceil(falta)} ${ingrediente.unidade}`,
+      ),
+    ];
+    const blob = new Blob([linhas.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "lista-stock-baixo.txt";
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(t("ingredientes.listaGerada", { n: alertas.length }));
+  }
+
   return (
     <div className="lista-view" data-mobile-detail={isMobile && selecionado ? "true" : "false"}>
       <div className="lista-panel">
@@ -134,23 +162,34 @@ function IngredientesPage() {
           onChange={(k) => setFiltro("ingredientes", k)}
           contagem={t("ingredientes.contagem", { n: filtrados.length, total: lista.length })}
           acao={
-            <button
-              type="button"
-              className="btn-ghost"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                background: "none",
-                border: 0,
-                cursor: "pointer",
-                fontSize: 13,
-              }}
-              onClick={() => setFaturaOpen(true)}
-            >
-              <ScanLine size={16} strokeWidth={2.75} />
-              {t("ingredientes.lerFatura")}
-            </button>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ height: 34, fontSize: 13 }}
+                onClick={gerarListaStockBaixo}
+              >
+                <FileDown size={15} strokeWidth={2.75} />
+                {t("ingredientes.gerarListaStockBaixo")}
+              </button>
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  background: "none",
+                  border: 0,
+                  cursor: "pointer",
+                  fontSize: 13,
+                }}
+                onClick={() => setFaturaOpen(true)}
+              >
+                <ScanLine size={16} strokeWidth={2.75} />
+                {t("ingredientes.lerFatura")}
+              </button>
+            </span>
           }
         />
 
