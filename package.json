@@ -16,7 +16,7 @@
     "tauri": "tauri",
     "tauri:android:init": "tauri android init",
     "tauri:android:dev": "tauri android dev",
-    "tauri:android:apk": "tauri android build -- --apk",
+    "tauri:android:apk": "tauri android build --apk",
     "tauri:windows:build": "tauri-windows-bundle build"
   },
   "dependencies": {
