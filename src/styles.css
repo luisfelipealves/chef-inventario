@@ -758,6 +758,7 @@ body { margin: 0; }
     text-overflow: ellipsis;
   }
   .topbar > .btn-primary {
+    position: relative;
     order: 3;
     width: var(--touch-target-min);
     height: var(--touch-target-min);
@@ -773,6 +774,10 @@ body { margin: 0; }
     display: block;
     flex: none;
     margin: 0;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
   .topbar-search {
     order: 4;
