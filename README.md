@@ -48,6 +48,24 @@ npm run dev        # web, em modo desenvolvimento
 npm run tauri dev  # app desktop
 npm run build      # build de produção (web)
 npm run tauri build# app desktop empacotada
+npm run tauri:android:init  # inicializa o projeto Android (uma vez)
+npm run tauri:android:dev   # executa no emulador/dispositivo Android
+npm run tauri:android:apk   # gera APK para instalação/testes
 ```
+
+### Android
+
+Para gerar um APK localmente é necessário instalar o Android Studio com o SDK
+Platform, Platform-Tools, Build-Tools, Command-line Tools e NDK, além de Java
+e Rust com os targets Android. Depois de configurar `JAVA_HOME`, `ANDROID_HOME`
+e `NDK_HOME`, execute `npm run tauri:android:init` uma vez e, depois,
+`npm run tauri:android:apk`. O APK é gerado em `src-tauri/gen/android/app/build/outputs/apk`.
+
+Cada release Android deve usar uma versão maior; o workflow calcula automaticamente
+o `versionCode` a partir da tag.
+
+Também é possível executar o workflow **Build Android APK** no GitHub Actions;
+ele instala a toolchain no runner, inicializa o projeto Android e disponibiliza
+os APKs como artefactos para download.
 
 `npm run lint` corre o ESLint; `npx tsc --noEmit` verifica os tipos.

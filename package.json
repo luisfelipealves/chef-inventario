@@ -1,6 +1,6 @@
 {
   "name": "chef-gestao",
-  "version": "1.1.9",
+  "version": "1.1.11",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -14,6 +14,9 @@
     "test": "vitest run",
     "format": "prettier --write .",
     "tauri": "tauri",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:android:apk": "tauri android build --apk",
     "tauri:windows:build": "tauri-windows-bundle build"
   },
   "dependencies": {
