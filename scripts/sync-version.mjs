@@ -28,7 +28,7 @@ for (const path of ["src-tauri/Cargo.toml", "src-tauri/Cargo.lock"]) {
   const contents = fs.readFileSync(path, "utf8");
   const pattern = path.endsWith("Cargo.toml")
     ? /(^version = ")[^"]+(")/m
-    : /(^name = "chef-gestao"\nversion = ")[^"]+(")/m;
+    : /(^name = "chef-gestao"\r?\nversion = ")[^"]+(")/m;
   const updated = contents.replace(pattern, `$1${version}$2`);
   if (!pattern.test(contents)) {
     throw new Error(`Pacote chef-gestao não encontrado em ${path}`);
