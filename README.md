@@ -61,6 +61,9 @@ e Rust com os targets Android. Depois de configurar `JAVA_HOME`, `ANDROID_HOME`
 e `NDK_HOME`, execute `npm run tauri:android:init` uma vez e, depois,
 `npm run tauri:android:apk`. O APK é gerado em `src-tauri/gen/android/app/build/outputs/apk`.
 
+Cada release Android deve usar uma versão maior; o workflow calcula automaticamente
+o `versionCode` a partir da tag.
+
 Também é possível executar o workflow **Build Android APK** no GitHub Actions;
 ele instala a toolchain no runner, inicializa o projeto Android e disponibiliza
 os APKs como artefactos para download.
