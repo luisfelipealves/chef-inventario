@@ -61,6 +61,12 @@ e Rust com os targets Android. Depois de configurar `JAVA_HOME`, `ANDROID_HOME`
 e `NDK_HOME`, execute `npm run tauri:android:init` uma vez e, depois,
 `npm run tauri:android:apk`. O APK é gerado em `src-tauri/gen/android/app/build/outputs/apk`.
 
+O workflow do GitHub Actions exige os secrets `ANDROID_KEY_BASE64`,
+`ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` e `ANDROID_STORE_PASSWORD`.
+Eles devem apontar para o mesmo keystore em todas as releases, permitindo
+atualizar a app sem desinstalar a versão anterior. Um APK já instalado com
+outra chave precisa ser desinstalado antes do primeiro APK assinado.
+
 Cada release Android deve usar uma versão maior; o workflow calcula automaticamente
 o `versionCode` a partir da tag.
 
