@@ -11,6 +11,7 @@ import {
   PanelLeftOpen,
   TriangleAlert,
   Settings,
+  ShoppingBasket,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -32,6 +33,7 @@ const NAV: NavDef[] = [
   { to: "/", labelKey: "nav.painel", icon: LayoutDashboard, exact: true },
   { to: "/pedidos", labelKey: "nav.pedidos", icon: ClipboardList, module: "pedidos" },
   { to: "/receitas", labelKey: "nav.receitas", icon: BookOpen, module: "receitas" },
+  { to: "/pronto-venda", labelKey: "nav.prontoVenda", icon: ShoppingBasket },
   { to: "/ingredientes", labelKey: "nav.ingredientes", icon: Package, module: "ingredientes" },
   { to: "/clientes", labelKey: "nav.clientes", icon: Users, module: "clientes" },
   { to: "/financeiro", labelKey: "nav.financeiro", icon: Wallet },
@@ -40,9 +42,11 @@ const NAV: NavDef[] = [
 export function Sidebar({
   counts,
   alertas,
+  prontosCount,
 }: {
   counts: Record<ModuloLista, number>;
   alertas: AlertaStock[];
+  prontosCount: number;
 }) {
   const { t } = useTranslation();
   const { sidebarOpen, toggleSidebar, setFiltro, mobileNavOpen, setMobileNavOpen, closeMobileNav } =
@@ -74,7 +78,12 @@ export function Sidebar({
       <nav className="sidebar-nav">
         {NAV.map((item) => {
           const Icon = item.icon;
-          const count = item.module ? counts[item.module] : undefined;
+          const count =
+            item.to === "/pronto-venda"
+              ? prontosCount
+              : item.module
+                ? counts[item.module]
+                : undefined;
           return (
             <Link
               key={item.to}

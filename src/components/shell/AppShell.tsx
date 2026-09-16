@@ -66,6 +66,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     ingredientes: ingredientes.length,
     clientes: clientes.length,
   };
+  const prontosCount = useMemo(
+    () => receitas.filter((receita) => (receita.dosesProntas ?? 0) > 0).length,
+    [receitas],
+  );
 
   const datasets = {
     ingredientes,
@@ -79,7 +83,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="shell-root" data-mobile={isMobile ? "true" : "false"}>
-      <Sidebar counts={counts} alertas={alertas} />
+      <Sidebar counts={counts} alertas={alertas} prontosCount={prontosCount} />
       <div className="shell-main">
         <Topbar datasets={datasets} />
         <div className="shell-content">{children}</div>

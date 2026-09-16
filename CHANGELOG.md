@@ -4,6 +4,14 @@ As notas de cada versão são publicadas automaticamente na release do GitHub
 (ver `scripts/release-notes.mjs`). O título de cada secção tem de ser `## vX.Y.Z`,
 igual à tag, senão a release sai com as notas por omissão.
 
+## v1.1.13
+
+### Adicionado
+
+- Mostra o histórico de produção de cada receita, com data, lotes e doses produzidas.
+- Adiciona a área **Prontos para venda**, com o stock atual de produto acabado.
+- Adapta a consulta de produtos prontos e o histórico para ecrãs mobile.
+
 ## v1.1.9
 
 ### Adicionado
