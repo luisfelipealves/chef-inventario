@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "@/lib/i18n";
-import { gerarCsv, type MovimentoCsv } from "@/lib/financeiro-csv";
+import { exportarFinanceiroCsv, gerarCsv, type MovimentoCsv } from "@/lib/financeiro-csv";
 
 function mov(parcial: Partial<MovimentoCsv>): MovimentoCsv {
   return {
@@ -13,6 +13,11 @@ function mov(parcial: Partial<MovimentoCsv>): MovimentoCsv {
     ...parcial,
   };
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("gerarCsv (pt-PT)", () => {
   beforeEach(async () => {
@@ -63,5 +68,36 @@ describe("gerarCsv (en)", () => {
   it("protege campos com vírgulas", () => {
     const csv = gerarCsv([mov({ descricao: "Cake, big" })]);
     expect(csv).toContain('"Cake, big"');
+  });
+});
+
+describe("exportarFinanceiroCsv no browser", () => {
+  it("cria um download com nome baseado no período e revoga a URL", async () => {
+    await i18n.changeLanguage("pt-PT");
+    const anchor = {
+      href: "",
+      download: "",
+      click: vi.fn(),
+      remove: vi.fn(),
+    };
+    const createObjectURL = vi.fn().mockReturnValue("blob:csv");
+    const revokeObjectURL = vi.fn();
+    vi.stubGlobal("document", {
+      createElement: vi.fn().mockReturnValue(anchor),
+      body: { appendChild: vi.fn() },
+    });
+    vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
+    vi.useFakeTimers();
+
+    await expect(
+      exportarFinanceiroCsv([mov({})], new Date(2026, 0, 1), new Date(2026, 0, 31)),
+    ).resolves.toBe("financeiro-2026-01-01-a-2026-01-31.csv");
+    expect(anchor.download).toBe("financeiro-2026-01-01-a-2026-01-31.csv");
+    expect(anchor.href).toBe("blob:csv");
+    expect(anchor.click).toHaveBeenCalledOnce();
+    expect(anchor.remove).toHaveBeenCalledOnce();
+    vi.advanceTimersByTime(1000);
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:csv");
+    vi.useRealTimers();
   });
 });

@@ -91,4 +91,78 @@ describe("validarBackup", () => {
     });
     expect(() => validarBackup(JSON.stringify(dados))).toThrow(msg("backupLib.naoEBackup"));
   });
+
+  it("rejeita datas de entrega que não existem no calendário", () => {
+    const dados = JSON.parse(valido);
+    dados.clientes.push({
+      id: 1,
+      nome: "Cliente",
+      telefone: "",
+      endereco: "",
+      nif: "",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    dados.receitas.push({
+      id: 1,
+      nome: "Receita",
+      rendimento: 1,
+      unidadeRendimento: "un",
+      ingredientes: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    dados.pedidos.push({
+      id: 1,
+      clienteId: 1,
+      itens: [{ receitaId: 1, quantidade: 1, precoUnitario: 1 }],
+      dataEntrega: "2026-02-30",
+      estado: "pendente",
+      notas: "",
+      createdAt: "2026-01-01T00:00:00.000Z",
+    });
+    expect(() => validarBackup(JSON.stringify(dados))).toThrow(msg("backupLib.naoEBackup"));
+  });
+
+  it.each(["compras", "producoes"] as const)("rejeita ids duplicados em %s", (tabela) => {
+    const dados = JSON.parse(valido);
+    if (tabela === "compras") {
+      dados.compras = [
+        {
+          id: 1,
+          nome: "Farinha",
+          quantidade: 1,
+          unidade: "kg",
+          valor: 2,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: 1,
+          nome: "Açúcar",
+          quantidade: 1,
+          unidade: "kg",
+          valor: 2,
+          createdAt: "2026-01-02T00:00:00.000Z",
+        },
+      ];
+    } else {
+      dados.producoes = [
+        {
+          id: 1,
+          receitaId: 99,
+          nome: "Receita removida",
+          lotes: 1,
+          doses: 1,
+          createdAt: "2026-01-01T00:00:00.000Z",
+        },
+        {
+          id: 1,
+          receitaId: 99,
+          nome: "Receita removida",
+          lotes: 1,
+          doses: 1,
+          createdAt: "2026-01-02T00:00:00.000Z",
+        },
+      ];
+    }
+    expect(() => validarBackup(JSON.stringify(dados))).toThrow(msg("backupLib.naoEBackup"));
+  });
 });

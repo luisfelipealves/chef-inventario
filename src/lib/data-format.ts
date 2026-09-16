@@ -2,8 +2,17 @@
 import { localeAtual } from "@/lib/i18n";
 
 export function parseData(s: string): Date | null {
-  const d = new Date(`${s}T00:00:00`);
-  return Number.isNaN(d.getTime()) ? null : d;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!match) return null;
+  const [, ano, mes, dia] = match;
+  const d = new Date(Number(ano), Number(mes) - 1, Number(dia));
+  // Date normaliza silenciosamente, por exemplo, 30 de fevereiro para março.
+  // Uma data de input inválida deve continuar a ser tratada como inválida.
+  return d.getFullYear() === Number(ano) &&
+    d.getMonth() === Number(mes) - 1 &&
+    d.getDate() === Number(dia)
+    ? d
+    : null;
 }
 
 /** "24 ago" — dia + mês abreviado. */
