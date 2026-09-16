@@ -1,7 +1,8 @@
 import "fake-indexeddb/auto";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "./db";
-import { apagarDadosExemplo } from "./demo-data";
+import { apagarDadosExemplo, criarDadosExemplo } from "./demo-data";
+import i18n from "./i18n";
 
 const storage = new Map<string, string>();
 vi.stubGlobal("localStorage", {
@@ -59,5 +60,38 @@ describe("apagarDadosExemplo", () => {
     expect((await db.producoes.get(2))?.receitaId).toBe(2);
     expect(await db.receitas.get(1)).toBeUndefined();
     expect(storage.get("chefgestao:demo-ids")).toBeUndefined();
+  });
+});
+
+describe("criarDadosExemplo", () => {
+  it("cria um conjunto coerente de onboarding e regista todos os ids", async () => {
+    await criarDadosExemplo();
+
+    expect(await db.ingredientes.count()).toBe(8);
+    expect(await db.receitas.count()).toBe(4);
+    expect(await db.clientes.count()).toBe(3);
+    expect(await db.pedidos.count()).toBe(5);
+    expect(await db.compras.count()).toBe(7);
+    expect(JSON.parse(storage.get("chefgestao:demo-ids")!)).toMatchObject({
+      ingredientes: expect.arrayContaining([expect.any(Number)]),
+      receitas: expect.any(Array),
+      clientes: expect.any(Array),
+      pedidos: expect.any(Array),
+      compras: expect.any(Array),
+    });
+
+    const ingredientes = new Set((await db.ingredientes.toArray()).map((ing) => ing.id));
+    const receitas = await db.receitas.toArray();
+    expect(
+      receitas.flatMap((r) => r.ingredientes).every((l) => ingredientes.has(l.ingredienteId)),
+    ).toBe(true);
+    expect((await db.pedidos.toArray()).every((p) => p.itens.length > 0)).toBe(true);
+  });
+
+  it("usa nomes traduzidos quando o idioma do onboarding é inglês", async () => {
+    await i18n.changeLanguage("en");
+    await criarDadosExemplo();
+    expect((await db.ingredientes.orderBy("nome").first())?.nome).toBe("70% chocolate");
+    expect((await db.receitas.orderBy("nome").first())?.nome).toBe("Chocolate cake");
   });
 });

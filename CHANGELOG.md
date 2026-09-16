@@ -4,6 +4,18 @@ As notas de cada versão são publicadas automaticamente na release do GitHub
 (ver `scripts/release-notes.mjs`). O título de cada secção tem de ser `## vX.Y.Z`,
 igual à tag, senão a release sai com as notas por omissão.
 
+## v1.1.14
+
+### Corrigido
+
+- Rejeita datas de entrega que não existem no calendário ao apresentar ou importar dados.
+- Trata respostas OCR incompletas sem interromper a leitura da fatura.
+- Impede backups com IDs duplicados em compras ou produções.
+
+### Interno
+
+- Amplia a cobertura dos fluxos críticos de backup, OCR, exportações, stock, onboarding e configurações.
+
 ## v1.1.13
 
 ### Adicionado

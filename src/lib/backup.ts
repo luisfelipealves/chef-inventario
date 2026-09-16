@@ -129,6 +129,18 @@ const inteiro = (v: unknown): v is number => typeof v === "number" && Number.isI
 const numero = (v: unknown, minimo = 0): v is number =>
   typeof v === "number" && Number.isFinite(v) && v >= minimo;
 const dataValida = (v: unknown) => typeof v === "string" && Number.isFinite(new Date(v).getTime());
+const dataCalendarioValida = (v: unknown) => {
+  if (typeof v !== "string") return false;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!match) return false;
+  const [, ano, mes, dia] = match;
+  const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+  return (
+    data.getFullYear() === Number(ano) &&
+    data.getMonth() === Number(mes) - 1 &&
+    data.getDate() === Number(dia)
+  );
+};
 
 function estruturaBackupValida(dados: Record<string, unknown>): boolean {
   if (
@@ -218,8 +230,7 @@ function estruturaBackupValida(dados: Record<string, unknown>): boolean {
       !inteiro(raw.clienteId) ||
       !clienteIds.has(raw.clienteId) ||
       !Array.isArray(raw.itens) ||
-      typeof raw.dataEntrega !== "string" ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(raw.dataEntrega) ||
+      !dataCalendarioValida(raw.dataEntrega) ||
       !ESTADOS.has(String(raw.estado)) ||
       typeof raw.notas !== "string" ||
       !dataValida(raw.createdAt)
@@ -238,10 +249,12 @@ function estruturaBackupValida(dados: Record<string, unknown>): boolean {
     pedidoIds.add(raw.id);
   }
 
+  const compraIds = new Set<number>();
   for (const raw of dados.compras ?? []) {
     if (
       !registo(raw) ||
       !inteiro(raw.id) ||
+      compraIds.has(raw.id) ||
       typeof raw.nome !== "string" ||
       !raw.nome.trim() ||
       !numero(raw.quantidade, Number.MIN_VALUE) ||
@@ -252,11 +265,14 @@ function estruturaBackupValida(dados: Record<string, unknown>): boolean {
       (raw.ingredienteId !== undefined && !inteiro(raw.ingredienteId))
     )
       return false;
+    compraIds.add(raw.id);
   }
+  const producaoIds = new Set<number>();
   for (const raw of dados.producoes ?? []) {
     if (
       !registo(raw) ||
       !inteiro(raw.id) ||
+      producaoIds.has(raw.id) ||
       !inteiro(raw.receitaId) ||
       typeof raw.nome !== "string" ||
       !raw.nome.trim() ||
@@ -265,6 +281,7 @@ function estruturaBackupValida(dados: Record<string, unknown>): boolean {
       !dataValida(raw.createdAt)
     )
       return false;
+    producaoIds.add(raw.id);
   }
   return true;
 }

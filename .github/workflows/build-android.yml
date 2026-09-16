@@ -7,7 +7,7 @@ on:
       - "v*"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -79,3 +79,24 @@ jobs:
           path: src-tauri/gen/android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Attach APKs to tag release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          shopt -s globstar nullglob
+          apks=(src-tauri/gen/android/app/build/outputs/apk/**/*.apk)
+          test "${#apks[@]}" -gt 0 || (echo "Nenhum APK foi gerado" && exit 1)
+
+          for attempt in {1..60}; do
+            if gh release view "${{ github.ref_name }}" >/dev/null 2>&1; then
+              gh release upload "${{ github.ref_name }}" "${apks[@]}" --clobber
+              exit 0
+            fi
+            echo "A release ${{ github.ref_name }} ainda não está disponível (tentativa $attempt/60)."
+            sleep 10
+          done
+
+          echo "A release ${{ github.ref_name }} não foi criada a tempo."
+          exit 1
