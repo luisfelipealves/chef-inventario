@@ -3,6 +3,7 @@
     "painel": "Dashboard",
     "pedidos": "Orders",
     "receitas": "Recipes",
+    "prontoVenda": "Ready for sale",
     "ingredientes": "Ingredients",
     "clientes": "Customers",
     "financeiro": "Finances",
@@ -23,6 +24,19 @@
     "pesquisaGlobal": "Global search",
     "abrirMenu": "Open menu",
     "fecharMenu": "Close menu"
+  },
+  "prontoVenda": {
+    "kicker": "Finished product",
+    "titulo": "Ready for sale",
+    "descricao": "Everything produced that is still available to sell.",
+    "count_one": "{{count}} recipe available",
+    "count_other": "{{count}} recipes available",
+    "cardKicker": "Available for sale",
+    "disponiveis": "{{unidade}} available",
+    "verFicha": "View recipe sheet",
+    "vazioTitulo": "Nothing ready for sale",
+    "vazioDesc": "When you log production, the product appears here while units remain available.",
+    "verReceitas": "Go to recipes"
   },
   "painel": {
     "pedidosAbertos": "Open orders",
@@ -66,7 +80,8 @@
     "guardar": "Save",
     "aGravar": "Saving…",
     "acaoIrreversivel": "This action cannot be undone.",
-    "erroGravar": "Error while saving"
+    "erroGravar": "Error while saving",
+    "aCarregar": "Loading…"
   },
   "estado": {
     "pendente": "Pending",

@@ -3,6 +3,7 @@
     "painel": "Painel",
     "pedidos": "Pedidos",
     "receitas": "Receitas",
+    "prontoVenda": "Prontos para venda",
     "ingredientes": "Ingredientes",
     "clientes": "Clientes",
     "financeiro": "Financeiro",
@@ -23,6 +24,19 @@
     "pesquisaGlobal": "Pesquisa global",
     "abrirMenu": "Abrir menu",
     "fecharMenu": "Fechar menu"
+  },
+  "prontoVenda": {
+    "kicker": "Produto acabado",
+    "titulo": "Prontos para venda",
+    "descricao": "Tudo o que foi produzido e ainda está disponível para vender.",
+    "count_one": "{{count}} receita disponível",
+    "count_other": "{{count}} receitas disponíveis",
+    "cardKicker": "Disponível para venda",
+    "disponiveis": "{{unidade}} disponíveis",
+    "verFicha": "Ver ficha da receita",
+    "vazioTitulo": "Nada pronto para venda",
+    "vazioDesc": "Quando registares uma produção, o produto aparece aqui enquanto houver unidades disponíveis.",
+    "verReceitas": "Ir para receitas"
   },
   "painel": {
     "pedidosAbertos": "Pedidos abertos",
@@ -66,7 +80,8 @@
     "guardar": "Guardar",
     "aGravar": "A gravar…",
     "acaoIrreversivel": "Esta ação não pode ser desfeita.",
-    "erroGravar": "Erro ao gravar"
+    "erroGravar": "Erro ao gravar",
+    "aCarregar": "A carregar…"
   },
   "estado": {
     "pendente": "Pendente",

@@ -50,6 +50,11 @@ function configPara(pathname: string, nome: string, t: T): RotaConfig {
         titulo: t("nav.receitas"),
         primario: { label: t("topbar.novaReceita"), module: "receitas" },
       };
+    case "/pronto-venda":
+      return {
+        titulo: t("nav.prontoVenda"),
+        primario: { label: t("topbar.novoPedido"), module: "pedidos" },
+      };
     case "/ingredientes":
       return {
         titulo: t("nav.ingredientes"),
