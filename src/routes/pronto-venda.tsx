@@ -6,6 +6,7 @@ import { ArrowRight, BookOpen, ShoppingBasket } from "lucide-react";
 import { db, type Receita } from "@/lib/db";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useShell } from "@/lib/shell";
+import { receitasProntas } from "@/lib/pronto-venda";
 
 export const Route = createFileRoute("/pronto-venda")({
   head: () => ({
@@ -29,10 +30,7 @@ function ProntoVendaPage() {
     () => (hydrated ? db.receitas.orderBy("nome").toArray() : []),
     [hydrated],
   );
-  const prontos = useMemo(
-    () => (receitas ?? []).filter((receita) => (receita.dosesProntas ?? 0) > 0),
-    [receitas],
-  );
+  const prontos = useMemo(() => receitasProntas(receitas ?? []), [receitas]);
 
   function abrirFicha(receita: Receita) {
     setSelection("receitas", receita.id);

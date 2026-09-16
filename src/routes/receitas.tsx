@@ -20,6 +20,7 @@ import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
 import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
 import { dataHora } from "@/lib/data-format";
+import { ordenarProducoesMaisRecentes } from "@/lib/producao-historico";
 import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -103,10 +104,7 @@ function ReceitasPage() {
     [],
   );
   const historicoProducao = useMemo(
-    () =>
-      [...(producoes ?? [])].sort(
-        (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id,
-      ),
+    () => ordenarProducoesMaisRecentes(producoes ?? []),
     [producoes],
   );
 
