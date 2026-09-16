@@ -15,13 +15,14 @@ function resposta(itens: unknown[], status = 200): Response {
 }
 
 describe("configuração do OCR", () => {
-  it("usa a chave local aparada e mantém o modelo padrão", () => {
+  it("respeita a prioridade da chave embutida e mantém o modelo configurado", () => {
     vi.stubGlobal("localStorage", {
       getItem: vi.fn().mockReturnValue("  chave-local  "),
       setItem: vi.fn(),
     });
-    expect(getGeminiModel()).toBe("gemini-3.6-flash");
-    expect(getGeminiKey()).toBe("  chave-local  ");
+    const env = import.meta.env as Record<string, string | undefined>;
+    expect(getGeminiModel()).toBe(env.VITE_GEMINI_MODEL?.trim() || "gemini-3.6-flash");
+    expect(getGeminiKey()).toBe(env.VITE_GEMINI_KEY?.trim() || "  chave-local  ");
 
     setGeminiKey("  nova-chave  ");
     expect(vi.mocked(localStorage.setItem)).toHaveBeenCalledWith(
@@ -32,7 +33,8 @@ describe("configuração do OCR", () => {
 
   it("tolera a ausência de localStorage", () => {
     vi.stubGlobal("localStorage", undefined);
-    expect(getGeminiKey()).toBe("");
+    const embedded = (import.meta.env as Record<string, string | undefined>).VITE_GEMINI_KEY;
+    expect(getGeminiKey()).toBe(embedded?.trim() || "");
     expect(() => setGeminiKey("chave")).not.toThrow();
   });
 });
