@@ -167,6 +167,7 @@ export async function lerFatura(imagemBase64: string, apiKey: string): Promise<I
 
   return itens
     .map((raw): ItemFatura | null => {
+      if (typeof raw !== "object" || raw === null) return null;
       const o = raw as Record<string, unknown>;
       const nome = String(o.nome ?? "").trim();
       const quantidade = Number(o.quantidade);
