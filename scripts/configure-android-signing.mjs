@@ -28,10 +28,9 @@ fs.writeFileSync(
 
 let gradle = fs.readFileSync(gradlePath, "utf8");
 if (!gradle.includes('signingConfigs {\n        create("release")')) {
-  const imports = [
-    "import java.io.FileInputStream",
-    "import java.util.Properties",
-  ].filter((statement) => !gradle.includes(statement));
+  const imports = ["import java.io.FileInputStream", "import java.util.Properties"].filter(
+    (statement) => !gradle.includes(statement),
+  );
   if (imports.length > 0) gradle = `${imports.join("\n")}\n${gradle}`;
 
   const signingConfig = `signingConfigs {
@@ -61,4 +60,3 @@ if (!gradle.includes('signingConfig = signingConfigs.getByName("release")')) {
   );
 }
 fs.writeFileSync(gradlePath, gradle);
-
