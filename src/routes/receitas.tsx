@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useEffect, useMemo, useState } from "react";
 import { Pencil, Printer, BookOpen, Plus, CookingPot, Trash2 } from "lucide-react";
-import { db, type Receita, type Ingrediente } from "@/lib/db";
+import { db, type Receita, type Ingrediente, type Producao } from "@/lib/db";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { ReceitaFormDialog } from "@/components/receitas/ReceitaFormDialog";
 import { ProducaoDialog } from "@/components/receitas/ProducaoDialog";
 import { formatEuro } from "@/lib/format";
+import { dataHora } from "@/lib/data-format";
 import { resumoReceita, custoLinha } from "@/lib/receita-custo";
 import { useHydrated } from "@/hooks/use-hydrated";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -92,6 +93,22 @@ function ReceitasPage() {
   const selecionado = isMobile
     ? (filtrados.find((c) => c.receita.id === selection.receitas) ?? null)
     : (filtrados.find((c) => c.receita.id === selection.receitas) ?? filtrados[0] ?? null);
+  const receitaSelecionadaId = selecionado?.receita.id;
+  const producoes = useLiveQuery(
+    () =>
+      hydrated && receitaSelecionadaId != null
+        ? db.producoes.where("receitaId").equals(receitaSelecionadaId).toArray()
+        : [],
+    [hydrated, receitaSelecionadaId],
+    [],
+  );
+  const historicoProducao = useMemo(
+    () =>
+      [...(producoes ?? [])].sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime() || b.id - a.id,
+      ),
+    [producoes],
+  );
 
   const [formOpen, setFormOpen] = useState(false);
   const [producaoOpen, setProducaoOpen] = useState(false);
@@ -145,6 +162,7 @@ function ReceitasPage() {
                   <th>{t("receitas.thReceita")}</th>
                   <th className="num">{t("receitas.thIngredientes")}</th>
                   <th>{t("receitas.thRende")}</th>
+                  <th className="num">{t("receitas.thProntas")}</th>
                   <th className="num">{t("receitas.thCustoTotal")}</th>
                   <th className="num">{t("receitas.thPorDose")}</th>
                   <th className="num">{t("receitas.thVenda")}</th>
@@ -171,6 +189,9 @@ function ReceitasPage() {
                     </td>
                     <td data-label={t("receitas.thRende")}>
                       {c.receita.rendimento} {c.receita.unidadeRendimento}
+                    </td>
+                    <td className="num" data-label={t("receitas.thProntas")}>
+                      {c.receita.dosesProntas ?? 0} {c.receita.unidadeRendimento}
                     </td>
                     <td className="num" data-label={t("receitas.thCustoTotal")}>
                       {formatEuro(c.custoTotal, { compact: true })}
@@ -225,6 +246,7 @@ function ReceitasPage() {
               <ReceitaDetalhe
                 calc={selecionado}
                 ingMap={ingMap}
+                producoes={historicoProducao}
                 onEdit={() =>
                   openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
                 }
@@ -235,6 +257,7 @@ function ReceitasPage() {
             <ReceitaDetalhe
               calc={selecionado}
               ingMap={ingMap}
+              producoes={historicoProducao}
               onEdit={() =>
                 openSheet({ module: "receitas", mode: "editar", id: selecionado.receita.id })
               }
@@ -288,11 +311,13 @@ function ReceitasPage() {
 function ReceitaDetalhe({
   calc,
   ingMap,
+  producoes,
   onEdit,
   onProduzir,
 }: {
   calc: ReceitaCalc;
   ingMap: Map<number, Ingrediente>;
+  producoes: Producao[];
   onEdit: () => void;
   onProduzir: () => void;
 }) {
@@ -439,6 +464,8 @@ function ReceitaDetalhe({
         <AvisoCusto completo={calc.completo} />
       </div>
 
+      <HistoricoProducao receita={receita} producoes={producoes} />
+
       <div className="detalhe-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={onProduzir}>
           <CookingPot size={16} strokeWidth={2.75} />
@@ -462,6 +489,58 @@ function ReceitaDetalhe({
         </button>
       </div>
     </div>
+  );
+}
+
+function HistoricoProducao({ receita, producoes }: { receita: Receita; producoes: Producao[] }) {
+  const { t } = useTranslation();
+  const totalDoses = producoes.reduce((total, producao) => total + producao.doses, 0);
+
+  return (
+    <section
+      className="detalhe-card producao-historico"
+      aria-labelledby="historico-producao-titulo"
+    >
+      <div className="producao-historico-header">
+        <div>
+          <span className="card-kicker">{t("receitas.historicoKicker")}</span>
+          <h4 id="historico-producao-titulo" style={{ fontSize: 18, marginTop: 2 }}>
+            {t("receitas.historicoTitulo")}
+          </h4>
+        </div>
+        <span className="tag tag-outline">
+          {t("receitas.historicoTotal", {
+            n: totalDoses,
+            unidade: receita.unidadeRendimento,
+          })}
+        </span>
+      </div>
+
+      {producoes.length === 0 ? (
+        <p className="producao-historico-empty">{t("receitas.historicoVazio")}</p>
+      ) : (
+        <div className="producao-historico-list">
+          {producoes.map((producao) => (
+            <div className="producao-historico-row" key={producao.id}>
+              <div className="producao-historico-info">
+                <strong>{dataHora(producao.createdAt)}</strong>
+                <span>
+                  {t("receitas.historicoLotes", {
+                    n: producao.lotes,
+                  })}
+                </span>
+              </div>
+              <span className="tag tag-accent-2">
+                {t("receitas.historicoDoses", {
+                  n: producao.doses,
+                  unidade: receita.unidadeRendimento,
+                })}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

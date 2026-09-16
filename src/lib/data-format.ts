@@ -30,3 +30,12 @@ export function dataComAno(s: string): string {
   if (!d) return "—";
   return `${dataEntregaCurta(s)} ${d.getFullYear()}`;
 }
+
+/** "24/08/2026, 15:30" — data e hora de um movimento registado. */
+export function dataHora(d: Date): string {
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat(localeAtual(), {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(d);
+}
