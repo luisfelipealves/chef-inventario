@@ -28,7 +28,12 @@ jobs:
           targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
+        with:
+          # O pacote legado `tools` deixou de existir no repositório do SDK.
+          # O sdkmanager continua disponível nos command-line tools instalados
+          # pela action; aqui só precisamos do adb para as etapas seguintes.
+          packages: platform-tools
 
       - name: Install Android SDK components
         run: |
