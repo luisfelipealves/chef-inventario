@@ -4,9 +4,13 @@
 
 Built with React, TypeScript and Dexie, then packaged with Tauri for desktop and Android. The interface supports Portuguese and English. The separate [product site](https://luisfelipealves.github.io/caderninho-site/) introduces the app to customers; **this repository contains the application source code**.
 
-![Caderninho ingredient and stock screen](https://raw.githubusercontent.com/luisfelipealves/caderninho-site/main/shots/ingredientes.png)
+![Current Caderninho dashboard with built-in sample data](screenshots/caderninho-desktop.png)
 
-*Product screenshots from the public site; some details may differ from the latest build.*
+| Desktop browser viewport | Mobile browser viewport |
+| --- | --- |
+| ![Desktop dashboard](screenshots/caderninho-desktop.png) | ![Mobile dashboard](screenshots/caderninho-mobile.png) |
+
+*Captured from the current React build in automated Chromium viewports using the app's built-in sample data. The native Tauri shell is not shown. The product screenshots below come from the public site and may differ from the latest build.*
 
 | Recipe costing | Orders |
 | --- | --- |
