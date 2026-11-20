@@ -1,0 +1,37 @@
+name: Portfolio screenshots (browser viewport)
+on:
+  push:
+    branches: [docs/emulator-screenshots-20261120]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run build
+      - name: Start the app preview
+        run: |
+          bun run preview --host 127.0.0.1 --port 4173 > /tmp/caderninho-preview.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/caderninho-preview.log
+          exit 1
+      - name: Capture desktop and mobile viewport
+        run: |
+          npx --yes playwright@1.56.1 install --with-deps chromium
+          mkdir -p screenshots
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size "1440,900" --wait-for-timeout 4000 http://127.0.0.1:4173/ screenshots/caderninho-desktop.png
+          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size "390,844" --wait-for-timeout 4000 http://127.0.0.1:4173/ screenshots/caderninho-mobile.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: caderninho-browser-viewport-screenshots
+          path: screenshots/*.png
+          if-no-files-found: error
