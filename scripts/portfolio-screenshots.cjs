@@ -8,7 +8,7 @@ const { chromium } = require('/tmp/portfolio-playwright/node_modules/playwright'
     await page.getByPlaceholder('Your name').fill('Demo');
     await page.getByRole('button', { name: 'Continue' }).click();
     await page.getByRole('button', { name: 'Load sample data' }).click();
-    await page.waitForTimeout(1200);
+    await page.waitForTimeout(4500);
     await page.screenshot({ path: 'screenshots/caderninho-' + name + '.png' });
     await context.close();
   }
