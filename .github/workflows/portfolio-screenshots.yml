@@ -26,9 +26,9 @@ jobs:
       - name: Capture desktop and mobile viewport
         run: |
           npx --yes playwright@1.56.1 install --with-deps chromium
+          npm install --prefix /tmp/portfolio-playwright --no-save playwright@1.56.1
           mkdir -p screenshots
-          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size "1440,900" --wait-for-timeout 4000 http://127.0.0.1:4173/ screenshots/caderninho-desktop.png
-          npx --yes playwright@1.56.1 screenshot --browser chromium --viewport-size "390,844" --wait-for-timeout 4000 http://127.0.0.1:4173/ screenshots/caderninho-mobile.png
+          node scripts/portfolio-screenshots.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
