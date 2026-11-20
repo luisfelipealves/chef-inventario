@@ -7,7 +7,8 @@ const { chromium } = require('/tmp/portfolio-playwright/node_modules/playwright'
     await page.goto('http://127.0.0.1:4173/', { waitUntil: 'networkidle' });
     await page.getByPlaceholder('Your name').fill('Demo');
     await page.getByRole('button', { name: 'Continue' }).click();
-    await page.waitForTimeout(600);
+    await page.getByRole('button', { name: 'Load sample data' }).click();
+    await page.waitForTimeout(1200);
     await page.screenshot({ path: 'screenshots/caderninho-' + name + '.png' });
     await context.close();
   }
